@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "maplarge-claude-marketplace-public",
+  "description": "MapLarge development tools and workflows for Claude Code CLI",
+  "owner": {
+    "name": "MapLarge",
+    "email": "support@maplarge.com"
+  },
+  "plugins": [
+    {
+      "name": "maplarge-adk",
+      "source": "./plugins/maplarge-adk",
+      "description": "Guidance for building MapLarge ADK extensions: workspace detection, queries, Raptor dashboards, data modeling, server-side extension patterns, deep product references (database, DataStreams, Notebooks, Raptor), granular Raptor-control and Apache ECharts charting skill families, and the ml-docgen config-documentation tool",
+      "version": "1.0.0",
+      "author": {
+        "name": "MapLarge",
+        "email": "support@maplarge.com"
+      },
+      "repository": "https://dev.azure.com/MapLarge/Internal/_git/maplarge-ai-plugins-public",
+      "license": "Proprietary",
+      "keywords": ["maplarge", "adk", "extensions", "raptor", "echarts", "charts", "queries", "dashboard"],
+      "category": "development"
+    }
+  ]
+}

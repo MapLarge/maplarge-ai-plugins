@@ -1,0 +1,9 @@
+{
+  "localRepos": {
+    "core": "/path/to/core",
+    "maplarge-cli": "/path/to/maplarge-cli"
+  },
+  "repoHints": [],
+  "docsPortalBaseUrl": "https://docs.maplarge.com/dashboard/ext/docportal/portal",
+  "internalMode": false
+}
