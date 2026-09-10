@@ -5,6 +5,7 @@ Sources: Apache ECharts option/API docs (echarts.apache.org/en/option.html, echa
 ## Instance / global API (echarts.ECharts, typed `ml.echarts.ECharts`)
 
 Global (echarts namespace):
+
 - `echarts.init(dom, theme?, opts?)` → ECharts. `opts: { renderer: "canvas"|"svg", width, height, devicePixelRatio, useDirtyRect, locale }`.
 - `echarts.use([...])` — register tree-shaken components (modern builds).
 - `echarts.registerTheme(name, themeObj)`, `echarts.registerMap(name, geoJson)`, `echarts.getMap(name)`.
@@ -13,6 +14,7 @@ Global (echarts namespace):
 - `echarts.graphic.clipRectByRect(targetRect, frameRect)` → clipped rect or undefined. **Used in renderItem** to clip a gantt/timeline bar to the plot rect. Other `echarts.graphic` helpers: `extendShape`, `LinearGradient`, `RadialGradient`.
 
 Instance methods:
+
 - `setOption(option, notMerge?, lazyUpdate?)` or `setOption(option, { notMerge, replaceMerge, lazyUpdate, silent })`. Default = deep merge per component. `replaceMerge: "series"` replaces all series. `notMerge: true` wipes prior option.
 - `getOption()` → the full resolved option (used to read `dataZoom[0].start/end` on the `dataZoom` event).
 - `getWidth()`, `getHeight()`, `getDom()`.
@@ -39,20 +41,20 @@ Events (`chart.on(name, ...)`): mouse — `click`, `dblclick`, `mousedown/up/mov
 ## Option tree (top-level components)
 
 | Key | Purpose | Notable sub-keys |
-|-----|---------|------------------|
+| ----- | --------- | ------------------ |
 | `title` | chart title | `text`, `subtext`, `left/top`, `textStyle` |
-| `legend` | series toggles | `show`, `data`, `type: "plain"|"scroll"`, `orient`, `selectedMode` |
+| `legend` | series toggles | `show`, `data`, `type: "plain" \| "scroll"`,`orient`,`selectedMode` |
 | `grid` | cartesian plot rect | `top/bottom/left/right`, `containLabel`, `show`, `backgroundColor`; array for multi-grid |
 | `xAxis`/`yAxis` | axes (array allowed) | `type`, `data`, `name`, `nameLocation`, `nameGap`, `nameRotate`, `min/max`, `axisLabel{interval,rotate,formatter,color}`, `axisLine.lineStyle`, `splitLine`, `boundaryGap`, `position` |
 | `polar`/`radiusAxis`/`angleAxis` | polar coords | for pie-alt, radar-ish |
 | `radar` | radar indicator | `indicator: [{name,max}]` |
-| `dataZoom` | zoom/pan | `type:"slider"|"inside"`, `xAxisIndex`, `yAxisIndex`, `filterMode`, `start/end`, `startValue/endValue`, `realtime`, `showDataShadow`, `labelFormatter` |
-| `visualMap` | value→color | `type:"continuous"|"piecewise"`, `min/max`, `range`, `calculable`, `orient`, `inRange.color`, `text`, `dimension`, `seriesIndex` |
-| `tooltip` | hover info | `trigger:"item"|"axis"|"none"`, `axisPointer.type:"line"|"shadow"|"cross"`, `formatter`, `renderMode:"html"|"richText"`, `appendTo`, `confine`, `showContent`, `textStyle`, `borderColor` |
+| `dataZoom` | zoom/pan | `type:"slider" \| "inside"`,`xAxisIndex`,`yAxisIndex`,`filterMode`,`start/end`,`startValue/endValue`,`realtime`,`showDataShadow`,`labelFormatter` |
+| `visualMap` | value→color | `type:"continuous" \| "piecewise"`,`min/max`,`range`,`calculable`,`orient`,`inRange.color`,`text`,`dimension`,`seriesIndex` |
+| `tooltip` | hover info | `trigger:"item" \| "axis" \| "none"`,`axisPointer.type:"line" \| "shadow" \| "cross"`,`formatter`,`renderMode:"html" \| "richText"`,`appendTo`,`confine`,`showContent`,`textStyle`,`borderColor` |
 | `axisPointer` | global pointer | `type`, `link`, `label` |
 | `toolbox` | built-in tools | `feature.{dataZoom,saveAsImage,restore,dataView,magicType,brush}` |
 | `brush` | region select | `toolbox`, `brushType`, `brushLink` |
-| `graphic` | free shapes | `elements: [{type:"group"|"rect"|"text"|"circle"|"line"|"image", left/top, shape, style, z, children}]` |
+| `graphic` | free shapes | `elements: [{type:"group" \| "rect" \| "text" \| "circle" \| "line" \| "image", left/top, shape, style, z, children}]` |
 | `dataset` | shared data | `dimensions`, `source`; series pick via `datasetIndex` + `encode` |
 | `aria` | accessibility | — |
 | `series` | the data | array; each `{ type, ... }` |
@@ -72,6 +74,7 @@ Events (`chart.on(name, ...)`): mouse — `click`, `dblclick`, `mousedown/up/mov
 Per-series shared: `name`, `type`, `z`, `zlevel`, `silent`, `tooltip`, `itemStyle`, `emphasis`, `label`, `labelLine`, `markLine`, `markArea`, `markPoint`, `encode`, `datasetIndex`, `dimensions`, `animation`.
 
 `markLine`/`markArea`/`markPoint`:
+
 - `markLine.data`: `[{ xAxis|yAxis|coord:[x,y]|type:"average"|"min"|"max", name }]` or pairs `[{coord},{coord}]` for segments. `symbol`, `lineStyle`, `label`, `silent`, `z`.
 - `markArea.data`: pairs `[{ xAxis, name }, { xAxis }]`. `itemStyle`, `label`.
 - **Category-axis collapse**: a `markLine`/`markArea` where start === end has zero extent; emit those via a custom series with `api.coord` instead.
@@ -81,6 +84,7 @@ Per-series shared: `name`, `type`, `z`, `zlevel`, `silent`, `tooltip`, `itemStyl
 `renderItem(params: CustomSeriesRenderItemParams, api: CustomSeriesRenderItemAPI) → CustomSeriesRenderItemReturn`
 
 `api`:
+
 - `api.value(dimIndex)` — value of the current item at a dimension.
 - `api.coord([x, y])` → `[px, py]` data→pixel (interpolates between category band centers — works for single-cell marks where markLine fails).
 - `api.size([dx, dy])` → `[pxW, pxH]` size of a data delta (`api.size([1,1])` = one heatmap cell).
@@ -115,6 +119,7 @@ Charts should never hardcode colors — resolve `--chart-*` / `--bs-*` CSS varia
 ## Where charts live in an extension
 
 A chart in a MapLarge ADK extension is the node class + its View + ViewModel working together:
+
 - The **view** (`client/views/...`) declares `s.chart({ viewName, options, bindings: { traverseRaptorChart: true }, events })`, with option leaves bound to `s.prefix(vmKey).getTypedProp("...")`.
 - The **ViewModel** (`client/view-models/...` or `client/viewModels/...` — match whichever folder the file you are editing uses) exposes getters returning `ml.echarts.*` option fragments (series arrays, datasets, axis layouts, `graphic` elements) and, after mount, attaches imperative behavior in `node.onChartCreated` (click drilldown, `dataZoom` persistence, `datarangeselected` filtering).
 - A reusable chart **helper** module often centralizes data loading, gap-marker computation (markLine/markArea pairs + single-band custom markers), gantt defaults, and HTML tooltip swatch builders (remember `opacity: 1 !important` on swatches to escape inherited framework opacity).

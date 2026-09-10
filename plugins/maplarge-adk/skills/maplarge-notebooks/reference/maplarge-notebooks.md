@@ -35,7 +35,7 @@ If the question is "can I just run Jupyter on my laptop?", you can — and for o
 ### 1.3 How they differ from a local Jupyter notebook
 
 | Dimension | Local Jupyter / Colab | MapLarge Notebook |
-|-----------|-----------------------|-------------------|
+| ----------- | ----------------------- | ------------------- |
 | Kernel location | Your laptop / Colab VM | Managed container on the MapLarge server |
 | Python environment | Whatever you `pip install`ed | Pre-built container images (standard data-science, LLM, vision, Ollama, etc.) |
 | Data access | Export/import via CSV, REST calls, OAuth | `import maplarge` — direct |
@@ -127,14 +127,14 @@ Open the notebook → click the notebook **name** in the top bar → **Download*
 
 Click the down arrow next to the notebook name to access:
 
-| Action              | What it does |
-|---------------------|--------------|
-| **Edit**            | Rename / change description |
-| **Save a Copy**     | Duplicate into the same or a different account |
+| Action | What it does |
+| --------------------- | -------------- |
+| **Edit** | Rename / change description |
+| **Save a Copy** | Duplicate into the same or a different account |
 | **Version History** | Browse all prior saves; restore an older version |
-| **Download**        | Export as `.ipynb` |
+| **Download** | Export as `.ipynb` |
 | **Upload new version** | Replace the notebook's contents with an uploaded file (keeps history) |
-| **Delete**          | Remove the notebook |
+| **Delete** | Remove the notebook |
 
 ---
 
@@ -142,19 +142,19 @@ Click the down arrow next to the notebook name to access:
 
 ### 3.1 Top ribbon bar
 
-| Area                   | Purpose |
-|------------------------|---------|
+| Area | Purpose |
+| ------------------------ | --------- |
 | **Notebook name menu** | Edit / Copy / Version History / Download / Upload / Delete |
-| **Table Inputs**       | Attach MapLarge tables as named inputs your script can reference (§4.1) |
-| **VFS Mappings**       | Mount MapLarge VFS folders into the kernel container (§4.2) |
-| **Output Fields**      | Declare the output-table schema for ETL (§4.3) |
-| **User Parameters**    | Named parameters your script can read from `maplarge.userParameters` (§4.4) |
-| **Secrets**            | Inject API keys, tokens, etc. into the container without hardcoding (§4.5) |
+| **Table Inputs** | Attach MapLarge tables as named inputs your script can reference (§4.1) |
+| **VFS Mappings** | Mount MapLarge VFS folders into the kernel container (§4.2) |
+| **Output Fields** | Declare the output-table schema for ETL (§4.3) |
+| **User Parameters** | Named parameters your script can read from `maplarge.userParameters` (§4.4) |
+| **Secrets** | Inject API keys, tokens, etc. into the container without hardcoding (§4.5) |
 | **Resource Limits / Requests** | Set CPU / memory / GPU limits for the kernel (§4.6) |
-| **Idle Timeout**       | Minutes of inactivity before the kernel is shut down (§4.7) |
-| **Cell Palette**       | Add Code, Add Markdown, Cut, Copy, Paste, **Run Cell** (`Ctrl+Enter`) |
-| **Kernel Controls**    | Start, Interrupt, Restart, Restart Container, Stop, Switch Image (§3.3) |
-| **Output Panel toggle**| Show/hide Script Output panel; pick layout |
+| **Idle Timeout** | Minutes of inactivity before the kernel is shut down (§4.7) |
+| **Cell Palette** | Add Code, Add Markdown, Cut, Copy, Paste, **Run Cell** (`Ctrl+Enter`) |
+| **Kernel Controls** | Start, Interrupt, Restart, Restart Container, Stop, Switch Image (§3.3) |
+| **Output Panel toggle** | Show/hide Script Output panel; pick layout |
 
 ### 3.2 Cell operations
 
@@ -168,14 +168,14 @@ Select a cell (its boundary highlights) before any operation.
 
 A **kernel** is the language runtime; a **container** is the Docker image the kernel is running inside. They can be controlled separately:
 
-| Control             | Effect |
-|---------------------|--------|
-| **Start Kernel**    | Start the runtime environment (boots the container if needed) |
-| **Interrupt Kernel**| Stop the cell currently running (like Ctrl-C) |
-| **Restart Kernel**  | Reset language state — every variable and function you've defined is gone — but keep the container running |
+| Control | Effect |
+| --------------------- | -------- |
+| **Start Kernel** | Start the runtime environment (boots the container if needed) |
+| **Interrupt Kernel** | Stop the cell currently running (like Ctrl-C) |
+| **Restart Kernel** | Reset language state — every variable and function you've defined is gone — but keep the container running |
 | **Restart Container** | Restart the container itself; the kernel reconnects |
-| **Stop Kernel**     | Stop the container |
-| **Switch Image**    | Rebind the notebook to a different registered container image |
+| **Stop Kernel** | Stop the container |
+| **Switch Image** | Rebind the notebook to a different registered container image |
 
 The kernel status indicator (top right) reads:
 
@@ -720,7 +720,7 @@ Sometimes the default image isn't enough — you need pre-installed libraries, C
 
 Your image needs the MapLarge Python helpers so that `import maplarge` works inside it. Add these to your repo before building:
 
-```
+```text
 ml_python_packages/
     maplargeclient/       # required
     mlflowmaplarge/       # only if you want MLFlow integration
@@ -820,7 +820,7 @@ End-users don't see this sidebar entry; if you need an image registered, ask you
 ## 12. Quick Reference — `maplarge` Methods
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `maplarge.MODE` | `INTERACTIVE` / `DESCRIBE` / `EXECUTE` — branch on this to skip heavy work in `DESCRIBE` |
 | `maplarge.userParameters` | Dict of toolbar-supplied named parameters |
 | `maplarge.GetInputSchema(inputs=[...])` | Schema of declared inputs or any accessible table |
@@ -890,12 +890,12 @@ Typical toolbar usage on Profile B servers: **Table Inputs ~68%**, **Output Sche
 User Parameters are where you pass knobs a notebook might want tuned between runs without editing code. Common MLOps uses:
 
 | Notebook purpose | Typical User Parameters |
-|-------------------|-------------------------|
-| Model training    | `checkpoint`, `batch_size`, `max_epochs`, `lr`, `config` |
+| ------------------- | ------------------------- |
+| Model training | `checkpoint`, `batch_size`, `max_epochs`, `lr`, `config` |
 | Deployment / inference | `model`, `config` |
 | Clustering / stats | `max_states`, `min_states`, `min_samples_required` |
-| Geo notebooks      | `lat`, `lon` (name of the latitude/longitude columns) |
-| Table-selection    | `polygon`, `table`, `account` (pointing at an input by name) |
+| Geo notebooks | `lat`, `lon` (name of the latitude/longitude columns) |
+| Table-selection | `polygon`, `table`, `account` (pointing at an input by name) |
 
 If you catch yourself editing a cell just to change a number or a table name between runs, that's a User Parameter.
 
@@ -938,7 +938,7 @@ Heavily-used notebooks accumulate **40–70 saved versions**. That's not sloppin
 For specialized workloads, dedicated images exist on some servers (pre-registered by admins) — real examples seen in the wild:
 
 | Image | Purpose | When to pick it |
-|-------|---------|-----------------|
+| ------- | --------- | ----------------- |
 | `maplarge/ipython-kernel` | Default Python with data-science stack + MLFlow | General-purpose, ETL, exploration |
 | `ghcr.io/maplarge/notebook` | Alternative ghcr-hosted Python image | Equivalent to default for most uses |
 | `maplarge/llm` | LLM inference (Bedrock-style client, prompting utilities) | Running prompts against hosted LLMs, multi-model eval, judging |

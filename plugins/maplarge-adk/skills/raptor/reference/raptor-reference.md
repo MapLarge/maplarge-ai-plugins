@@ -5,7 +5,7 @@ Fast index of the signatures used in MapLarge ADK extension client code (`extens
 ## RSScriptor entry / commit
 
 | Call | Use |
-|---|---|
+| --- | --- |
 | `RSScriptor.create<VM>()` | start a scriptor typed to a VM |
 | `s.page(modelKey, label)` | declare a page (page views only) |
 | `s.view(name, s => ...)` | a named render region within a page |
@@ -37,7 +37,7 @@ Common option keys across builders: `viewName`, `controlTargetKey`, `id`, `custo
 ## Scoping / value helpers
 
 | Helper | Returns | Note |
-|---|---|---|
+| --- | --- | --- |
 | `s.getTypedProp("name")` | typed `"name"` string | resolved against current scope at render |
 | `s.prefix("vmGetter")` | scriptor scoped onto a nested VM | chain `.getTypedProp(...)` or `.prefix(...)` |
 | `s.getSvgKey("mlsvg-x")` | registered svg key string | for `svg({key})` |
@@ -73,7 +73,7 @@ All ctors: `(raptorDom: RaptorDom, raptorEngine: RaptorEngine)` → `super(...)`
 ## update()
 
 | Call | Effect |
-|---|---|
+| --- | --- |
 | `this.update()` | re-render whole VM |
 | `this.update("viewName")` | re-render one named region (the `viewName:` on an element) |
 | `this.update("viewName", index)` | targeted indexed update |
@@ -100,7 +100,7 @@ All ctors: `(raptorDom: RaptorDom, raptorEngine: RaptorEngine)` → `super(...)`
 ## Dialogs
 
 | Call | Returns |
-|---|---|
+| --- | --- |
 | `raptorEngine.renderDialog(viewDef)` | plain dialog |
 | `raptorEngine.renderDialogVM(View(), null, vm)` | `{ newDialogModelKey }` (assign to `vm.dialogKey`) |
 | `raptorEngine.renderer.raptorDom.destroyDialog(key)` | close |
@@ -128,6 +128,7 @@ Override `serialize(): ISerializedViewModel` (call `super.serialize()`, set `jso
 ```ts
 { name, pages:{[key]:View()}, pageViewModels:{[key]:[{classModule, className}]}, layouts:{Layout:LayoutView()}, dialogs:{[key]:DialogView()} }
 ```
+
 `registerPublicDashboard({ id:"ext/<Ext>/main", name, description, hideSidebar, hideHeader })`. `registerCustomRoute({route, path, params})`. Shell prefixes page/vm keys as `<name>-<key>`.
 
 ## Build / toolchain

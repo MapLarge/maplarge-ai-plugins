@@ -1,0 +1,16 @@
+# Internal infrastructure and workflow references that must not appear in
+# customer-facing skills (checklist item 17; ARC-15 public-repo rules).
+# Deliberately limited to generic infrastructure names: program codenames are
+# checked by the internal suite only — this file mirrors to GitHub, and listing
+# them here would itself leak them.
+extends: existence
+message: "Internal reference ('%s') — customer-facing skills must not cite internal systems (checklist item 17)."
+level: error
+scope: raw
+ignorecase: true
+tokens:
+  - dev.azure.com
+  - maplarge.atlassian.net
+  - host.maplarge.io
+  - Jira
+  - TeamCity

@@ -8,6 +8,7 @@ A multi-level pie: concentric rings where each ring is one tree depth and each a
 - You want depth encoded as radius and magnitude encoded as arc angle in one compact circular view.
 
 Use a sibling instead when:
+
 - **One level only** (a ring/donut) → `pie.md` (`roseType` for nightingale).
 - **Rectangular nesting / many leaves / area emphasis** → `treemap.md`.
 - **Topology over magnitude** (a node-link dendrogram, no value-sized arcs) → `tree.md`.
@@ -53,6 +54,7 @@ const option: ml.echarts.EChartsOption = {
   label?: {...}, link?: string, target?: string, collapsed?: boolean
 }
 ```
+
 Leaves drive the geometry; a parent with no `value` is the sum of its descendants. Depth 0 is the innermost ring (or center disc if `radius[0] === 0`).
 
 ## Key options
@@ -74,6 +76,7 @@ From `ml.echarts.SunburstSeriesOption`:
 ## Patterns
 
 ### Per-depth styling via `levels` (remember the empty index 0)
+
 ```ts
 levels: [
   {},                                                   // 0: reserved — leave empty
@@ -84,10 +87,13 @@ levels: [
     label: { position: "outside", silent: true } }
 ]
 ```
+
 `radius: ["35%","70%"]` per level is the modern form; `r0`/`r` are the deprecated equivalents still in the type.
 
 ### Drilldown via `nodeClick` (free) or a click handler
+
 `nodeClick: "rootToNode"` gives drill-in/out with zero JS. For custom drilldown, read the path off the click param — `params.treePathInfo` is the array of `{ name, dataIndex, value }` from root to the clicked node:
+
 ```ts
 chart.on("click", (p: ml.echarts.SunburstDataParams) => {
   const path = p.treePathInfo.map(n => n.name).join(" / ");  // "Alpha / A2 / A2a"
@@ -96,7 +102,9 @@ chart.on("click", (p: ml.echarts.SunburstDataParams) => {
 ```
 
 ### Theming hook
+
 Set arc separators to the themed border and let the series palette flow from CSS vars (see the parent `echarts` theming pattern). Inner-ring legibility usually wants `label.rotate: "radial"`; outer thin bands read better with `position: "outside"`.
+
 ```ts
 itemStyle: { borderColor: chartTheme.background, borderWidth: 2 },
 color: chartTheme.getSeriesColors()
@@ -115,7 +123,7 @@ color: chartTheme.getSeriesColors()
 ## Related skills
 
 - `echarts` — parent: option model, `s.chart` binding, `onChartCreated`, CSS-var theming.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
 - `pie.md` — single-level ring/donut/nightingale sibling.
 - `treemap.md` — rectangular hierarchy sibling.
 - `tree.md` — node-link dendrogram sibling.

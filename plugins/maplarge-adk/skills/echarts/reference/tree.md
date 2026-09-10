@@ -8,6 +8,7 @@ A dendrogram: a hierarchy drawn as nodes joined by edges, laid out left-to-right
 - Data is naturally recursive `{ name, children: [...] }` and you want collapse/expand drilldown.
 
 Use a different skill when:
+
 - **Leaf magnitude matters more than structure** (sizes/proportions of leaves) → `treemap.md` (nested rectangles) or `sunburst.md` (radial rings).
 - **It's a general network**, not a single-rooted tree (cycles, many-to-many) → `graph.md`.
 - Flat category counts → `bar.md`/`pie.md`.
@@ -38,11 +39,13 @@ const option: ml.echarts.EChartsOption = {
   }]
 };
 ```
+
 A tree uses **no `grid`/`xAxis`/`yAxis`** — it positions itself in the chart box via `top/left/bottom/right` (BoxLayoutOptionMixin). Reserve `right` (or `bottom` for `TB`) for outward-growing labels.
 
 ## Data shape
 
 `series.data` is an **array with one root object** (multiple roots = a forest, allowed). Each node (`TreeSeriesNodeItemOption`):
+
 ```ts
 {
   name: "Node label",       // shown as the label
@@ -52,6 +55,7 @@ A tree uses **no `grid`/`xAxis`/`yAxis`** — it positions itself in the chart b
   // per-node overrides: itemStyle, lineStyle, label, symbol, symbolSize, link, target
 }
 ```
+
 There is **no dataset/encode path** for trees — data must be the nested object form. Build it recursively in the VM from flat rows (group by parent id).
 
 ## Key options (`ml.echarts.TreeSeriesOption`)
@@ -96,6 +100,6 @@ There is **no dataset/encode path** for trees — data must be the nested object
 ## Related skills
 
 - `echarts` — parent: the option model, `setOption` merge semantics, theme-from-CSS-vars helper.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `onChartCreated`, `getTypedProp` bindings).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `onChartCreated`, `getTypedProp` bindings).
 - `treemap.md` / `sunburst.md` — hierarchy by **area/magnitude** instead of node-link lineage.
 - `graph.md` — general (non-tree) node-edge networks.

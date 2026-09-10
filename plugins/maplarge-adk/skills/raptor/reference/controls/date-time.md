@@ -3,6 +3,7 @@
 Two controls: `s.dateTime` (a single date/time picker) and `s.dateFilter` (a from–to range filter, usually attached to a data source). Both speak **luxon** (`ml.luxon.DateTime`), not native `Date`.
 
 ## When to use
+
 - **`dateTime`** — pick one moment (a "Select date" field, an "as-of" timestamp). Single value in/out.
 - **`dateFilter`** — pick a start/end range. It is a `@LateBoundNode` filter: when bound to a data source it emits a filter string and also writes back a `{ start, end }` range. Has built-in quick filters (Last Hour/Week/etc.) and an All-Day toggle.
 
@@ -11,6 +12,7 @@ For a draggable time-scrubber over a time series, use `time-slider.md` instead.
 ## Builder
 
 ### `s.dateTime(options: IRaptorDateTime)` → node `type: "dateTime"`
+
 Key fields on `IRaptorDateTime` (extends `IViewDefinition`):
 `minDate` / `maxDate` (`DateLikeObject`), `showTime` (default true), `military` (24h ZULU, overrides user TZ), `timeZone` (static override), `clearable` (allow empty + X button), `buttonOnly` (icon only, no text field), `borderless`, `small`, `placeholder`, `label` (`ILabel`), `dateFormat` (luxon format string), `showCloseButton`, `allowDisableDates`, `autoOpen`.
 
@@ -26,6 +28,7 @@ s.dateTime({
 ```
 
 ### `s.dateFilter(options: IRaptorDateFilter)` → node `type: "dateFilter"`
+
 `IRaptorDateFilter` = `IRaptorDateFilterOptions`. Key fields:
 `minDate` / `maxDate` / `startDate` / `endDate` (`DateLikeObject`), `showQuickFilters` (default shows Last Hour/Week…), `showTime`, `military`, `clearable`, `placeholder`, `small`, `buttonOnly`, `borderless`, `dateFormat`, `showCloseButton`, `dualNavigationButtons`, `timeZone`, `label`, and `constrainMinAndMaxToData` (when bound to a data source, clamp min/max to the data's time span).
 
@@ -41,6 +44,7 @@ s.dateFilter({
 ```
 
 ## Bindings & events
+
 **`dateTime`** (`IRaptorDateTimeBinding` + universal): `value` (`ml.luxon.DateTime | ToObjectOutput`), `disable` (boolean), `timeZone` (string), and deprecated `data` (`IRaptorDateTimeOptions`, i.e. `{ selectedDate }`). Prefer `value`.
 
 **`dateFilter`** (`IRaptorDateFilterBinding` + universal): `value` (`DateFilterRange` = `{ start, end }`), `allowedDates` (`DateFilterRange` — the selectable min/max window), plus `dataSource` from universal bindings to act as a filter; deprecated `data` (`IRaptorDateFilterBindingData` `{ startDate, endDate, minDate, maxDate, timeZone }` or `ITimeSeriesData`).
@@ -50,6 +54,7 @@ s.dateFilter({
 `DateLikeObject = ml.luxon.ToObjectOutput | Partial<ToObjectOutput> | ml.luxon.DateTime` — you may pass a `DateTime` or a plain `{ year, month, day, … }` object anywhere a date option/binding is expected.
 
 ## ViewModel / instance API
+
 Reach the live node: `this.raptorDom.nodeT<DateFilter>("rangeFilter")` (or `<DateTime>`).
 
 `DateFilter` public surface: `startDate` / `endDate` / `originalStartDate` / `originalEndDate` getters+setters (`DateTime | undefined`), `allDayChecked`, `timeZone`, `military`, `showTime`, `buttonOnly`, `borderless`, `timeSeriesData`, and methods `updateSelectedRange(start, end)` (accepts luxon **or** moment), `updateFilter()`, `applyFilter(filterValue)`. The emitted filter string is `"<startISO>/<endISO-1ms>"`.
@@ -59,6 +64,7 @@ Reach the live node: `this.raptorDom.nodeT<DateFilter>("rangeFilter")` (or `<Dat
 `DateTimeViewModel` (the registered VM for the standalone node) holds `dateTimeState` (`{ selectedDate, minDate?, maxDate? }`) and `userContext`.
 
 ## Patterns
+
 **Two-way bind a picker.** Type the VM property as `ml.luxon.DateTime | undefined`; bind `value`. The control writes back via `updateBoundValue("value", …)` on selection, then fires `change`.
 
 ```ts
@@ -75,6 +81,7 @@ set asOf(v) { this._asOf = v; }
 **Programmatic set.** `raptorDom.nodeT<DateFilter>("rangeFilter").updateSelectedRange(start, end)` then it fires the filter; for the picker, set `value` on the VM and `update("asOf")`.
 
 ## Gotchas
+
 - **Luxon, not Date/moment.** Values are `ml.luxon.DateTime` (or `ToObjectOutput`). `updateSelectedRange` tolerates moment but the bindings do not — normalize with `ml.luxon.DateTime.fromISO(...)`.
 - **Timezone precedence:** binding `timeZone` > nodeModel `timeZone` > user context timezone. `military: true` forces 24h ZULU regardless. Selecting a value re-zones it, so a `change` can fire on timezone change alone.
 - **`clearable: false` on the picker** auto-fills `now()` when empty — you can never have a null value unless `clearable` is true.
@@ -83,6 +90,7 @@ set asOf(v) { this._asOf = v; }
 - `dateFormat` is a **luxon** format string (e.g. `"yyyy-LL-dd"`), not a moment one.
 
 ## Related skills
+
 - **`raptor`** — parent: View/VM split, RSScriptor, bindings, `update()`, `nodeT`, data sources.
 - **`time-slider.md`** — scrub a continuous time range over a time series (`ITimeSeriesData`).
 - **`timeline.md`** — event timelines.
@@ -97,7 +105,7 @@ set asOf(v) { this._asOf = v; }
 ## IRaptorDateTime — full option table (extends ViewDefinitions.IViewDefinition)
 
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `minDate` | `DateLikeObject` | earliest selectable |
 | `maxDate` | `DateLikeObject` | latest selectable |
 | `clearable` | `boolean` | allow empty + render clear (X) button; if false, empty falls back to `now()` |
@@ -120,7 +128,7 @@ set asOf(v) { this._asOf = v; }
 ## IRaptorDateFilter — full option table (= IRaptorDateFilterOptions, extends IViewDefinition)
 
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `startDate` / `endDate` | `DateLikeObject` | initial selected range |
 | `minDate` / `maxDate` | `DateLikeObject` | allowable bounds |
 | `constrainMinAndMaxToData` | `boolean` | clamp bounds to bound data source's min/max (editor default true) |
@@ -141,6 +149,7 @@ set asOf(v) { this._asOf = v; }
 `IRaptorDateFilterBinding`: `value?` (`DateFilterRange`), `allowedDates?` (`DateFilterRange`), `data?` (deprecated: `IRaptorDateFilterBindingData` or `ITimeSeriesData`).
 
 ## Shared types
+
 ```ts
 type DateLikeObject = ml.luxon.ToObjectOutput | Partial<ml.luxon.ToObjectOutput> | ml.luxon.DateTime;
 interface DateFilterRange { start: DateLikeObject | null; end: DateLikeObject | null; }
@@ -156,15 +165,18 @@ interface QuickRange {            // a preset row in the dateFilter popup
 ```
 
 ## DateFilter node — useful members
+
 - Getters/setters: `startDate`, `endDate`, `originalStartDate`, `originalEndDate` (`DateTime | undefined`); `allDayChecked` (setting true snaps to start-of-day / end-of-day and rebuilds quick filters); read-only `timeZone`, `military`, `showTime`, `buttonOnly`, `borderless`; `timeSeriesData` (`ITimeSeriesData`).
 - Methods: `updateSelectedRange(start, end)` (luxon or moment) → sets range, calls `updateFilter()` + redraws; `updateFilter()` → applies filter string + writes back `value` `{start,end}`; `applyFilter(filterValue: string | null)` → fires the `change` event with the value.
 - Emitted filter string format: `` `${startDate.toISO()}/${endDate.minus({millisecond:1}).toISO()}` ``.
 
 ## DateTime node — useful members
+
 - `selectedDate` (`DateTime | undefined`), `minDate`/`maxDate` (`DateTime`), `timeZone`, `open` (bool), `togglePopup()`, `removePopup()`, `showCloseButton`.
 - Popup is the `ml-date-time` custom element (`dom.defineCustomElement('ml-date-time', DateTimeWebComponent)`); it dispatches a `valueChange` `CustomEvent` whose `detail` is the selected `DateTime`. Web-component attributes set by the node: `value`, `min-date`, `max-date`, `show-time`, `military`, `time-zone`, `data-date-disable`.
 
 ## Reaching instances
+
 ```ts
 const filter = this.raptorDom.nodeT<DateFilter>("rangeFilter");
 const picker = this.raptorDom.nodeT<DateTime>("asOf");

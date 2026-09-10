@@ -9,6 +9,7 @@ A grid of colored cells (or a smoothed density field over a map) where each cell
 - A **calendar** value-per-day grid (GitHub contributions style). → `coordinateSystem: "calendar"` (add a top-level `calendar` component).
 
 Use a different skill when:
+
 - Both axes are continuous and points are sparse → **scatter.md** (or `effectScatter` for emphasis).
 - Only one axis is categorical and you want magnitude bars → **bar.md**.
 - The data is relational or hierarchical → **graph.md** / **treemap.md** / **sunburst.md**.
@@ -69,6 +70,7 @@ From `ml.echarts.HeatmapSeriesOption`:
 - `calendarIndex` / `calendarId` — which `calendar` component (calendar mode).
 
 **Geo-density-only** fields (ignored on cartesian/calendar):
+
 - `pointSize: number` — radius of each data point's influence (px). Default 20.
 - `blurSize: number` — Gaussian blur radius; larger = smoother blob. Default 20.
 - `minOpacity` / `maxOpacity` — clamp the alpha range of the blurred field.
@@ -76,10 +78,13 @@ From `ml.echarts.HeatmapSeriesOption`:
 ## Patterns
 
 ### visualMap is the color engine
+
 The heatmap itself carries no palette — `visualMap.inRange.color` (a low→high ramp) plus `min`/`max` define the mapping. `calculable: true` adds a draggable handle that filters cells live and emits `datarangeselected`. Pull the ramp from theme CSS vars (e.g. `--chart-heatmap-N`) rather than hardcoding, and set `min`/`max` from the data extent so the full range is used. See **visualmap.md**.
 
 ### Per-cell tooltip
+
 Tooltips read the raw tuple, so map indices back to labels in the formatter:
+
 ```ts
 tooltip: {
     position: "top",
@@ -91,6 +96,7 @@ tooltip: {
 ```
 
 ### Geo density blob
+
 ```ts
 const option: ml.echarts.EChartsOption = {
     geo: { map: "myRegion", roam: true },
@@ -102,9 +108,11 @@ const option: ml.echarts.EChartsOption = {
     }]
 };
 ```
+
 The named map (`geo.map`) must be registered with `echarts.registerMap(...)` before the chart builds.
 
 ### Calendar grid
+
 ```ts
 calendar: { range: "2024", cellSize: ["auto", 16] },
 series: [{ type: "heatmap", coordinateSystem: "calendar",
@@ -112,6 +120,7 @@ series: [{ type: "heatmap", coordinateSystem: "calendar",
 ```
 
 ### Click a cell
+
 Wire via `onChartCreated` (see parent skill): `chart.on("click", e => { const [x, y, v] = e.value as number[]; ... })`. `e.data` is the original tuple/object.
 
 ## Gotchas
@@ -128,8 +137,8 @@ Wire via `onChartCreated` (see parent skill): `chart.on("click", e => { const [x
 ## Related skills
 
 - `echarts` — parent: option object model, `s.chart` mounting, theming via CSS vars, `onChartCreated` events.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
 - `visualmap.md` — **required** companion that supplies the color ramp and range control.
 - `scatter.md` — sparse continuous-axis points instead of a dense grid.
 - `bar.md` — magnitude over a single categorical axis.
-- Official option reference: https://echarts.apache.org/en/option.html#series-heatmap
+- Official option reference: <https://echarts.apache.org/en/option.html#series-heatmap>

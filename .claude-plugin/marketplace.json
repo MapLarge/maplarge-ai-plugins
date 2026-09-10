@@ -16,7 +16,7 @@
         "name": "MapLarge",
         "email": "support@maplarge.com"
       },
-      "repository": "https://dev.azure.com/MapLarge/Internal/_git/maplarge-ai-plugins-public",
+      "repository": "https://github.com/maplarge/maplarge-ai-plugins",
       "license": "Proprietary",
       "keywords": ["maplarge", "adk", "extensions", "raptor", "echarts", "charts", "queries", "dashboard"],
       "category": "development"

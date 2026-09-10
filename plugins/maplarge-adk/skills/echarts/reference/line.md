@@ -61,20 +61,26 @@ From `ml.echarts.LineSeriesOption` (+ injected `markLine`/`markArea`/`markPoint`
 ## Patterns
 
 ### Stacked area (part-to-whole over time)
+
 Give every series the same `stack` name and an `areaStyle`. Order matters — later series stack on top.
+
 ```ts
 series: ["Direct", "Email", "Search"].map((name, i) => ({
   name, type: "line", stack: "traffic", areaStyle: {},
   emphasis: { focus: "series" }, data: rowsByChannel[name]
 }));
 ```
+
 `emphasis: { focus: "series" }` dims other bands on hover.
 
 ### Smooth vs step
+
 `smooth: true` for organic trends; `step: "end"` for state/holding values (counts, status). They are mutually exclusive in practice — pick one per series.
 
 ### Threshold line + shaded band
+
 `markLine` for a horizontal reference, `markArea` for a target zone (both injected onto the series option):
+
 ```ts
 { name: "Latency", type: "line", data: latency,
   markLine: { symbol: "none", data: [{ yAxis: 200, name: "SLA", lineStyle: { type: "dashed" } }] },
@@ -82,10 +88,12 @@ series: ["Direct", "Email", "Search"].map((name, i) => ({
 ```
 
 ### Theme-reactive color
+
 Resolve CSS vars at access time rather than hardcoding (see parent `echarts`): `lineStyle: { color: chartTheme.series(i) }`, `areaStyle: { color: chartTheme.series(i), opacity: 0.15 }`.
 
 ### Signature events
-`click` fires per data point (`e.dataIndex`, `e.value`, `e.data`); `legendselectchanged` toggles series visibility. Wire via `RaptorChart.onChartCreated` (see the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`)). For per-point hit-testing on a line whose symbols are hidden, set `triggerLineEvent: true` to get clicks on the line segment itself.
+
+`click` fires per data point (`e.dataIndex`, `e.value`, `e.data`); `legendselectchanged` toggles series visibility. Wire via `RaptorChart.onChartCreated` (see the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`)). For per-point hit-testing on a line whose symbols are hidden, set `triggerLineEvent: true` to get clicks on the line segment itself.
 
 ## Gotchas
 
@@ -100,7 +108,7 @@ Resolve CSS vars at access time rather than hardcoding (see parent `echarts`): `
 ## Related skills
 
 - `echarts` — parent: option model, `setOption` merge semantics, theming helper, event wiring.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `onChartCreated`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `onChartCreated`).
 - `bar.md` — categorical magnitude comparison (shares `stack`, `markLine`).
 - `scatter.md` / `effectscatter.md` — unconnected / animated points.
 - `candlestick.md`, `boxplot.md` — OHLC / distribution over an axis.

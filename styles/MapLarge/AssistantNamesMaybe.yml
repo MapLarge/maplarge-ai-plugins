@@ -1,0 +1,6 @@
+extends: existence
+message: "'%s' may name the Cursor assistant — pass only if it means a text/UI cursor (checklist item 14)."
+level: warning
+ignorecase: true
+tokens:
+  - cursor

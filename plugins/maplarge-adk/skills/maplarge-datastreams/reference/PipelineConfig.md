@@ -8,11 +8,11 @@
 ## IMPORTANT: Two Separate Configs — Do NOT Combine
 
 | UI Tab | What you generate | Documented in |
-|--------|------------------|---------------|
-| **Connector tab** | Flat JSON object with connector-specific properties | `ConnectorConfig.claude.md` |
+| -------- | ------------------ | --------------- |
+| **Connector tab** | Flat JSON object with connector-specific properties | `ConnectorConfig.md` |
 | **Pipeline tab** (this doc) | JSON object with `NumberOfWorkers` + `Steps` array | This file |
 
-Do NOT wrap pipeline JSON in an on-ramp envelope. Do NOT include `connectorPluginName`, `connectorOptions`, `effectiveUserName`, or any other on-ramp-level fields. The UI handles those separately. User pastes your JSON into the **Pipeline tab** "Show JSON" editor. Connector is configured separately in the **Connector tab** (see `ConnectorConfig.claude.md`).
+Do NOT wrap pipeline JSON in an on-ramp envelope. Do NOT include `connectorPluginName`, `connectorOptions`, `effectiveUserName`, or any other on-ramp-level fields. The UI handles those separately. User pastes your JSON into the **Pipeline tab** "Show JSON" editor. Connector is configured separately in the **Connector tab** (see `ConnectorConfig.md`).
 
 ---
 
@@ -39,7 +39,7 @@ Do NOT wrap pipeline JSON in an on-ramp envelope. Do NOT include `connectorPlugi
 - [Transitions and Conditional Routing](#transitions-and-conditional-routing)
 - [Well-Known vs Ad-Hoc Pipelines](#well-known-vs-ad-hoc-pipelines)
 - [Message Context System](#message-context-system)
-- [Complete Pipeline Examples](#complete-pipeline-examples) — including [Cursor Pagination with HttpPollingConnector](#example-cursor-pagination-with-httppollingconnector)
+- [Complete Pipeline Examples](#complete-pipeline-examples) — including [Cursor Pagination with HttpPollingConnector](#example-5-cursor-pagination-with-httppollingconnector)
 - [Data Selection Cheat Sheet](#data-selection-cheat-sheet)
 - [Available Connectors](#available-connectors)
 
@@ -84,7 +84,7 @@ This is the JSON structure that gets pasted into the **Pipeline tab** "Show JSON
 ### Key Fields
 
 | Field | Purpose |
-|-------|---------|
+| ------- | --------- |
 | `NumberOfWorkers` | Parallel processing threads (e.g., 10 workers dequeue messages concurrently) |
 | `Steps[]` | List of processing stages (execution order determined by transitions, not array position) |
 | `StepName` | Unique name for routing via transitions |
@@ -102,7 +102,7 @@ The `PipelineStepType` enum defines these stages:
 **Import Pipeline Steps:**
 
 | Type | Input -> Output | Purpose |
-|------|-----------------|---------|
+| ------ | ----------------- | --------- |
 | **StreamTransform** | bytes -> bytes | Modify raw stream before parsing (unzip, download from S3, split JSON) |
 | **Parser** | bytes -> records | Convert raw data into flat records |
 | **RecordTransform** | record -> record | Modify individual records (rename fields, convert coords, compute expressions) |
@@ -114,7 +114,7 @@ The `PipelineStepType` enum defines these stages:
 **Export Pipeline Steps (Off Ramps):**
 
 | Type | Purpose |
-|------|---------|
+| ------ | --------- |
 | **RecordObserver** | Entry point for export — observes table changes and emits records |
 | **Serializer** | Convert records to output format (JSON, CSV, etc.) |
 | **ExportConnector** | Send serialized data to external system (HTTP, NATS, file, etc.) |
@@ -122,7 +122,7 @@ The `PipelineStepType` enum defines these stages:
 
 ### Valid Import Transition Order
 
-```
+```text
 StreamTransform      -> StreamTransform | Parser | StreamCommitter
 Parser               -> RecordTransform | InterchangeTransform | Committer
 RecordTransform      -> RecordTransform | InterchangeTransform | Committer
@@ -133,7 +133,7 @@ StreamCommitter      -> TransactionNotifier
 
 ### Valid Export Transition Order
 
-```
+```text
 RecordObserver  -> RecordTransform | Serializer
 RecordTransform -> RecordTransform | Serializer
 Serializer      -> ExportConnector | StreamTransform
@@ -167,11 +167,13 @@ At runtime, every record is an `MLFlattenedRecord` — a flat, ordered list of `
 ### The Failure Model: Fail-Fast Per Message
 
 **When a pipeline step throws an exception:**
+
 - The **entire message** fails — all records from that message are lost (no partial commit)
 - The exception is logged and the pipeline moves on to the next message
 - Quota exceptions (account size limit exceeded) fault the entire ramp
 
 **When a RecordTransform returns `null`:**
+
 - The record is **silently skipped** (dropped from the pipeline)
 - A skip counter is incremented and reported in the process log
 - Other records in the same message continue processing normally
@@ -183,7 +185,7 @@ This means one bad record can take down an entire message worth of good records 
 This distinction is critical and a common source of confusion:
 
 | Scenario | Field in record? | Value | `SkipRecordTransform` NotExists? | `ExpressionTransform` behavior |
-|----------|-----------------|-------|----------------------------------|-------------------------------|
+| ---------- | ----------------- | ------- | ---------------------------------- | ------------------------------- |
 | Field never existed | No | N/A | Matches (drops record) | Throws `"Unable to find field"` |
 | `ExtendRecordTransform` stubbed it | Yes | `""` (or specified default) | Does NOT match | Uses the default value |
 | Geometry transform with `FailOnMissingParameters: false` | No | N/A | Matches (field absent) | Throws `"Unable to find field"` (field was never added) |
@@ -233,6 +235,7 @@ Choose your strategy based on what should happen to records with missing data:
 ## Geometry Column Naming — How the Import Engine Names Geo Columns
 
 **The pipeline does not automatically rename geometry columns.** The field name on the record when it reaches the committer becomes the column name, with two exceptions:
+
 1. **`SplitWKTIfNeeded`** — When mixed geometry types are detected OR `ForceSplitWKT` is set, the import engine renames the geo column and splits data into separate tables (post-commit).
 2. **Synthetic XY column** — When lat/lng columns are detected by name pattern (`lat`/`latitude`, `lng`/`lon`/`long`/`longitude`), a new `"XY"` column is added. Original lat/lng columns are preserved.
 
@@ -245,7 +248,7 @@ Choose your strategy based on what should happen to records with missing data:
 **Layer 2 — Pipeline transforms (your control):**
 
 | Transform | Default output field | Configurable via |
-|-----------|---------------------|-----------------|
+| ----------- | --------------------- | ----------------- |
 | `EllipseToWKTTransform` | `"EllipseWKT"` | `OutputShapeField` |
 | `SectorToWKTTransform` | `"SectorWKT"` | `OutputShapeField` |
 | `ECEFTransform` | `"XY"`, `"Altitude"` | `OutputPointField`, `OutputAltitudeField` |
@@ -256,6 +259,7 @@ Choose your strategy based on what should happen to records with missing data:
 **Layer 3 — VariableSchemaAccumulator (commit time):** Normalizes column names via `StringUtils.AlphaNumeric()` (character cleanup only). Detects column types but does **NOT rename**. Creates synthetic `"XY"` column from lat/lng if no XY exists.
 
 **Layer 4 — SplitWKTIfNeeded (post-commit):** Only triggers when `ForceSplitWKT` is set or mixed geometry types exist. Splits data into separate tables and renames:
+
 - Points → `"XY"` | Polygons → new table name (e.g., `"sensorsPoly"`) | Lines → new table name (e.g., `"sensorsLine"`) | No geometry → `"WKT"`
 
 **Source:** `StringImport.cs:1398-1408`
@@ -267,7 +271,7 @@ Choose your strategy based on what should happen to records with missing data:
 Used by MapLarge's APIs and `GeoFieldNameTransform` (`GeoColumnName.GetGeoColumnName()`):
 
 | Geometry type | Canonical name |
-|--------------|---------------|
+| -------------- | --------------- |
 | POINT | `XY` |
 | MULTIPOINT | `WKT` |
 | LINESTRING / MULTILINESTRING | `{tableName}_Line` |
@@ -330,6 +334,7 @@ Each entry matches a JSON path, producing a separate output stream identified by
 ```
 
 Root entry properties:
+
 - `Path`: JSONPath to extract (`$` = whole doc, `$.data` = `data` property, `$[*]` = each array element)
 - `OutputKey`: Identifies this output stream — match to `SourceOutputKey` in transitions
 - `Transpose`: Convert column-oriented JSON to row-oriented (default `false`)
@@ -353,7 +358,7 @@ Pulls values from JSON into message context metadata for use by downstream steps
 - Promoted values are **removed** from JSON before reaching the parser
 - Access downstream via `scope:name` (e.g., `streaming_msg:record_type`)
 
-> **Important: `PropertiesToPromote` is NOT scoped to `RecordRootPath`.** Promotion operates on the **full JSON document** during traversal. The parser calls `PromoteIfNeeded()` for every scalar value regardless of whether it's inside or outside `RecordRootPath`. This is critical for cursor pagination where the cursor is at a different level than records. See [Cursor Pagination with HttpPollingConnector](#example-cursor-pagination-with-httppollingconnector).
+> **Important: `PropertiesToPromote` is NOT scoped to `RecordRootPath`.** Promotion operates on the **full JSON document** during traversal. The parser calls `PromoteIfNeeded()` for every scalar value regardless of whether it's inside or outside `RecordRootPath`. This is critical for cursor pagination where the cursor is at a different level than records. See [Cursor Pagination with HttpPollingConnector](#example-5-cursor-pagination-with-httppollingconnector).
 
 **Both `Roots` and `PropertiesToPromote` can be used together:**
 
@@ -378,6 +383,7 @@ Pulls values from JSON into message context metadata for use by downstream steps
 ```
 
 Given an incoming message like:
+
 ```json
 { "message_type": "alert", "timestamp": "2025-01-01", "payload": [{"id": 1}, {"id": 2}] }
 ```
@@ -399,7 +405,7 @@ Streaming token-by-token parser (not loading full document into memory). Uses pa
 #### RecordRootPath
 
 | RecordRootPath | What It Selects |
-|----------------|----------------|
+| ---------------- | ---------------- |
 | `"$"` | Entire document = 1 record |
 | `"$[*]"` | Each element of a top-level array = 1 record per element |
 | `"$.items[*]"` | Each element of the `items` array |
@@ -426,7 +432,7 @@ Internally, the path is converted to regex via `JsonPathToRegex()` and matched a
 ```
 
 | Property | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `Path` | JSONPath to the record elements |
 | `OutputKey` | Routes to different committer input keys (different tables) |
 | `IncludeParentProperties` | Copy N levels of parent fields into child records (for denormalization) |
@@ -435,6 +441,7 @@ Internally, the path is converted to regex via `JsonPathToRegex()` and matched a
 **Example with IncludeParentProperties:**
 
 Input:
+
 ```json
 {
     "project": "Drilling",
@@ -451,6 +458,7 @@ Input:
 ```
 
 Output:
+
 - `wells` table: `well_id="W1"`
 - `measurements` table: `depth=100, temp=25.5, well_id="W1", project="Drilling"` (parent fields copied down)
 
@@ -485,7 +493,7 @@ Controls per-path handling within a record:
 **ObjectHandling options:**
 
 | Mode | Behavior |
-|------|----------|
+| ------ | ---------- |
 | `ParseOnly` (default) | Flatten nested object into separate columns: `user_name`, `user_age` |
 | `StringifyOnly` | Convert entire subtree to a JSON string column: `metadata="{\"key\":\"val\"}"` |
 | `ParseAndStringify` | Both: flattened columns AND a JSON blob column |
@@ -505,6 +513,7 @@ Controls per-path handling within a record:
 ```
 
 Input:
+
 ```json
 {
     "sensor_id": "S1",
@@ -541,7 +550,7 @@ Automatic — objects with `type` and `coordinates` are converted to WKT. E.g., 
 
 #### Full JSON Parser Config
 
-```
+```text
 TreeParserConfig:
   RecordRootPath       string       Single root path
   MultipleRoots        array        Multiple root configs
@@ -580,6 +589,7 @@ XML attributes become columns automatically:
     <name>Laptop</name>
 </product>
 ```
+
 Becomes: `id="P1"`, `category="Electronics"`, `name="Laptop"`
 
 #### AttributeBasedNames — Use Attribute Values in Column Names
@@ -594,6 +604,7 @@ Becomes: `id="P1"`, `category="Electronics"`, `name="Laptop"`
 <dynamics cs="COORD"><x>10</x><y>20</y></dynamics>
 <dynamics cs="SPEED"><value>50</value></dynamics>
 ```
+
 Becomes: `dynamics_COORD_x=10`, `dynamics_COORD_y=20`, `dynamics_SPEED_value=50`
 
 Without this, column name collisions occur since both elements are named `dynamics`.
@@ -610,6 +621,7 @@ Without this, column name collisions occur since both elements are named `dynami
 ```xml
 <gml:Point><gml:pos>40.75 -73.98</gml:pos></gml:Point>
 ```
+
 Becomes: `POINT(-73.98 40.75)`
 
 Supports: Point, LineString, Polygon, Envelope.
@@ -630,28 +642,33 @@ Every row is a record — no root path concept.
 ```
 
 | Option | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `Delimiter` | Column separator (`,`, `\t`, `;`, `\|`, etc.) |
 | `SkipRows` | Skip N rows before the header row |
 | `KeepNewLine` | Preserve newlines within quoted values |
 | `ExplicitColumnHeaders` | Override: provide column names manually instead of reading from first row |
 
 **With headers in data (default):**
+
 ```csv
 name,age,city
 John,30,NYC
 Jane,25,LA
 ```
+
 2 records, columns from row 1.
 
 **With ExplicitColumnHeaders (no header row in data):**
+
 ```json
 "ExplicitColumnHeaders": ["name", "age", "city"]
 ```
+
 ```csv
 John,30,NYC
 Jane,25,LA
 ```
+
 2 records, columns from config.
 
 ---
@@ -738,7 +755,7 @@ Splits each line on a delimiter to extract key-value pairs; all pairs combined i
 ### Other Parsers
 
 | PluginName | Format | Notes |
-|------------|--------|-------|
+| ------------ | -------- | ------- |
 | `WfsGmlParser` | OGC WFS GML | GML-specific parsing with geometry extraction. Extends `TreeParserConfig` |
 | `LASWellLogParser` | Well log data | Specialized for LAS well log format |
 | `RasterParser` | Raster imagery | Image/raster data parsing |
@@ -764,6 +781,7 @@ JSON, XML, and Avro parsers all flatten the same way.
 ```json
 { "user": { "profile": { "name": "John", "age": 30 } } }
 ```
+
 Becomes: `user_profile_name="John"`, `user_profile_age=30`
 
 ### SimplifyColumnNames = true
@@ -775,6 +793,7 @@ Uses leaf names only: `name="John"`, `age=30`. On collision, adds parent context
 ```json
 { "tags": ["red", "blue", "green"] }
 ```
+
 Becomes: `tags1="red"`, `tags2="blue"`, `tags3="green"`
 
 ### Custom Column Names via PathActions
@@ -830,8 +849,9 @@ Uses MapLarge's query expression engine (`DotNetExpTranslator`) — a **C#-like 
 `IsNull(value)` / `IsNotNull(value)` — works on any type. `Nvl(value, default)` — returns default if null. `NullIf(value, nullCondition)` — returns null if value matches nullCondition. `Coalesce(v1, v2, ...)` — first non-null value
 
 **String Functions:**
+
 | Function | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `IsEmpty(text)` | True if string is null or empty. **Use this, not `IsNullOrEmpty()`** |
 | `IsNotEmpty(text)` | True if string is not null and not empty. **Use this, not `IsNotNullOrEmpty()`** |
 | `Contains(text, search, insensitive)` | True if text contains search string (`insensitive` defaults to `true` — case-insensitive by default) |
@@ -880,8 +900,9 @@ Uses MapLarge's query expression engine (`DotNetExpTranslator`) — a **C#-like 
 `Floor(value)`, `Ceiling(value)`, `Round(value, decimalDigits)`, `Pow(value, exponent)`, `Sqrt(value)`, `Max(v1, v2, ...)`, `Min(v1, v2, ...)`, `Clamp(value, min, max)`, `Rand()` (0-1 double), `Rand(min, max)` (int), `NearestInt(value, step)`, `FormatNumber(value, format)`, `Threshold(value, t1, t2, ...)` (step-function: returns the last threshold the value exceeds, walking sorted thresholds in order), `StdDeviations(value, mean, stddev)` (number of standard deviations from mean), `NormalizeAngle(angle)` (normalize to -180..180), `CDF(value, mean, stdev)` (cumulative distribution function — returns the percentile of value on a bell curve)
 
 **Date/Time:**
+
 | Function | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `UtcNow()` | Current UTC time as DateTimeOffset. **`Now()` does NOT exist** |
 | `CreateTimestamp()` | Current UTC time as ISO 8601 string |
 | `FormatDateTime(date, format)` | Format date using .NET format string |
@@ -974,21 +995,27 @@ This creates a field `IsGuid` with value `"True"` or `"False"`. You can then use
 `MatchAndMapDelimited(match, matchIn, delimiter1, mapTo, delimiter2)` finds `match` in the `matchIn` delimited list, returns the value at the same index from the `mapTo` delimited list. Both lists are aligned by position. Returns empty string if no match.
 
 **Example 1 — Status code to label:**
-```
+
+```text
 MatchAndMapDelimited(status, '1|2|3', '|', 'Active|Pending|Closed', '|')
 ```
+
 Input `status` = `"2"` → matchIn `["1","2","3"]` → index 1 → mapTo `["Active","Pending","Closed"]` → **`"Pending"`**
 
 **Example 2 — Numeric code to WABCD label:**
-```
+
+```text
 MatchAndMapDelimited(code, '7|4|5', '|', 'SABCD-F|SABCD-U|WABCD', '|')
 ```
+
 Input `code` = `"4"` → index 1 → **`"SABCD-U"`**
 
 **Example 3 — No match returns empty string:**
-```
+
+```text
 MatchAndMapDelimited(region, 'US,EU,AP', ',', 'Americas,Europe,Asia-Pacific', ',')
 ```
+
 Input `region` = `"AF"` → not found → **`""`**
 
 The two delimiters can be different characters — `delimiter1` splits `matchIn`, `delimiter2` splits `mapTo`. In practice they're usually the same.
@@ -1000,7 +1027,7 @@ The two delimiters can be different characters — `delimiter1` splits `matchIn`
 **Examples with `text` = `"7 4 5"`, `delim` = `" "`:**
 
 | Expression | Result | Why |
-|---|---|---|
+| --- | --- | --- |
 | `ReverseContainsAll(field, ' ', '7')` | **false** | `"4"` not in words |
 | `ReverseContainsAll(field, ' ', '7', '4')` | **false** | `"5"` not in words |
 | `ReverseContainsAll(field, ' ', '7', '4', '5')` | **true** | all tokens found |
@@ -1027,25 +1054,28 @@ A common need: map a space-delimited field like `"7 4 5"` to a semicolon-joined 
 **Results:**
 
 | Input `codes` | Output `labels` | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `"6"` | `"SABCD-E;"` | Single match |
 | `"7 4 5"` | `"SABCD-F;SABCD-U;WABCD;"` | Three matches |
 | `"11 7 4 5"` | `"SABCD-F;SABCD-U;WABCD;SABCD-K;"` | `11` matches correctly, doesn't false-match `1` |
 | `"17"` | `""` | `7` does NOT false-match inside `17` — regex boundaries work |
 
 **Why not simpler alternatives?**
+
 - `Contains(codes, '7')` — substring match, so `Contains('17', '7')` = true (wrong)
 - `Replace()` chains — `Replace('11', '1', 'X')` corrupts multi-digit codes
 - `MatchAndMapDelimited()` — maps a single value only, not a multi-token string
 - `Split()` — splits the string but there's no way to iterate/map/rejoin results
 
 **Limitations of the regex approach:**
+
 1. **Trailing semicolon** — every match appends `';'`, no `TrimEnd()` available in expressions
 2. **Output order is hardcoded** — determined by expression order, not input order. `"5 4 7"` and `"7 4 5"` produce identical output
 3. **Every code must be hardcoded** — new codes require updating the expression
 4. **Expression gets long fast** — each code adds ~50 characters; unwieldy past ~20 codes
 
 **Better alternatives if limitations matter:**
+
 - Do the mapping at **query time** instead — same functions available plus JOINs
 - Use a **custom RecordTransform plugin** for proper split-map-rejoin
 - **Pre-normalize the source data** — one record per code instead of a delimited list
@@ -1059,7 +1089,7 @@ The expression engine has full access to MapLarge's geospatial functions. These 
 These functions convert WKT strings (e.g., output from `EllipseToWKTTransform`) into typed geometry objects that other geo functions can operate on:
 
 | Function | Input | Returns | Description |
-|----------|-------|---------|-------------|
+| ---------- | ------- | --------- | ------------- |
 | `ShapeFromWKT(wkt_field)` | WKT string (POLYGON, MULTIPOLYGON) | `ShapeSetDouble` | Convert WKT polygon/multipolygon to a shape object |
 | `LineFromWKT(wkt_field)` | WKT string (LINESTRING, MULTILINESTRING) | `LineSet` | Convert WKT line to a line object |
 | `PointFromWKT(wkt_field)` | WKT string (POINT) | `GeoPointDouble` | Convert WKT point to a point object |
@@ -1069,7 +1099,7 @@ These functions convert WKT strings (e.g., output from `EllipseToWKTTransform`) 
 ##### Measurement Functions
 
 | Function | Description | Returns |
-|----------|-------------|---------|
+| ---------- | ------------- | --------- |
 | `Area(shape)` | Geodesic area of a polygon | `double` (km²) |
 | `Buffer(line_or_shape, radiusMeters)` | Buffer a geometry by a distance | shape geometry |
 | `GeoDistance(a, b, unit)` | Geodesic distance between geometries | `double` (unit: `'m'`, `'km'`, `'mi'`, `'nmi'`) |
@@ -1081,7 +1111,7 @@ These functions convert WKT strings (e.g., output from `EllipseToWKTTransform`) 
 `Area()` requires `ShapeSetDouble`, not a string. WKT fields must be converted with `ShapeFromWKT()` first:
 
 | Expression | Works? | Why |
-|---|---|---|
+| --- | --- | --- |
 | `Area(EllipseWKT)` | **No** | `Area()` has no `string` overload — throws `"no overload for argument System.String"` |
 | `Area(GeoFromWKT(EllipseWKT))` | **No** | `GeoFromWKT` is private in the QueryEngine expression scope — not callable |
 | `Area(ShapeFromWKT(EllipseWKT))` | **Yes** | `ShapeFromWKT` converts WKT string to `ShapeSetDouble`, which `Area()` accepts |
@@ -1107,6 +1137,7 @@ These functions convert WKT strings (e.g., output from `EllipseToWKTTransform`) 
 > `Area()` returns km². Multiply by `0.291553` to convert to nmi² (since 1 km = 0.539957 nmi, and 0.539957² ≈ 0.291553).
 
 **At query time** (after import), `ShapeFromWKT()` is not needed — the column is already typed:
+
 ```sql
 SELECT *, Area(geometry_ellipse) AS AreaKmSq, Area(geometry_ellipse) * 0.291553 AS AreaNmiSq FROM MyAccount/MyTable
 ```
@@ -1192,6 +1223,7 @@ Reprojects geometry fields between CRS. Supports WKT strings and complex coordin
 ```
 
 **`ExtendedFields`** — An array of columns to add to every record:
+
 - `ColumnName`: The column name to add
 - `Value`: Either a literal string (`"kafka-prod"`) or a message context reference using `{scopename:valueid}` syntax (e.g., `"{streaming_msg:topic}"` pulls the `topic` property from the `streaming_msg` context scope)
 
@@ -1206,7 +1238,7 @@ Place `ExtendRecordTransform` **before** transforms that need a field to guarant
 **Transforms that throw on missing fields:**
 
 | Transform | Error When Field Missing | Fix |
-|-----------|------------------------|-----|
+| ----------- | ------------------------ | ----- |
 | **ExpressionTransform** | `"Unable to find field for expression variable '{name}'"` — throws for ANY referenced field, even inside `Iif()` or ternary expressions. | Set `TreatMissingFieldsAsEmpty: true`, or stub fields with `EnsureFieldsTransform` (preferred) or `ExtendRecordTransform` |
 | **MagneticDeclinationTransform** | `InvalidOperationException` from `.First()` — crashes if WKT, lat, lng, altitude, or time fields are missing. No graceful fallback. | Stub all input fields |
 | **TableLookupTransform** | `"Key Field {item} not found in incoming record"` — throws unless `IgnoreErrors: true` | Stub key fields, or set `IgnoreErrors: true` |
@@ -1301,7 +1333,7 @@ Drops records where **any** condition is true:
 ```
 
 | Condition | Drops the record when... |
-|-----------|--------------------------|
+| ----------- | -------------------------- |
 | `Exists` | The field exists on the record |
 | `NotExists` | The field does NOT exist on the record |
 | `Equals` | The field value equals `Value` |
@@ -1549,6 +1581,7 @@ Generates a geodesic ellipse (MULTIPOLYGON WKT) on WGS84 from center, axes, and 
 > **Solutions:**
 >
 > **Option A (recommended) — Filter before transform:** `SkipRecordTransform` BEFORE `EllipseToWKTTransform` drops records missing input fields. Then set `FailOnMissingParameters: true` so downstream steps can safely assume valid WKT.
+>
 > ```json
 > {"StepName": "RequireEllipseInputs", "Type": "RecordTransform", "PluginName": "SkipRecordTransform",
 >  "Options": {"SkipWhen": [
@@ -1564,6 +1597,7 @@ Generates a geodesic ellipse (MULTIPOLYGON WKT) on WGS84 from center, axes, and 
 > ```
 >
 > **Option B — Stub output field:** `ExtendRecordTransform` adds empty default before the transform. On success, duplicate field created (committer resolves: last wins). **Caveat:** `ExpressionTransform` crashes on duplicates — compute Area at **query time** instead.
+>
 > ```json
 > {"StepName": "DefaultEllipse", "Type": "RecordTransform", "PluginName": "ExtendRecordTransform",
 >  "Options": {"ExtendedFields": [{"ColumnName": "geometry_ellipse", "Value": ""}]}},
@@ -1653,7 +1687,7 @@ Converts ECEF coordinates (common in satellite and radar data) into a lat/lng WK
 Zero-config (`"Options": {}`). Auto-detects ArcGIS geometry fields by suffix (case-insensitive):
 
 | Field suffix | Output WKT type |
-|-------------|-----------------|
+| ------------- | ----------------- |
 | `geometry_x` + `geometry_y` | `POINT (x y)` |
 | `geometry_paths` / `geometry_line` | `LINESTRING` |
 | `geometry_points` | `MULTIPOINT` |
@@ -1835,7 +1869,7 @@ Converts a video frame bitmap from the message context into a geo-registered ima
 Operate on raw byte streams (`"Type": "StreamTransform"`). Typically placed before a parser.
 
 | Plugin | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `JSONDisassemblerStreamTransform` | Extract JSON subtrees, promote properties to context |
 | `MultipleJsonStreamSplitTransform` | Split concatenated JSON objects (see below) |
 | `ContextVariableStreamTransform` | Transform context variables (see below) |
@@ -1843,7 +1877,7 @@ Operate on raw byte streams (`"Type": "StreamTransform"`). Typically placed befo
 **Download Transforms** — Fetch data from remote storage when the connector delivers a reference (key, path, URL) rather than the data itself:
 
 | Plugin | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `DownloadFromS3Transform` | Fetch files from AWS S3 |
 | `DownloadFromAzureTransform` | Fetch from Azure Blob Storage |
 | `DownloadFromGCSTransform` | Fetch from Google Cloud Storage |
@@ -1854,7 +1888,7 @@ Operate on raw byte streams (`"Type": "StreamTransform"`). Typically placed befo
 **Archive/Compression Transforms** — Extract or decompress archives. `UnzipTransform` and `UntarTransform` both support `IncludeRegexes` and `ExcludeRegexes` arrays for filtering entries by name:
 
 | Plugin | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `UnzipTransform` | Decompress ZIP files. Config: `IncludeRegexes[]`, `ExcludeRegexes[]`. Each matching entry emitted as a separate message |
 | `GUnzipTransform` | Decompress gzip streams |
 | `UntarTransform` | Extract TAR archives. Config: `IncludeRegexes[]`, `ExcludeRegexes[]`. Each matching entry emitted as a separate message |
@@ -1862,7 +1896,7 @@ Operate on raw byte streams (`"Type": "StreamTransform"`). Typically placed befo
 **Other Stream Transforms:**
 
 | Plugin | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `AzureBlobStreamTransform` | Capture Azure blobs |
 | `PassThroughStreamTransform` | No-op pass-through (for development/debugging or satisfying a required slot) |
 | `GeoFileInfoStreamTransform` | Extract geospatial metadata via GDAL (`gdalinfo`/`ogrinfo`). Config: `PathRules` (regex→command mapping), `InfoOnlyMode`. Outputs JSON metadata array |
@@ -1933,7 +1967,7 @@ InterchangeTransforms operate on entire batches of records (the `IMLImportInterc
 Creates line geometry (LINESTRING) from supplied points, connecting them in sequence. Useful for GPS tracks, flight paths, or other trajectory data.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `SourceTableKey` | string | | Key identifying the source point table in the interchange |
 | `TargetTableKey` | string | | Key for the output line table in the interchange |
 | `IDField` | string | | Field that groups points into tracks (e.g., vehicle ID) |
@@ -1953,7 +1987,7 @@ Creates line geometry (LINESTRING) from supplied points, connecting them in sequ
 Generates MapLarge Record IDs and places them in a domain ID cache for downstream lookup.
 
 | Property | Type | Purpose |
-|----------|------|---------|
+| ---------- | ------ | --------- |
 | `KeyFields` | string[] | Fields that form the unique key for each record |
 | `AccountCode` | string | MapLarge account code |
 | `TableName` | string | Target table name |
@@ -1965,7 +1999,7 @@ Generates MapLarge Record IDs and places them in a domain ID cache for downstrea
 Looks up MapLarge row identifiers from existing tables and produces records with ML Record IDs. Used for joining incoming data with existing table records.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `KeyFields` | string[] | | Fields used for the lookup key |
 | `Tables` | TableInfo[] | | Table definitions to look up against (see below) |
 | `RetainFields` | bool | `false` | Keep the original record fields alongside the looked-up IDs |
@@ -1975,7 +2009,7 @@ Looks up MapLarge row identifiers from existing tables and produces records with
 **TableInfo properties:**
 
 | Property | Type | Purpose |
-|----------|------|---------|
+| ---------- | ------ | --------- |
 | `Account` | string | MapLarge account code |
 | `Name` | string | Table name |
 | `KeyColumns` | string[] | Columns in the table that form the lookup key |
@@ -2007,7 +2041,7 @@ Looks up MapLarge row identifiers from existing tables and produces records with
 ```
 
 | Option | Default | Purpose |
-|--------|---------|---------|
+| -------- | --------- | --------- |
 | `MaxFlushDelayMS` | 15000 | Max milliseconds to wait before flushing batch to DB |
 | `TargetBackingFileRecordCount` | 1 | Records to accumulate before flush |
 | `UseBackingFilePersistence` | true | Disk-backed accumulation (survives crashes) |
@@ -2025,7 +2059,7 @@ Looks up MapLarge row identifiers from existing tables and produces records with
 Each entry in `ImportTables` is an `MLImportOptions` object. Here are all available properties:
 
 | Property | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `Account` | string | required | Target account code. Supports context substitution (e.g., `"{{ACCOUNT}}"`) |
 | `Table` | string | required | Target table name. Supports context substitution |
 | `Append` | bool | false | When `true`, appends to existing table. When `false`, creates/replaces |
@@ -2046,7 +2080,7 @@ Each entry in `ImportTables` is an `MLImportOptions` object. Here are all availa
 When `PrimaryKeyColumns` is set, the import engine checks incoming rows against existing rows in the table. The behavior depends on additional flags:
 
 | Configuration | When PK already exists | When PK is new | Use case |
-|--------------|----------------------|----------------|----------|
+| -------------- | ---------------------- | ---------------- | ---------- |
 | `Append: true` (no PK) | N/A — no PK checking | Always inserts | Simple append, duplicates allowed |
 | `Append: true` + `PrimaryKeyColumns` | **Replaces** the existing row (upsert) | Inserts | Default upsert — always keep latest |
 | `Append: true` + `PrimaryKeyColumns` + `InsertOnly: true` | **Silently discards** the incoming row | Inserts | Skip duplicates — only insert new PKs |
@@ -2096,7 +2130,7 @@ Multiple columns can form the PK. A row is considered a duplicate only if **all*
 JSON string deserialized into `FileImportOptions` at import time:
 
 | Property | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `InsertOnly` | bool | false | Only insert rows with new PKs; discard rows where PK already exists |
 | `UpdateOnly` | bool | false | Only update rows where PK already exists; discard rows with new PKs |
 | `PrimaryKeyAppend` | bool | false | Trigger PK-based append behavior (usually inferred from PrimaryKeyColumns) |
@@ -2123,7 +2157,7 @@ JSON string deserialized into `FileImportOptions` at import time:
 Properties on the interface (from plugin-dependencies API; `FileImportOptions` may have additional):
 
 | Property | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `PrimaryKeyAppend` | bool | false | Trigger PK-based append behavior (usually inferred from PrimaryKeyColumns) |
 | `ForceGeocode` | bool | false | Force geocoding of address fields |
 | `MultiGeoTable` | bool | false | Allow multiple geometry columns in one table |
@@ -2138,7 +2172,7 @@ Properties on the interface (from plugin-dependencies API; `FileImportOptions` m
 Set via `Partition` property on `MLImportOptions`:
 
 | Property | Type | Default | Description |
-|----------|------|---------|-------------|
+| ---------- | ------ | --------- | ------------- |
 | `PartitionColumns` | string[] | null | Column(s) to partition by. Use `"colname:period"` syntax for time partitions (e.g., `"date:week"`, `"timestamp:day"`, `"date:month"`) |
 | `RetentionTime` | TimeSpan | null | How long to keep partitions before automatic expiration (e.g., `"30.00:00:00"` = 30 days). When null, partitions are never expired |
 | `ExpireFromEnd` | bool | false | When `true`, expires the newest partitions first. When `false` (default), expires the oldest partitions first |
@@ -2175,7 +2209,7 @@ Set via `Partition` property on `MLImportOptions`:
 Rename columns or force type conversions at import time. Each directive is an `MLDirectiveInfo`:
 
 | Property | Type | Description |
-|----------|------|-------------|
+| ---------- | ------ | ------------- |
 | `SrcColumn` | string | Source column name in the incoming data |
 | `DestColumn` | string | Destination column name in the table (can be the same as `SrcColumn` for type-only changes) |
 | `DestType` | MLColumnType | Target column type (see [MLColumnType](#mlcolumntype--supported-column-types) below) |
@@ -2199,6 +2233,7 @@ Rename columns or force type conversions at import time. Each directive is an `M
 ```
 
 **When to use SchemaDirectives vs FieldNameTransform:**
+
 - **SchemaDirectives** — Best for type coercion (string→DateTime, string→Int64, etc.) and simple renames at the database level. Applied during the import commit, not during pipeline processing. Downstream transforms still see the original field names.
 - **FieldNameTransform** — Best for renames that need to be visible to downstream pipeline steps (ExpressionTransform, SkipRecordTransform, etc.)
 
@@ -2207,7 +2242,7 @@ Rename columns or force type conversions at import time. Each directive is an `M
 These are the valid values for `DestType` in schema directives and represent the column types supported by the MapLarge database:
 
 | Type | Description |
-|------|-------------|
+| ------ | ------------- |
 | `Unknown` | Internal default (value 0) — do not specify in config; listed for completeness |
 | `Int32` | 32-bit integer |
 | `Int64` | 64-bit integer |
@@ -2233,7 +2268,7 @@ These are the valid values for `DestType` in schema directives and represent the
 Controls who can see the imported table:
 
 | Value | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `Private` | Only visible to the owning user (default — enum value 0, no explicit initializer on `MLImportOptions.Visibility`) |
 | `PublicUnlisted` | Accessible but not shown in table listings |
 | `Public` | Visible to all users with account access |
@@ -2243,7 +2278,7 @@ Controls who can see the imported table:
 Tags are key-value metadata pairs attached to the table at import time. Useful for categorization, filtering, and automation.
 
 | Property | Type | Description |
-|----------|------|-------------|
+| ---------- | ------ | ------------- |
 | `Key` | string | Tag key (e.g., `"source"`, `"environment"`, `"pipeline"`) |
 | `Value` | string | Tag value (e.g., `"kafka-feed"`, `"production"`, `"geo-enrichment"`) |
 | `Resource` | string | Optional resource qualifier |
@@ -2281,6 +2316,7 @@ Forwards records to a different ramp instead of writing to a table. Use for pipe
 - **`RampId`** — ID of the target ramp to invoke
 
 Message context is passed to the target ramp. Internally calls `ProcessPushedRecordAsync` **per record**. Requirements:
+
 - Target connector must implement `IMLAcceptsPushedRecords` (most polling connectors do); otherwise throws `"connector does not support dynamic invocation."`
 - Target ramp must be **running** (won't start automatically)
 - Each record triggers `PushedDataMapping` logic (can map record fields to connector config, e.g., URL → `EndPoint`)
@@ -2289,7 +2325,7 @@ Message context is passed to the target ramp. Internally calls `ProcessPushedRec
 
 Use **broadcasting** (transitions without guards) + **SkipRecordTransform** to filter, then `InvokeRampCommitter` for the subset. Avoids `TransitionGuard` limitations (message context only, throws on missing/empty properties).
 
-```
+```text
 Parser → Transforms → [broadcast to both paths]
                          ├→ CommitAll (saves all 300K records)
                          └→ FilterEnterprise (SkipRecordTransform drops non-enterprise)
@@ -2382,6 +2418,7 @@ Parser → Transforms → [broadcast to both paths]
 ```
 
 **Key points:**
+
 - Broadcasting sends data to ALL targets (both `CommitAll` and `FilterEnterprise` receive every record)
 - `SkipRecordTransform` filters per-record (vs `TransitionGuard` which is per-message)
 - `PushedDataMapping` maps record fields to connector config (e.g., URL → `EndPoint`)
@@ -2391,7 +2428,7 @@ Parser → Transforms → [broadcast to both paths]
 #### TransitionGuard vs SkipRecordTransform for Conditional Routing
 
 | Mechanism | Operates On | Best For | Limitation |
-|-----------|------------|----------|------------|
+| ----------- | ------------ | ---------- | ------------ |
 | `TransitionGuard` | Message context (set before/during parsing) | Routing different message types (e.g., Kafka topic routing) | Throws if context property is missing or empty |
 | `SkipRecordTransform` | Record field values | Filtering records within a single message | Only drops records — cannot route to different paths by itself |
 | **Broadcasting + SkipRecordTransform** | Record field values | Conditional per-record routing to different committers | Requires duplicate processing (all records flow through both paths initially) |
@@ -2507,7 +2544,7 @@ Both use the same config structure:
 ### Other Committers
 
 | Plugin | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `PublishToMessageBusCommitter` | StreamCommitter | Publishes raw stream bytes to MapLarge's internal Message Bus (`MessageProducer`). Config: `ProducerName`, `Destinations` dict of `{Account, BoxName}`. For internal server-to-server pub/sub |
 | `StreamCommitingRowDeleter` | StreamCommitter | Deletes rows from a target table by primary key extracted from message context. Config: `Account`, `Table`, `PrimaryKeyColumns[]`, `Scope`, `PkPath`. For CDC (change-data-capture) delete propagation |
 | `VFSCommitter` | Record | Registers records as `VFSTableItem` entries in MapLarge's Virtual File System. Creates pointer-disposition entries (remote URL references, not file content). Config: `PathColumnName`, `AccountColumnName` (context reference), `ContextItemsForTags`. For S3/blob storage listing pipelines |
@@ -2521,7 +2558,7 @@ Pattern: **RecordObserver → RecordTransform → Serializer → ExportConnector
 ### Serializers (`"Type": "Serializer"`)
 
 | PluginName | Config | Purpose |
-|------------|--------|---------|
+| ------------ | -------- | --------- |
 | `JsonRecordSerializer` | (none) | Serializes records to JSON. No configuration needed |
 | `DelimitedTextSerializer` | `Delimiter` (default `","`) | Produces CSV/TSV. Header row + one delimited line per record |
 | `TemplatingSerializer` | `Template` or `WellKnownTemplate` | Renders records against a Handlebars template for arbitrary output formats (JSON, XML, text, etc.). `Template` = inline string, `WellKnownTemplate` = server-stored resource ID/name. Exactly one must be set. Custom helpers: `{{#isMatch field "value"}}`, `{{#propertyValues this "col1,col2" 3}}` |
@@ -2529,13 +2566,13 @@ Pattern: **RecordObserver → RecordTransform → Serializer → ExportConnector
 ### Observers (`"Type": "RecordObserver"`)
 
 | PluginName | Purpose |
-|------------|---------|
+| ------------ | --------- |
 | `PushedRecordObserver` | Infrastructure observer for push-based off-ramps. Records are pushed into the pipeline externally. No config |
 
 ### Export Connectors (`"Type": "ExportConnector"`)
 
 | PluginName | Purpose |
-|------------|---------|
+| ------------ | --------- |
 | `FileSystemExportConnector` | Export stream to a file on the local filesystem |
 | `HttpExportConnector` | Export stream via HTTP POST/PUT |
 | `NATSExportConnector` | Publish message to NATS |
@@ -2630,13 +2667,14 @@ Scoped key-value metadata store (`IMLMessageContext`) carried with each message,
 ### IMLMessageContext Interface
 
 | Member | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `IMLSystemContext SystemContext` | Access to the full system context (logger, database, jobs, etc.) |
 | `this[string scope, string propertyName]` | Get a context value by scope and property name |
 | `SetProperty(scope, propertyName, value, sensitive)` | Set a context value. `sensitive=true` masks the value in logs |
 | `GetValues(SensitiveDataHandling)` | Enumerate all context values with optional sensitive data handling |
 
 **Sensitive data handling options** (`SensitiveDataHandling` enum):
+
 - `Mask` — Replace sensitive values with `"***"` in output
 - `Include` — Include sensitive values as-is
 - `Omit` — Exclude sensitive values entirely
@@ -2659,7 +2697,7 @@ Values are organized as `scope:property` (e.g., `streaming_msg:record_type`).
 The pipeline message handler (`IMLDataStreamMessageHandler`) also provides persistent metadata storage that survives restarts:
 
 | Method | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `StoreMetadataAsync(key, value)` | Store a persistent key-value pair (e.g., cursor position, last processed ID) |
 | `GetMetadataAsync(key)` | Retrieve a stored value |
 
@@ -3001,13 +3039,14 @@ The cursor (`content.nextCursor`) is **outside** the record root (`content.tasks
 5. **Repeat** until the API returns no `nextCursor` (null/empty) or the cursor is unchanged
 
 **Key points:**
+
 - `CursorParameterName` must match the API's query parameter name
 - `CursorContextScope`/`CursorContextKey` must exactly match `PropertiesToPromote`'s `Scope`/`Name` (names are arbitrary; double-underscore convention avoids collisions)
 - Fresh context per page; cursor flows via local variable, not across contexts
-- POST pagination: use `{{CURSOR_VALUE}}` in `PostPayload` (see `ConnectorConfig.claude.md`)
+- POST pagination: use `{{CURSOR_VALUE}}` in `PostPayload` (see `ConnectorConfig.md`)
 - `PaginationDelayMs` adds delay between requests to avoid rate limiting
 
-**Troubleshooting: Pagination stops after 1 page**
+#### Troubleshooting: Pagination stops after 1 page
 
 If pagination only fetches 1 page, check these in order:
 
@@ -3038,14 +3077,14 @@ If pagination only fetches 1 page, check these in order:
 }
 ```
 
-Add `FieldTrackingTransform` to the pipeline if using POST-based tracking (see `ConnectorConfig.claude.md` for POST tracking details).
+Add `FieldTrackingTransform` to the pipeline if using POST-based tracking (see `ConnectorConfig.md` for POST tracking details).
 
 ---
 
 ## Data Selection Cheat Sheet
 
 | Question | JSON Parser | XML Parser | YAML Parser | CSV Parser | Avro |
-|----------|-------------|------------|-------------|------------|------|
+| ---------- | ------------- | ------------ | ------------- | ------------ | ------ |
 | **PluginName** | `JsonPipelineParser` | `XmlParser` | `YamlPipelineParser` | `DelimitedTextParser` | `AvroParser` |
 | **Where do records start?** | `RecordRootPath` or `MultipleRoots` | `MultipleRoots` with XPath | Same as JSON (converts YAML to JSON first) | Every row | Every Avro record |
 | **How to exclude data?** | `ExcludePaths` | `ExcludePaths` | `ExcludePaths` | N/A | N/A |
@@ -3062,12 +3101,12 @@ Add `FieldTrackingTransform` to the pipeline if using POST-based tracking (see `
 
 ## Available Connectors
 
-Configs documented in `ConnectorConfig.claude.md`. **Two plugins use spaces in names:** `"ArcGIS Rest Connector"` and `"Tiled Imagery Connector"`.
+Configs documented in `ConnectorConfig.md`. **Two plugins use spaces in names:** `"ArcGIS Rest Connector"` and `"Tiled Imagery Connector"`.
 
 ### Push/Subscribe Connectors (Listen for incoming data)
 
 | PluginName | Source |
-|------------|--------|
+| ------------ | -------- |
 | `KafkaConnector` | Kafka topics |
 | `NATSConnector` | NATS Core |
 | `NATSJetStreamConnector` | NATS JetStream |
@@ -3082,7 +3121,7 @@ Configs documented in `ConnectorConfig.claude.md`. **Two plugins use spaces in n
 ### Polling Connectors (Check periodically)
 
 | PluginName | Source |
-|------------|--------|
+| ------------ | -------- |
 | `S3Connector` | AWS S3 objects |
 | `AzureStorageConnector` | Azure Storage blobs |
 | `GoogleCloudStorageConnector` | Google Cloud Storage |
@@ -3096,7 +3135,7 @@ Configs documented in `ConnectorConfig.claude.md`. **Two plugins use spaces in n
 ### Long-Running Connectors
 
 | PluginName | Source |
-|------------|--------|
+| ------------ | -------- |
 | `FileSystemConnector` | Local filesystem monitoring |
 | `AttachedFilesystemConnector` | Monitored filesystem with indexing |
 | `Tiled Imagery Connector` | WMTS/XYZ tile services (**note: has spaces in plugin name**) |
@@ -3104,10 +3143,8 @@ Configs documented in `ConnectorConfig.claude.md`. **Two plugins use spaces in n
 ### Export Connectors (Off Ramps)
 
 | PluginName | Destination |
-|------------|-------------|
+| ------------ | ------------- |
 | `FileSystemExportConnector` | Local filesystem |
 | `HttpExportConnector` | HTTP POST/PUT |
 | `NATSExportConnector` | NATS publish |
 | `SNSExportConnector` | AWS SNS topics |
-
-

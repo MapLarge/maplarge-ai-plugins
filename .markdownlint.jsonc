@@ -1,0 +1,14 @@
+// markdownlint config — structural hygiene for all markdown in this repo.
+// Rules are binary here (no severity tiers): everything enabled blocks.
+// Content/style rules with graduated severity live in Vale (styles/MapLarge/).
+{
+  "default": true,
+
+  // Prose is deliberately unwrapped to one line per paragraph (renders correctly
+  // in editors that treat source newlines as hard breaks), so no line-length cap.
+  "MD013": false,
+
+  // Long reference docs legitimately repeat section names (e.g. "Key Methods")
+  // under different parent components; only same-parent duplicates are drift.
+  "MD024": { "siblings_only": true }
+}

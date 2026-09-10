@@ -74,6 +74,7 @@ From `ml.echarts.PieSeriesOption` (and its `CircleLayoutOptionMixin`):
 ## Patterns
 
 **Doughnut with a centered total.** Use a hole plus a label anchored in the center:
+
 ```ts
 series: [{ type: "pie", radius: ["55%", "80%"],
   label: { show: false }, emphasis: { label: { show: true } },
@@ -82,23 +83,28 @@ series: [{ type: "pie", radius: ["55%", "80%"],
 ```
 
 **Rose chart (varying value range).** When slice values span a wide range, equal-angle rose reads better than tiny slivers:
+
 ```ts
 { type: "pie", roseType: "area", radius: [20, 140], data }
 ```
 
 **Theme hook (follow light/dark).** Let slices use the app palette and theme the chrome from CSS variables (see parent `echarts` theming pattern):
+
 ```ts
 itemStyle: { borderColor: chartTheme.background, borderWidth: 2 },
 label: { color: chartTheme.text }
 ```
+
 Setting `borderColor` to the page background with a 2px border gives clean slice separation in both themes.
 
 **Click / select event.** Pie click fires with `seriesType: "pie"`, `name`, `value`, `percent`, `dataIndex`:
+
 ```ts
 chart.on("click", e => { if (e.seriesType === "pie") this.drillInto(e.name); });
 // programmatic highlight/select:
 chart.dispatchAction({ type: "pieSelect", seriesIndex: 0, dataIndex: 2 });
 ```
+
 `legendselectchanged` toggles slices when a legend is present.
 
 ## Gotchas
@@ -115,5 +121,5 @@ chart.dispatchAction({ type: "pieSelect", seriesIndex: 0, dataIndex: 2 });
 ## Related skills
 
 - `echarts` — parent: the option model, `setOption` merge behavior, theming via CSS variables, event wiring through `onChartCreated`.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how a chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `getTypedProp` bindings, `raptorDom.nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how a chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `getTypedProp` bindings, `raptorDom.nodeT<RaptorChart>`).
 - Siblings: `bar.md` (many categories / precise comparison), `funnel.md` (stage drop-off), `sunburst.md` / `treemap.md` (hierarchical part-of-whole), `gauge.md` (single-value dial), `radar.md` (multi-axis profile).

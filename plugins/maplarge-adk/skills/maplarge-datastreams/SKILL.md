@@ -1,57 +1,43 @@
 ---
 name: maplarge-datastreams
 description: >-
-  Authoritative reference for configuring MapLarge DataStream on-ramps and off-ramps — the two
-  separate JSON configs (Connector tab and Pipeline tab) for the on-ramp create/edit dialog.
-  Covers every connector (NATS, NATSJetStream, Kafka, MQTT, Pulsar, ActiveMQ, SQS, WebSocket,
-  PushedMessage, HTTP polling, S3, Azure/GCS storage, SFTP, FileSystem, AttachedFilesystem,
-  RelationalDB, Elasticsearch, OGC WFS, ArcGIS REST, TiledImagery, Video) plus the full pipeline:
-  parsers, record/stream/interchange transforms, committers, serializers, scheduling, tracking,
-  message context, and monitoring. Use when building, editing, debugging, or reasoning about any
-  DataStream pipeline, on-ramp connector config, or off-ramp/export config in any MapLarge repo.
-  Triggers on: "datastream", "data stream", "data streams", "on-ramp", "onramp", "on ramp",
-  "off-ramp", "offramp", "off ramp", "connector config", "connector tab", "pipeline tab",
-  "pipeline definition", "NumberOfWorkers", "Steps array", "fetchonramp", "ml_rampserverstats",
-  "ml_ramplog", "ml_rampsteplog", "connector", "parser", "RecordTransform", "StreamTransform",
-  "InterchangeTransform", "committer", "off ramp serializer", "KafkaConnector",
-  "NATSConnector", "NATSJetStreamConnector", "JetStream", "DeliverPolicy", "MQTTConnector",
-  "PulsarConnector", "ActiveMQConnector", "SQSConnector", "WebSocketMessageConnector",
-  "PushedMessageConnector", "HttpPollingConnector", "S3Connector", "AzureStorageConnector",
-  "GoogleCloudStorageConnector", "GCS connector", "SFTPConnector", "FileSystemConnector",
-  "AttachedFilesystemConnector", "RelationalDatabaseConnector", "ElasticsearchConnector",
-  "ArcGIS Rest Connector", "WfsConnector", "WFS", "OGC", "TiledImageryConnector", "VideoConnector",
-  "JsonPipelineParser", "XmlParser", "DelimitedTextParser", "AvroParser", "YamlPipelineParser",
-  "LiteralParser", "MessageContextParser", "KeyValuePairParser", "PassThroughParser",
-  "JSONDisassemblerStreamTransform", "Roots", "PropertiesToPromote", "RecordRootPath",
-  "MultipleRoots", "PathActions", "Pivot", "SimplifyColumnNames", "FieldNameTransform",
-  "ExpressionTransform", "expression functions", "DelimitedToWKTTransform", "CrsTransform",
-  "ExtendRecordTransform", "EnsureFieldsTransform", "SkipRecordTransform", "SplitDelimitedTransform",
-  "EmbeddedJsonTransform", "TableLookupTransform", "RegexTransform", "FieldTrackingTransform",
-  "LineToWKTTransform", "EllipseToWKTTransform", "SectorToWKTTransform", "ECEFTransform",
-  "LOBToWKTTransform", "ArcGisGeometryTransform", "SimplifyTransform", "GeoFieldNameTransform",
-  "geometry transform", "WKT", "CoalescingPipelineCommitter", "InvokeRampCommitter",
-  "DMLStatementCommitter", "ChangeSetCoalescingPipelineCommitter", "FixedSchemaBatchCommitter",
-  "FileImportPipelineCommitter", "MLImportOptions", "ExtendedConfigJson", "SchemaDirectives",
-  "ForceSplitWKT", "ImportTables", "TransitionGuard", "transitions", "conditional routing",
-  "WellKnownPipelineId", "well-known pipeline", "message context", "incremental tracking",
-  "DoNotTrack", "cursor pagination", "offset pagination", "PollingFrequencyMS", "CronExpression",
-  "RunInAcceptingMode", "pushed records", "ProcessLogConfig", "PathTemplate",
-  "geometry column naming", "ingest pipeline", "Kafka SASL", "verboseLogging", "tableLogging".
+  Authoritative reference for configuring MapLarge DataStream on-ramps and off-ramps: the two
+  separate JSON configs (Connector tab and Pipeline tab) in the on-ramp create/edit dialog.
+  Covers every connector (messaging: Kafka, NATS/JetStream, MQTT, Pulsar, ActiveMQ, SQS,
+  WebSocket, PushedMessage; HTTP polling; file/object storage: S3, Azure, GCS, SFTP, FileSystem,
+  AttachedFilesystem; relational DB, Elasticsearch, ArcGIS REST, OGC WFS, TiledImagery, Video)
+  plus the full pipeline: parsers, record/stream/interchange transforms, committers, serializers,
+  scheduling, incremental tracking, message context, and monitoring. Use when building, editing,
+  or debugging any DataStream pipeline, on-ramp connector config, or off-ramp/export config.
+  Triggers on "datastream", "on-ramp", "off-ramp", "connector config", "pipeline tab",
+  "NumberOfWorkers", "KafkaConnector", "HttpPollingConnector", "JSONDisassembler",
+  "ExpressionTransform", "CoalescingPipelineCommitter", "MLImportOptions", "transitions",
+  "ml_ramplog".
+metadata:
+  owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
+  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
+  verified-against: "MapLarge Server trunk source @ 2026-08 import baseline; Kafka connector config properties spot-verified against trunk 119ba585c6e, 2026-09-09 (ARC-48)"
 ---
 
 # MapLarge DataStreams — Connector & Pipeline Configuration
 
+Covers configuring MapLarge DataStream on-ramps and off-ramps: every connector type, the
+pipeline (parsers, transforms, committers, transitions), scheduling, tracking, and monitoring.
+It excludes the tables the data lands in (`maplarge-database` for table admin, `adk-data-dev`
+for schema design), queries over the committed data (`adk-query-dev`), and one-shot external
+relational DB pulls, which `maplarge-database` §12 compares against the DataStream connector.
+
 Before configuring, editing, or debugging any DataStream on-ramp, off-ramp, connector, or pipeline, READ the relevant sections of the bundled references first — they are the authoritative source:
 
-- Connector tab (data source, scheduling, credentials, tracking, accepting mode): `${CLAUDE_PLUGIN_ROOT}/skills/maplarge-datastreams/reference/ConnectorConfig.md`
-- Pipeline tab (parsers, transforms, committers, transitions, export components, message context): `${CLAUDE_PLUGIN_ROOT}/skills/maplarge-datastreams/reference/PipelineConfig.md`
+- Connector tab (data source, scheduling, credentials, tracking, accepting mode): `reference/ConnectorConfig.md` (relative to this skill folder)
+- Pipeline tab (parsers, transforms, committers, transitions, export components, message context): `reference/PipelineConfig.md`
 
 Read only the sections you need for the task (not the whole file unless required). The two configs are **separate JSON objects edited in separate UI tabs** — never merge them into one object.
 
 ## When to read what
 
 | Task | Sections to read |
-|------|-----------------|
+| ------ | ----------------- |
 | Decide connector type / scheduling (interval, CRON, one-time) | ConnectorConfig: *Connector Type Categories*, *Scheduling (BasePollingConnectorConfig)* |
 | Configure a messaging connector (Kafka, NATS, JetStream, MQTT, Pulsar, ActiveMQ, SQS, WebSocket, PushedMessage) | ConnectorConfig: *Messaging Connectors (Push-Based)* + the specific `<Name>Connector` subsection |
 | Configure HTTP polling, tracking, cursor/offset pagination, date substitution | ConnectorConfig: *HttpPollingConnector* (incl. *Two Separate Placeholder Systems*, *DoNotTrack Summary*) |
@@ -81,3 +67,20 @@ Read only the sections you need for the task (not the whole file unless required
 - **Records are schema-less string bags** at pipeline time — fields may be absent on some records, duplicate names are legal, and type detection happens at commit time. Prefer `EnsureFieldsTransform` over `ExtendRecordTransform` before `ExpressionTransform` (duplicates crash `ToDictionary()`).
 - **Some PluginNames contain spaces:** `"ArcGIS Rest Connector"` and `"Tiled Imagery Connector"`. The YAML parser is `YamlPipelineParser` (not `YamlParser`).
 - **Destructive runtime behavior:** `FileSystemConnector` deletes files and `SQSConnector` deletes messages after successful processing; `AttachedFilesystemConnector` reconciliation deletes table rows when source files are removed.
+
+## Examples
+
+- "Ingest the sensor topic from our Kafka cluster" → two separate JSON objects. Connector tab:
+
+  ```json
+  { "PluginName": "KafkaConnector", "Topic": "sensors", "Endpoint": "kafka-broker.internal:9092", "GroupId": "ml-sensors" }
+  ```
+
+  Pipeline tab: `{ "NumberOfWorkers": 1, "Steps": [ …parser → transforms → committer… ] }`.
+  Never merged, never wrapped in an envelope with `connectorPluginName` — that key is UI-managed.
+- "Half my records vanish with no error" → a `RecordTransform` returning `null` drops that one
+  record silently, while a thrown exception loses the whole message; check transforms that touch
+  optional fields first (PipelineConfig: *Runtime Data Model & Defensive Patterns*).
+- "My YAML feed won't parse" → the parser PluginName is `YamlPipelineParser`, not `YamlParser`;
+  wrong plugin names fail at load, and two connectors legitimately contain spaces
+  (`"ArcGIS Rest Connector"`, `"Tiled Imagery Connector"`).

@@ -8,6 +8,7 @@ A stream graph: each category becomes a colored band stacked symmetrically aroun
 - You want an organic, "river" aesthetic rather than rigid bars.
 
 Prefer a sibling instead when:
+
 - You need to read **absolute values** off a fixed zero baseline → `line.md` (stacked area via `areaStyle` + `stack`) or `bar.md` (stacked bars).
 - You're showing **flow/transfer between nodes**, not composition over time → `sankey.md`.
 - It's a **single time period's** breakdown → `pie.md` / `funnel.md`.
@@ -43,6 +44,7 @@ const option: ml.echarts.EChartsOption = {
 ## Data shape
 
 `series.data` is `[time, value, category][]` (the d.ts alias `ThemerRiverDataItem = [OptionDataValueDate, OptionDataValueNumeric, string]`):
+
 - **time** — a value the `singleAxis` can place: an ISO date string / timestamp (`type: "time"`), a number (`type: "value"`), or a category label (`type: "category"`). Same axis for every row.
 - **value** — non‑negative thickness contribution at that time.
 - **category** — the band name; the set of distinct names is the legend and the band colors.
@@ -52,6 +54,7 @@ It's one **flat** array of triples (NOT one series per category, NOT nested). Ea
 ## Key options
 
 From `ml.echarts.ThemeRiverSeriesOption`:
+
 - `type: "themeRiver"` — required discriminant.
 - `data: [time, value, name][]` — the triples above.
 - `coordinateSystem?: "singleAxis"` — fixed; you don't set another. There is no `xAxis`/`yAxis` — layout comes from `singleAxis`.
@@ -67,7 +70,7 @@ The companion `singleAxis` component carries the axis: `type` (`"time" | "value"
 
 ## Patterns
 
-**Bind from a ViewModel** — build the flat triples in a getter typed `ml.echarts.ThemeRiverSeriesOption["data"]` and bind `series` with `getTypedProp`; keep `bindings: { traverseRaptorChart: true }` on the `s.chart` node (see the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`)).
+**Bind from a ViewModel** — build the flat triples in a getter typed `ml.echarts.ThemeRiverSeriesOption["data"]` and bind `series` with `getTypedProp`; keep `bindings: { traverseRaptorChart: true }` on the `s.chart` node (see the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`)).
 
 **Theming** — set band colors from CSS variables via `series.color: chartTheme.getSeriesColors()` and axis text via `singleAxis.axisLabel.color: chartTheme.textMuted`, resolved fresh per access so light/dark switches apply (see the parent `echarts` theming section). Style edges with `itemStyle: { borderColor: chartTheme.border, opacity: 0.9 }`.
 
@@ -88,7 +91,7 @@ The companion `singleAxis` component carries the axis: `type` (`"time" | "value"
 ## Related skills
 
 - `echarts` — parent: option model, theming via CSS vars, `setOption` merge behavior, event wiring.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — mounting: the `s.chart({ options })` node, `traverseRaptorChart`, `getTypedProp` bindings, `onChartCreated`.
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — mounting: the `s.chart({ options })` node, `traverseRaptorChart`, `getTypedProp` bindings, `onChartCreated`.
 - `line.md` / `bar.md` — stacked area / stacked bars when absolute values and a zero baseline matter.
 - `sankey.md` — flow between nodes rather than composition over time.
 - `pie.md` / `funnel.md` — single-period composition.

@@ -1,19 +1,28 @@
 ---
 name: adk-data-dev
-description: Guide Claude through MapLarge table, schema, sample-data, account/profile, and verification workflows for ADK extension work without assuming internal systems.
+description: MapLarge table, schema, sample-data, account/profile, and verification workflows for ADK extension work. Use when creating, inspecting, or verifying MapLarge tables for an extension, designing a schema from natural language, generating sample data, or enforcing runtime table schemas. Triggers on "create table", "table schema", "sample data", "CreateTables", "GetColumnInfo", "schema migration", "/adk-data-dev".
+metadata:
+  owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
+  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
+  verified-against: "MapLarge ADK CLI 1.0.90 (admin account list, query exec flags) verified live 2026-09-09 (ARC-41); server-side patterns @ 2026-08 import baseline"
 ---
 
 # ADK Data Development
 
-Use this skill when the user wants to create, inspect, verify, or reason about MapLarge tables for an ADK extension, including natural-language table design, schema-only tables, sample data, extension `CreateTables`, or runtime-managed table schemas.
+Covers MapLarge table work for ADK extensions: designing a schema from natural language,
+schema-only tables, sample data, manifest `CreateTables`, and runtime-managed table schemas.
+It excludes query authoring against those tables (`adk-query-dev`), the extension project
+workflow around them (`adk-extension-dev`), the UI that displays them (`adk-raptor-dev`), and
+table administration on a running server - CRUD verbs, permissions, exports - which belongs to
+`maplarge-database`.
 
 ## Grounding
 
-Run the bundled helpers from the plugin root. `${CLAUDE_PLUGIN_ROOT}` is set by Claude Code when the skill runs:
+Run the bundled helpers from the plugin root. Resolve `<plugin-root>` as the directory containing `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json` (in a checkout of this repo, `plugins/maplarge-adk/`):
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/detect_maplarge_workspace.mjs --cwd "$PWD"
-node ${CLAUDE_PLUGIN_ROOT}/scripts/check_adk_environment.mjs --cwd "$PWD"
+node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd "$PWD"
+node <plugin-root>/scripts/check_adk_environment.mjs --cwd "$PWD"
 ```
 
 Use workspace output to decide whether local extension files, `.adk/manifest.schema.json`, or only bundled docs are available. Do not invent account, table, column, profile, or server names.
@@ -49,10 +58,35 @@ maplarge query exec -profile <profile> -input "<query-json-or-sql-request>" -out
 
 Use JSON query documents by default for ADK extension work. SQL-like examples are acceptable for quick operator-facing verification when the user asks for CLI commands.
 
+## Examples
+
+- "Design a table for delivery vehicles: id, plate, capacity, last known position" → present a
+  schema-only JSON mapping and stop; no CSV rows, no invented account:
+
+  ```json
+  { "id": "Int32", "plate": "String", "capacity": "Double", "Lat": "Double", "Lng": "Double" }
+  ```
+
+  Then ask which account/table path it should live under rather than assuming one.
+- "Create it under myaccount/Vehicles with a few sample rows" → present table path, visibility,
+  columns, and sample-row count for confirmation first, create, then verify with the narrowest
+  check: `maplarge query exec -profile <profile> -input '{"table":"myaccount/Vehicles","take":1}' -outputTypes json`.
+- "My connector writes to whatever table the config names" → do not extend manifest
+  `CreateTables`; inspect at runtime with `GetExistingTable("<account>/<table>").GetColumnInfo()`
+  and migrate additively in the `Installed`/`ConfigUpdated` lifecycle handlers.
+
 ## Primary References
 
-- [`../../docs/extension-reference.md`](../../docs/extension-reference.md)
-- [`../../docs/query-authoring.md`](../../docs/query-authoring.md)
-- [`../../docs/server-api-access.md`](../../docs/server-api-access.md)
-- [`../../docs/source-of-truth.md`](../../docs/source-of-truth.md)
-- [`../../docs/getting-started.md`](../../docs/getting-started.md)
+Read these when the task reaches their topic; skip them otherwise:
+
+- [`../../docs/extension-reference.md`](../../docs/extension-reference.md) — when touching manifest `Accounts`/`CreateTables` or extension folder layout.
+- [`../../docs/query-authoring.md`](../../docs/query-authoring.md) — before writing the verification query if no local example exists.
+- [`../../docs/server-api-access.md`](../../docs/server-api-access.md) — when table work must go through a server API rather than the CLI.
+- [`../../docs/source-of-truth.md`](../../docs/source-of-truth.md) — when bundled docs and observed behavior disagree.
+- [`../../docs/getting-started.md`](../../docs/getting-started.md) — only when the surrounding ADK setup is itself in question.
+
+## Hand-offs
+
+- Authoring or debugging the queries that read these tables: use `adk-query-dev`.
+- Project setup, build, package, deploy, or lifecycle plumbing beyond schema: use `adk-extension-dev`.
+- Table administration on a running server (deletes, permissions, exports, version pinning): use `maplarge-database`.

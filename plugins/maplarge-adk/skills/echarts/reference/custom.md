@@ -7,6 +7,7 @@ The `type: "custom"` series — you supply a `renderItem(params, api)` callback 
 Use a custom series when you need a bespoke mark anchored to a coordinate system: gantt/timeline bars (start→end on a category row), error bars, range/profit bands, dumbbell/lollipop pairs, single-cell overlays on a heatmap, or arbitrary shapes that track an axis as you zoom/pan.
 
 Prefer a built-in series first — it is far less code and gets tooltips/legend/emphasis for free:
+
 - Time/value bars → `bar.md`. Points → `scatter.md` (or `effectscatter.md`). Matrix cells → `heatmap.md`.
 - OHLC candles → `candlestick.md`. Statistical min/Q1/median/Q3/max → `boxplot.md`.
 Only drop to custom when none of those produce the geometry you need.
@@ -51,6 +52,7 @@ const option: ml.echarts.EChartsOption = {
 ## Data shape
 
 `series.data` is an array of items, each a value tuple or `{ value: [...], itemStyle?, ... }`. There is no fixed dimension count — `renderItem` decides which slots mean what via `api.value(dim)`. Common conventions:
+
 - Gantt/timeline: `[categoryIndex, start, end]`.
 - Error bar: `[categoryIndex, low, high]` (often alongside a sibling bar series).
 - Range band: `[x, yLow, yHigh]`.
@@ -73,7 +75,9 @@ See the Reference section below for the full `api.*` / `params.*` surface and th
 ## Patterns
 
 ### Group multiple shapes per item
+
 Return a `group` whose `children` is an array of elements (bar + label + whisker). Each child is itself a rect/line/text with its own `shape`/`style`.
+
 ```ts
 return { type: "group", children: [
   { type: "rect", shape: barShape, style: api.style() },
@@ -82,19 +86,24 @@ return { type: "group", children: [
 ```
 
 ### Manual clipping for single-band marks on a category axis
+
 `markLine`/`markArea` collapse to nothing on a category axis when start === end. Draw the mark as a custom rect and clip it to the plot rect:
+
 ```ts
 const r = ml.echarts.graphic.clipRectByRect(
   { x, y, width, height },
   { x: params.coordSys.x, y: params.coordSys.y, width: params.coordSys.width, height: params.coordSys.height });
 return r && { type: "rect", shape: r, style: api.style() };
 ```
+
 (`params.coordSys` carries `x/y/width/height` at runtime even though it is typed as `{ type }`; cast as needed.)
 
 ### Theme the fill from the series palette
+
 `api.style()` already merges the item's `itemStyle` and the assigned series color, so it respects per-item `itemStyle.color` you set in `data`. For a custom stroke, read `api.visual("color")` or capture a themed CSS-variable color in the closure (renderItem has no `this`).
 
 ### Transitions on zoom
+
 Add `transition: ["shape"]` to a returned element so bars animate smoothly when `data`/zoom changes rather than snapping.
 
 ## Gotchas
@@ -109,11 +118,11 @@ Add `transition: ["shape"]` to a returned element so bars animate smoothly when 
 
 ## Related skills
 
-- `echarts` — parent: option model, the `s.chart` node, theming, events. the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view.
+- `echarts` — parent: option model, the `s.chart` node, theming, events. the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view.
 - Built-in alternatives to try first: `bar.md`, `scatter.md`, `heatmap.md`, `candlestick.md`, `boxplot.md`, `effectscatter.md`.
 - `dataset.md` — feed `data` via dataset + `encode` instead of inline tuples.
 
-Official option reference: https://echarts.apache.org/en/option.html#series-custom
+Official option reference: <https://echarts.apache.org/en/option.html#series-custom>
 
 ---
 
@@ -124,7 +133,7 @@ Grounded in `ml.echarts.CustomSeriesOption`, `CustomSeriesRenderItemParams`, `Cu
 ## `params` — `CustomSeriesRenderItemParams`
 
 | field | type | meaning |
-|---|---|---|
+| --- | --- | --- |
 | `context` | `Dictionary<unknown>` | scratch object you may write to; persists across calls for the same series render |
 | `dataIndex` | `number` | index into the original `data` array |
 | `dataIndexInside` | `number` | index after dataZoom filtering — use for `api.value(dim, dataIndexInside)` |
@@ -137,20 +146,24 @@ Grounded in `ml.echarts.CustomSeriesOption`, `CustomSeriesRenderItemParams`, `Cu
 ## `api` — `CustomSeriesRenderItemAPI`
 
 Data access:
+
 - `value(dim, dataIndexInside?) : ParsedValue` — read a slot of the current (or given) data tuple. `dim` is index or dimension name.
 - `ordinalRawValue(dim, dataIndexInside?)` — raw category value (before ordinal→index conversion).
 
 Coordinate mapping (`CustomSeriesRenderItemCoordinateSystemAPI`):
+
 - `coord(data, clamp?) : number[]` — data tuple → pixel `[x, y]`. e.g. `api.coord([xVal, catIdx])`.
 - `size?(dataSize, dataItem?) : number | number[]` — pixel extent of a data delta. `api.size([0,1])` → `[0, rowHeightPx]`; `api.size([1,0])` → `[unitWidthPx, 0]`. **Optional — guard it.**
 
 Styling:
+
 - `style(userProps?, dataIndexInside?) : ZRStyleProps` — merged normal style (item `itemStyle` + series color + your overrides). Deprecated in types but the standard way to style.
 - `styleEmphasis(userProps?, idx?)` — emphasis-state style.
 - `visual(visualType, idx?)` — a single resolved visual, e.g. `api.visual("color")`, `"opacity"`, `"symbolSize"`.
 - `font(opt)` — build a CSS font string from `{ fontStyle, fontWeight, fontSize, fontFamily }` for `text` elements.
 
 Canvas / layout:
+
 - `getWidth()` / `getHeight()` — canvas size (use with `coordinateSystem: "none"`).
 - `getZr()` / `getDevicePixelRatio()`.
 - `barLayout(opt) : BarGridLayoutResult` — compute bar-band geometry matching built-in bars (for bar-aligned custom marks).
@@ -161,10 +174,11 @@ Canvas / layout:
 A single element option, or a `group`, or `undefined`/`null` to draw nothing. Root element may also carry `focus`, `blurScope`, `emphasisDisabled`.
 
 ### Element `type` values (`CustomElementOption`)
+
 Built-in shapes (`type` + `shape`):
 
 | type | key `shape` fields |
-|---|---|
+| --- | --- |
 | `rect` | `x, y, width, height, r?` |
 | `circle` | `cx, cy, r` |
 | `ring` | `cx, cy, r, r0` |
@@ -178,12 +192,14 @@ Built-in shapes (`type` + `shape`):
 | `compoundPath` | `paths: [...]` |
 
 Other element types:
+
 - `path` — SVG path: `shape: { pathData / d, x, y, width, height, layout: "center" | "cover" }`.
 - `image` — `style: { image, x, y, width, height }`.
 - `text` — `style: { text, x, y, fill, font, fontSize, align, verticalAlign, ... }`.
 - `group` — `{ type: "group", children: CustomElementOption[], width?, height?, diffChildrenByName?, $mergeChildren? }`.
 
 ### Common element fields (`CustomDisplayableOption` / `CustomBaseElementOption`)
+
 - `style` — `ZRStyleProps`: `fill`, `stroke`, `lineWidth`, `opacity`, `shadowBlur`, `lineDash`, plus text props for `text` elements.
 - `shape` — geometry (see table); supports `TransitionOptionMixin`.
 - `transition` — array of prop names to animate, e.g. `["shape"]`, `["x","y"]`. `enterAnimation`/`updateAnimation`/`leaveAnimation`/`during`/`keyframeAnimation` for finer control.
@@ -198,6 +214,7 @@ Other element types:
 ## Coordinate systems
 
 `coordinateSystem` controls what `api.coord` maps against:
+
 - `"cartesian2d"` — `api.coord([xVal, yVal])`; pair with `xAxisIndex`/`yAxisIndex`.
 - `"polar"` — `api.coord([radiusVal, angleVal])`; `polarIndex`.
 - `"calendar"` — `api.coord([timestamp])` → cell center; `calendarIndex`. Use `api.size` for cell size.
@@ -214,6 +231,7 @@ Intersects `targetRect` with `clipRect` (both `{ x, y, width, height }`); return
 ## Raptor binding note
 
 Bind `renderItem` (and any data getters) like other function leaves:
+
 ```ts
 series: [{ type: "custom", coordinateSystem: "cartesian2d",
   encode: { x: [1, 2], y: 0 },
@@ -221,4 +239,5 @@ series: [{ type: "custom", coordinateSystem: "cartesian2d",
   renderItem: <any>s.prefix(vmKey).getTypedProp("renderRowBar") }]
 // keep bindings: { traverseRaptorChart: true } on the s.chart node
 ```
+
 Type the VM method as `(params: ml.echarts.CustomSeriesRenderItemParams, api: ml.echarts.CustomSeriesRenderItemAPI) => ml.echarts.CustomSeriesRenderItemReturn`.

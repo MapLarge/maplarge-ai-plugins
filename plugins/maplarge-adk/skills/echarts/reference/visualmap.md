@@ -10,6 +10,7 @@ A top-level ECharts component (`option.visualMap`, an object or array) that maps
 - Any chart that needs a value→color gradient legend the user can drag to filter (`calculable: true`).
 
 Not the right tool when:
+
 - You want a discrete category→color mapping purely for the **series legend** — that's `legend` + per-series `itemStyle.color`, see `line.md`/`bar.md`.
 - You're zooming the data range on an axis — that's `datazoom.md`.
 
@@ -18,6 +19,7 @@ Not the right tool when:
 ## Minimal config
 
 A continuous color gradient over a scatter's 3rd dimension:
+
 ```ts
 const option: ml.echarts.EChartsOption = {
   xAxis: { type: "value" },
@@ -42,6 +44,7 @@ const option: ml.echarts.EChartsOption = {
 ## Data shape
 
 `visualMap` has no data of its own — it reads `series.data`. `dimension` selects which slot of each data item is mapped:
+
 - Array data: `dimension: 2` reads index 2 of `[x, y, value]` (heatmap cells are `[xIdx, yIdx, value]`, mapped on dim 2 by default).
 - Object/dataset data: `dimension` is the column index in the dataset's `dimensions`.
 - If `dimension` is omitted, ECharts picks the last value dimension (the one most charts encode as the metric).
@@ -52,6 +55,7 @@ const option: ml.echarts.EChartsOption = {
 From `ml.echarts.VisualMapComponentOption` (= `ContinousVisualMapComponentOption | PiecewiseVisualMapComponentOption`):
 
 Shared (`VisualMapOption`):
+
 - `type` : `"continuous" | "piecewise"` — picks which sub-type below.
 - `min` / `max` : `number` — value extent to map (required unless `pieces`/`categories` given).
 - `dimension` : `number` — which data dimension to encode.
@@ -62,12 +66,14 @@ Shared (`VisualMapOption`):
 - `inverse` : `boolean`; `show` : `boolean`; `realtime` : `boolean`.
 
 Continuous (`ContinousVisualMapComponentOption`):
+
 - `calculable` : `boolean` — show draggable handles (drives filtering + `datarangeselected`).
 - `range` : `[number, number]` — currently selected sub-range (defaults to `[min, max]`, follows handles).
 - `hoverLink` : `boolean` — hovering a data point highlights its spot on the bar (and vice-versa).
 - `handleIcon` / `handleSize` / `handleStyle`, `indicatorIcon` / `indicatorStyle`.
 
 Piecewise (`PiecewiseVisualMapComponentOption`):
+
 - `pieces` : `{ min?, max?, lt?, gt?, lte?, gte?, value?, label?, color? }[]` — explicit bins.
 - `splitNumber` : `number` — auto-split min..max into N equal bins (when `pieces` omitted).
 - `categories` : `string[]` — discrete category names (ignores min/max).
@@ -77,19 +83,24 @@ Piecewise (`PiecewiseVisualMapComponentOption`):
 ## Patterns
 
 ### Theme the ramp from CSS variables
+
 Build the `inRange.color` array from `--chart-heatmap-N` (resolved fresh per access) instead of hardcoding, so it tracks light/dark. See the parent `echarts` theming pattern.
+
 ```ts
 visualMap: { type: "continuous", min, max, calculable: true,
   inRange: { color: chartTheme.getHeatmapColors() } }   // cool→warm, theme-reactive
 ```
 
 ### Map size, not just color
+
 `inRange` can carry multiple channels. Encode the metric as both color and point size:
+
 ```ts
 inRange: { symbolSize: [6, 30], color: ["#91cc75", "#fac858", "#ee6666"] }
 ```
 
 ### Piecewise bins with explicit thresholds
+
 ```ts
 visualMap: { type: "piecewise", dimension: 2, splitNumber: 0,
   pieces: [
@@ -100,12 +111,15 @@ visualMap: { type: "piecewise", dimension: 2, splitNumber: 0,
 ```
 
 ### The `datarangeselected` event (its signature event)
+
 On `calculable` continuous (or piece selection) the user drag fires `datarangeselected`. Wire it via `onChartCreated` (see parent `echarts`):
+
 ```ts
 chart.on("datarangeselected", (p: { selected?: unknown }) => {
   // continuous: p.selected = [min, max]; piecewise: p.selected = { "0": true, ... }
 });
 ```
+
 Drive selection programmatically with `chart.dispatchAction({ type: "selectDataRange", visualMapIndex: 0, selected: [10, 80] })`.
 
 ## Gotchas
@@ -122,7 +136,7 @@ Drive selection programmatically with `chart.dispatchAction({ type: "selectDataR
 ## Related skills
 
 - `echarts` — parent: option model, `setOption` merge, `onChartCreated` event wiring, CSS-variable theming.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
 - `heatmap.md` — the series that requires a `visualMap`.
 - `scatter.md`, `effectscatter.md` — value-driven color/size on points.
 - `datazoom.md` — for ranging the axis instead of the visual channel.

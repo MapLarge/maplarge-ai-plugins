@@ -9,12 +9,14 @@ import type { Descriptors, Descriptor, Layout, DynamicLayoutProvider } from "dat
 ```
 
 ## When to use
+
 - A form that edits many properties of one object: settings panels, parameter editors, entity/record editors, "add / edit" forms.
 - You want field definitions to live as **data** (a descriptor map on the VM) rather than hand-written `s.input`/`s.checkbox` trees — add/remove a field by editing the map, not the view.
 - You need reactive fields: a label/options/visibility that depends on the current values (dynamic attributes), or a layout that changes as the user edits (dynamic layout).
 - **Not** this: a single standalone input or checkbox → `forms.md`. A single dropdown → `select.md`. A tabular grid of records → `data-grid.md`.
 
 ## Placing the editor
+
 There is no typed `s.objectEditor` scriptor method — pass an `IObjectEditor` to `s.element()`. Give it `value` + `descriptors` (and optionally `layout`) via `bindings`:
 
 ```ts
@@ -37,10 +39,11 @@ s.element(editor);
 You'll see two other spellings in the codebase: `s.element({ ... } as any)` (when reaching across a `prefix()`), and `// @ts-ignore` + `s.objectEditor({ ... })` (a runtime method that isn't in the type defs). Prefer the typed `IObjectEditor<ForScriptorTrue>` + `s.element(...)` form.
 
 ## Descriptors
+
 A `Descriptors<Entity>` is `{ [K in keyof Entity]: Descriptor }`. Each descriptor's `type` selects the control; the rest configure it. Built-in types:
 
 | `type` | Renders | Value type | Notable fields |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `"Text"` | text input | `string` | `placeholder` |
 | `"TextArea"` | multi-line | `string` | `placeholder`, `rows` |
 | `"Number"` | number input | `number` | `min`, `max`, `step`, `unitInfo`, `placeholder` |
@@ -70,6 +73,7 @@ public get formDescriptors(): Descriptors<Employee> {
 `sortOrder` sets the default field order (used when there's no layout, or for fields a `layoutOnly` layout doesn't place). `TypeScript` picks the descriptor union from the property's value type, so `Descriptors<Employee>` rejects a `"Number"` descriptor on a `string` field — a strong safety net. When the field type can't map cleanly (dynamically-built descriptors), type as `Descriptors<Record<string, ...>>` or cast the individual descriptor to `Descriptor<any, any>`.
 
 ### Dynamic attributes (reactive fields)
+
 `label`, `description`, `hidden`, `disabled`, `required`, `defaultValue`, `placeholder`, and `options` accept either a literal value **or** a `{ function, dependsOn }` object that recomputes from the current entity:
 
 ```ts
@@ -89,6 +93,7 @@ kindOfColor: {
 `dependsOn` controls re-evaluation: **omit** → recompute on any field change; **`[]`** → compute once (good for a fixed async fetch); **`["fieldA"]`** → recompute only when those fields change.
 
 ### Transforms (stored type ≠ edited type)
+
 When the object stores a value in a different type than the control edits, add `toDescriptor` / `fromDescriptor`. Classic case: the object holds an ISO **string** but you want a `DateTime` picker:
 
 ```ts
@@ -101,6 +106,7 @@ strDateTime: {
 ```
 
 ## Layout
+
 Without a `layout`, fields render top-to-bottom by `sortOrder`. A `Layout` (or `DynamicLayoutProvider`) gives you rows, columns, and custom markup. Two shapes:
 
 - **`RowsLayout`**: `{ rows: LayoutRow[], layoutOnly?: boolean }` — the common one.
@@ -109,6 +115,7 @@ Without a `layout`, fields render top-to-bottom by `sortOrder`. A `Layout` (or `
 `layoutOnly: true` renders **only** the fields you place; unplaced descriptors are dropped. Omit it (or `false`) to append the rest by `sortOrder`.
 
 ### Row types
+
 Each row is `{ type, fields, ...rowProps }`. `fields` entries are a bare `"key"` string, a `{ key, ... }` object, or a `{ template }` object (custom markup, no descriptor).
 
 - **`flex`** — flexbox row; row props are `IDiv`; each field object takes `divProps` (an `IDiv`) + `fieldTemplate`.
@@ -149,6 +156,7 @@ private buildLayout(e: Partial<Employee>): Layout<Employee, MyVm> {
 - **`layoutPresets`** tune spacing/gutters globally; start from `layoutPresets.normalRowSpacing` / `condensedRowSpacing` and `mergeLayoutPresets(base, { containerDiv: { padding: 3 } })`.
 
 ## Reactivity — there is no change event
+
 The ObjectEditor emits **no** `change`/`input` event. It writes edits back through the two-way `value` binding into your VM property (debounced). **Observe changes in the setter.** This is the single most important pattern:
 
 ```ts
@@ -162,6 +170,7 @@ public set data(v: Record<string, any>) {
 ```
 
 ## Patterns
+
 - **Descriptor + layout getters on the VM, bound in the view.** Keep `value`, `descriptors`, `layout` as VM getters; the view just wires the three bindings. Adding a field = editing the descriptor map.
 - **Diff-highlight two editors** (e.g. a compare / what-if parameters panel): render two ObjectEditors over the same descriptors, and in each field's `divProps` set `background: "warning"` when `taskA[key] !== taskB[key]`. Recompute the layout in the value setters so highlights track edits.
 - **Disable a whole editor or subset of fields**: map over the descriptors and set `disabled: true` on the ones to lock (e.g. a "by ID" mode disables every field; a gated card disables just its keys). Return a fresh descriptors object from the getter.
@@ -169,6 +178,7 @@ public set data(v: Record<string, any>) {
 - **Conditional fields**: prefer a descriptor's `hidden` dynamic attribute for show/hide of a single field; use a `DynamicLayoutProvider` (with `dependsOn`) when the *arrangement* changes.
 
 ## Gotchas
+
 - **No change event** — read edits via the `value` setter (see above). Don't look for `events: [{ event: "change" }]`.
 - **Value write-back is debounced** — don't assume the VM property is updated synchronously inside the same tick the user typed.
 - `descriptors` is typed optional but the editor is only useful with them; omitting descriptors falls back to type-inferred basic controls.
@@ -179,6 +189,7 @@ public set data(v: Record<string, any>) {
 - Dynamic-attribute / dynamic-layout functions receive a `Partial<Entity>` and may run before all fields are set — guard against `undefined`.
 
 ## Related skills
+
 - Parent: `raptor` — View/VM split, `RSScriptor.create`, `getTypedProp`, `prefix`, `update()`, bindings/events.
 - `forms.md` — hand-built single inputs (`s.input`, `s.checkbox`, `s.switch`, `s.textArea`) when you don't want a descriptor-driven form; the ObjectEditor renders these under the hood.
 - `select.md` — standalone `quickSelect` dropdown (the ObjectEditor's `Select`/`MultiSelect` descriptors wrap the same picker).
@@ -189,7 +200,7 @@ public set data(v: Record<string, any>) {
 
 ---
 
-# Raptor Object Editor — Reference
+## Raptor Object Editor — Reference
 
 Exact identifiers from the `data-ui` module (`framework/src/.../data-ui/...`), surfaced in `.adk/types.d/MapLarge.Server.d.ts`. Everything is re-exported from `"data-ui"`.
 
@@ -205,13 +216,14 @@ import type {
 } from "data-ui";
 ```
 
-## Placement — IObjectEditor (view definition)
+### Placement — IObjectEditor (view definition)
+
 Node `type`: `"objectEditor"`. Backing class: `ObjectEditor<Entity, CustomDescriptor> extends RaptorNodeBase<IObjectEditor>`. There is **no** typed `s.objectEditor` builder — use `s.element(cfg)` where `cfg: IObjectEditor<ForScriptorTrue>`.
 
 `IObjectEditor<T, Entity, CustomDescriptor, TViewModel> extends ViewDefinitions.IViewDefinition<T>`:
 
 | field | type | notes |
-|---|---|---|
+| --- | --- | --- |
 | `descriptors?` | `Descriptors<Entity, CustomDescriptor>` | static; or via binding |
 | `inline?` | `boolean` | default `false`; `true` = inline label layout |
 | `requiredIndicator?` | `RequiredIndicator` | `"required"` (default) \| `"optional"` \| `"none"` |
@@ -219,9 +231,10 @@ Node `type`: `"objectEditor"`. Backing class: `ObjectEditor<Entity, CustomDescri
 | `layoutPresets?` | `Partial<LayoutPresets>` | static; or via binding |
 | `bindings?` | `IRaptorUniversalBindings<T> & IObjectEditorBindings<...>` | |
 
-### IObjectEditorBindings
+#### IObjectEditorBindings
+
 | binding | type |
-|---|---|
+| --- | --- |
 | `value?` | `BindingProp<Entity \| null \| undefined>` — **two-way**, writes edits back (debounced) |
 | `descriptors?` | `BindingProp<Descriptors<Entity, CustomDescriptor> \| null \| undefined>` |
 | `layout?` | `BindingProp<LayoutInput<Entity, TViewModel> \| null \| undefined>` |
@@ -229,14 +242,16 @@ Node `type`: `"objectEditor"`. Backing class: `ObjectEditor<Entity, CustomDescri
 
 Plus universal bindings (`visible`, `style`, `css`, `attr`, …). **No** `change`/`input` event exists — observe edits through the `value` setter on the VM.
 
-## Descriptors
+### Descriptors
+
 `Descriptors<Entity, TCustomDescriptor = never> = { [K in keyof Entity]: Descriptor<Entity, K, TCustomDescriptor> }`.
 `Descriptor` = union of `TypeSafeDescriptor` | `TransformDescriptor` | `SelectDescriptors` | custom. The value type of the field picks the built-in descriptor.
 `UnknownDescriptor = Descriptor<any, any>`, `UnknownDescriptors = Record<string, UnknownDescriptor>` for dynamic maps.
 
-### BaseDescriptor (all descriptors)
+#### BaseDescriptor (all descriptors)
+
 | field | type | notes |
-|---|---|---|
+| --- | --- | --- |
 | `type` | `string` | discriminant (capitalized) |
 | `label?` | `DynamicAttribute<…, string>` | |
 | `description?` | `DynamicAttribute<…, string>` | |
@@ -246,9 +261,10 @@ Plus universal bindings (`visible`, `style`, `css`, `attr`, …). **No** `change
 | `defaultValue?` | `DynamicAttribute<…, Value>` | |
 | `sortOrder?` | `number` | default ordering / fallback placement |
 
-### Built-in descriptor types
+#### Built-in descriptor types
+
 | `type` const | interface | extra fields (beyond base) | value |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `"Text"` | `TextDescriptor` | `placeholder?` (dynamic) | `string` |
 | `"TextArea"` | `TextAreaDescriptor` | `placeholder?` (dynamic), `rows?: number` | `string` |
 | `"Number"` | `NumberDescriptor` | `placeholder?` (dynamic), `min?`, `max?`, `step?: number`, `unitInfo?: ml.data.table.IUnitInfo`, `units?: string` *(deprecated → use unitInfo)* | `number \| null` |
@@ -261,67 +277,83 @@ Plus universal bindings (`visible`, `style`, `css`, `attr`, …). **No** `change
 `SelectOption<T> = { value: T; label: string }`.
 Type helpers: `BooleanDescriptors = Checkbox | Switch`; `StringDescriptors = Text | TextArea`; `NumericDescriptors = Number`; `DateTimeDescriptors = DateTime`; `SelectDescriptors = Select`.
 
-### DynamicAttribute
+#### DynamicAttribute
+
 `DynamicAttribute<Entity, Field, T> = T | DynamicAttributeDefinition<Entity, Field, T>`
 `DynamicAttributeDefinition = { function: (entity: Partial<Entity>) => T | Promise<T>; dependsOn?: (keyof Entity)[] }`
 `dependsOn`: **omitted** → re-eval on any field change · **`[]`** → eval once · **`[fields]`** → re-eval when those change.
 
-### Transform (value-type mismatch)
+#### Transform (value-type mismatch)
+
 Add to a descriptor when the stored `Entity[Field]` differs from the descriptor's edit type (`TransformDescriptor`):
+
 ```ts
 toDescriptor:   (entityValue) => descriptorValue
 fromDescriptor: (descriptorValue) => entityValue
 ```
+
 Supported pairings: Text⇄string, Number⇄number, Checkbox/Switch⇄boolean, DateTime⇄(DateTime|null).
 
-## Layout
+### Layout
+
 `LayoutInput<Entity, TViewModel> = Layout | DynamicLayoutProvider`.
 `Layout = RowsLayout | TemplateLayout`.
 
-### RowsLayout
+#### RowsLayout
+
 `{ rows: LayoutRow<Entity, TViewModel>[]; layoutOnly?: boolean; template?: never }`
+
 - `layoutOnly: true` → render only placed fields (others dropped). Omitted/false → append remaining by `sortOrder`.
 
-### TemplateLayout
+#### TemplateLayout
+
 `{ template: RenderByTemplate<Entity, TViewModel>; rows?: never }`
 `RenderByTemplate = (s: IRootScriptor<TViewModel>, renderField: (field: LayoutField<Entity>) => void) => void`.
 
-### LayoutRow (discriminated by `type`)
+#### LayoutRow (discriminated by `type`)
+
 `DefineLayoutRow<Type, Entity, Field, RowProps> = { type: Type; fields: LayoutField<Entity, Field>[] } & RowProps`.
 
 | `type` | RowProps | per-field extra | field props type |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `"flex"` (`LayoutFlexRow`) | `Partial<ViewDefinitions.IDiv>` | `divProps?: Partial<IDiv>`, `fieldTemplate?` | `FlexLayoutRowField` |
 | `"columns"` (`LayoutColumnsRow`) | `Partial<ViewDefinitions.IRow>` | `columnProps?: Partial<IColumn>`, `fieldTemplate?` | `ColumnsLayoutRowField` |
 | `"templatedRows"` (`LayoutTemplatedRowsRow`) | `{ rowTemplate: TemplatedRowsTemplate; wrap?: boolean }` | (fields are `LayoutFieldObject`) | — |
 
 `LayoutRowType = "flex" | "columns" | "templatedRows"`.
 
-### Fields
+#### Fields
+
 `LayoutField<Entity> = keyof Entity | { key: keyof Entity } | LayoutFieldObject`.
 `LayoutFieldObject` is a discriminated union:
+
 - `{ key: keyof Entity; inline?: boolean; template?: never }` — a descriptor field (plus `divProps`/`columnProps`/`fieldTemplate` in flex/columns rows).
 - `{ template: (s: IRootScriptor<TViewModel>) => void; key?: never }` — custom markup, **no descriptor**.
 
-### Templates
+#### Templates
+
 - `FieldTemplate<Entity, TViewModel> = (s, descriptorId, descriptor, renderField: RenderThisField) => void` — wrap one field; `renderField()` (`RenderThisField = () => void`) inserts the standard label+input+description.
 - `TemplatedRowsTemplate<Entity, TViewModel> = (s, renderField: (field: LayoutField<Entity>) => void) => void` — render a whole row; call `renderField("key")` where each field goes.
 
-### DynamicLayoutProvider
+#### DynamicLayoutProvider
+
 `{ function: DynamicLayoutFunction<Entity, TViewModel>; dependsOn?: (keyof Entity)[] }`
 `DynamicLayoutFunction = (entity: Partial<Entity>) => Layout | Promise<Layout>`.
 `dependsOn` same semantics as dynamic attributes. Guard: `isDynamicLayoutProvider(layout)`.
 
-### LayoutPresets
+#### LayoutPresets
+
 `{ containerDiv?: Partial<IDiv>; columns?: LayoutTypePreset<IRow, IColumn>; flex?: LayoutTypePreset<IDiv, IDiv>; templatedRows?: LayoutTypePreset<IDiv, never> }`
 `LayoutTypePreset<RowProps, ColumnProps> = { row?: RowProps; column?: ColumnProps }`.
 Registry: `layoutPresets.normalRowSpacing` (default), `layoutPresets.condensedRowSpacing`.
 `mergeLayoutPresets(...presets: Partial<LayoutPresets>[]): LayoutPresets` — later overrides earlier per nested level.
 
-## Descriptor registry (custom descriptor types — advanced)
+### Descriptor registry (custom descriptor types — advanced)
+
 `registerDescriptorType<TDescriptor, TInternal, AdditionalData>(def: DescriptorType<...>): void` and `getDescriptorType(type: string)`. A `DescriptorType` supplies `type`, `render(s, id, bindingKey, descriptor, options, testId)`, `defaultBoundValue`, optional `transformToBound` / `transformFromBound` / `setupAdditionalData` / `evaluateDescriptor`. `RequiredIndicator` enum: `Required = "required"`, `Optional = "optional"`, `None = "none"`. Binding-data plumbing lives in `data-ui/descriptor-registry/BindingData` (`IBindingData`, `BindingData`, `bindingKey`).
 
-## Minimal example
+### Minimal example
+
 ```ts
 // VM
 import { RaptorViewModel } from "raptor/raptorDom/viewModels/RaptorViewModel";

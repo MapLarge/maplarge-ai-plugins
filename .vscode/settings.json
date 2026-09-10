@@ -1,0 +1,8 @@
+{
+    // Editor-side lint for this repo's docs and skills.
+    // Broken relative links / anchors in markdown:
+    "markdown.validate.enabled": true,
+    // Vale extension manages its own Vale binary (no manual install);
+    // config discovery finds .vale.ini at the repo root automatically.
+    "vale.valeCLI.installVale": true
+}

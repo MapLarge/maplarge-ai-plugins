@@ -1,6 +1,10 @@
 ---
 name: echarts
-description: "Builds and configures Apache ECharts charts inside MapLarge ADK Raptor views — the router for every chart type. Covers the option object model (title/legend/grid/xAxis/yAxis/series/tooltip/axisPointer/dataZoom/visualMap/dataset/graphic/toolbox) and how charts live in a Raptor codebase: declared via the RSScriptor s.chart({ options }) node with traverseRaptorChart bindings, option fragments returned from ViewModel getters typed as ml.echarts.* (BarSeriesOption/HeatmapSeriesOption/CustomSeriesOption/ECharts), events wired through RaptorChart.onChartCreated (click drilldown, dataZoom persistence, visualMap datarangeselected), and theme-reactive theming via CSS variables. Use when adding, editing, or debugging ANY chart in a MapLarge ADK extension, including these series and components (each has an on-demand reference doc): line/area/step, bar/column/stacked/horizontal, scatter/bubble, effectScatter (ripple), pie/doughnut/rose, funnel/pyramid, gauge/dial, radar/spider, heatmap (matrix/calendar/geo density), boxplot (quartiles), candlestick/OHLC/K-line, sankey (flow), graph (network/force-directed), tree (dendrogram), treemap, sunburst, themeRiver (stream); and the tooltip/axisPointer, visualMap (value→color, continuous/piecewise), dataZoom (slider/inside), dataset (encode/transform), and custom renderItem (timelines/gantt) components. Also for setOption merge/notMerge/replaceMerge behavior. Official refs: echarts.apache.org/en/option.html and echarts.apache.org/en/api.html."
+description: "Builds and configures Apache ECharts charts inside MapLarge ADK Raptor views — the router for every chart type. Covers the option object model (title, legend, grid, axes, series, tooltip, dataZoom, visualMap, dataset, graphic) and how charts live in a Raptor codebase: the RSScriptor s.chart({ options }) node with traverseRaptorChart bindings, option fragments from ViewModel getters typed as ml.echarts.*, events via RaptorChart.onChartCreated, theme-reactive colors via CSS variables, and setOption merge/notMerge/replaceMerge behavior. Use when adding, editing, or debugging ANY chart in a MapLarge ADK extension; every series and component has an on-demand reference doc. Triggers on \"chart\", \"s.chart\", \"echarts\", \"line chart\", \"bar chart\", \"pie\", \"scatter\", \"heatmap\", \"gauge\", \"radar\", \"boxplot\", \"candlestick\", \"sankey\", \"graph\", \"tree\", \"treemap\", \"sunburst\", \"themeRiver\", \"custom renderItem\", \"tooltip\", \"visualMap\", \"dataZoom\", \"dataset\"."
+metadata:
+  owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
+  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
+  verified-against: "Apache ECharts 5 / ml.echarts typings @ 2026-08 import baseline; traverseRaptorChart + onChartCreated spot-verified against framework typings, trunk 119ba585c6e, 2026-09-09 (ARC-47)"
 ---
 
 # ECharts in MapLarge Raptor
@@ -19,10 +23,10 @@ How to build Apache ECharts charts and configure them inside MapLarge ADK Raptor
 
 This skill is the router. The framing below (the `s.chart` node, theming, events, gotchas) applies to
 every chart; for the specific series or component you're building, read its doc under
-`${CLAUDE_PLUGIN_ROOT}/skills/echarts/reference/` before writing the option.
+`reference/` (relative to this skill folder) before writing the option.
 
 | Task / keywords | Reference doc |
-|---|---|
+| --- | --- |
 | line, area, stacked area, smooth, step, trend over time | `line.md` |
 | bar, column, grouped, stacked, horizontal | `bar.md` |
 | scatter, bubble, correlation, point cloud | `scatter.md` |
@@ -46,7 +50,9 @@ every chart; for the specific series or component you're building, read its doc 
 | dataset, encode, shared columns, transform | `dataset.md` |
 | custom series, renderItem, gantt/timeline, bespoke shapes | `custom.md` |
 
-The deeper option/DSL cheatsheet is `reference/echarts-reference.md`.
+Read `reference/echarts-reference.md` (the deeper option/DSL cheatsheet) when the option shape
+you need spans multiple components or is not covered by a per-series doc — full component key
+maps, merge semantics detail, and cross-cutting option patterns live there.
 
 ## Mental model / how it works
 
@@ -59,6 +65,7 @@ The flow: **view declares `s.chart({ options })`** where most leaves are `s.pref
 ## Core API / DSL
 
 ### The `s.chart()` node (RSScriptor)
+
 ```ts
 s.chart({
     viewName: "myChart",              // look the node up later by this name
@@ -74,11 +81,13 @@ s.chart({
     ]
 })
 ```
+
 - `bindings: { traverseRaptorChart: true }` is on essentially every chart — without it the `getTypedProp(...)` leaves inside `options` are not wired up.
 - Bind a leaf with `<any>s.prefix(vmKey).getTypedProp("mySeries")`; the `<any>` cast is normal because the binding token is not the option's static type.
 - Function leaves (axis `formatter`, tooltip `formatter`, `renderItem`) are written inline in the view **or** bound to a VM method via `getTypedProp` (e.g. `renderItem: <any>s.prefix(vmKey).getTypedProp("renderTimelineBar")`).
 
 ### Live instance (RaptorChart node)
+
 ```ts
 this.raptorDom.nodeT<RaptorChart>("myChart").onChartCreated(chart => {
     chart.on("click", e => { if (e.seriesIndex === 0) { /* e.data["allData"] */ } });
@@ -87,11 +96,13 @@ this.raptorDom.nodeT<RaptorChart>("myChart").onChartCreated(chart => {
 });
 // node.resize({ left, right, top, bottom });  chart.getDataURL(opts);  chart.getConnectedDataURL(opts)
 ```
+
 - `chart` is `ml.echarts.ECharts`: `setOption`, `getOption`, `on/off`, `dispatchAction`, `resize`, `getDataURL`, `clear`, `dispose`, `showLoading/hideLoading`.
 - `onChartCreated` may **re-fire** per chart instance (e.g. on theme/relayout). Guard one-time work with a flag (e.g. `_clickEventRegistered`) or an instance marker (e.g. `echart.__saveBgPatched`). The inner `chart.on(...)` re-attaches automatically each fire, which is what you want.
 - Event names commonly used here: `click`, `dataZoom`, `datarangeselected`. Other common ones: `dblclick`, `mouseover/mouseout`, `legendselectchanged`, `brushselected`, `restore`, `finished`, `rendered`.
 
 ### Option components (quick reference)
+
 - `grid: { top, bottom, left, right, containLabel }` — plot rectangle. `containLabel: true` keeps axis labels inside; otherwise reserve room manually (`grid.bottom: 85`).
 - `xAxis` / `yAxis`: `type: "category" | "value" | "time" | "log"`, `data: string[]` (category), `name`, `nameLocation: "middle"|"center"`, `nameGap`, `min`/`max`, `axisLabel: { interval, rotate, formatter }`, `axisLine.lineStyle.color`. Either axis can be an array for multiple axes (`xAxis: [{...},{...}]`).
 - `series[]` per type — `data`, `encode`, `itemStyle`, `label`, `emphasis`, `markLine`, `markArea`, `tooltip`, `z`/`zlevel`, `stack`.
@@ -105,7 +116,9 @@ this.raptorDom.nodeT<RaptorChart>("myChart").onChartCreated(chart => {
 ## Patterns
 
 ### Theming — read CSS variables, never hardcode
+
 Colors live as `--chart-*` / `--bs-*` CSS vars in the extension's `style.less` and adapt to light/dark. Resolve them **at access time** so theme switches take effect. A common pattern is a small theme helper/service that reads the computed CSS variables fresh on each access and exposes getters (e.g. `text`, `textMuted`, `border`, `neutral`) plus a series palette and a heatmap ramp built by iterating `--chart-series-N` / `--chart-heatmap-N` with sensible fallbacks.
+
 ```ts
 // resolve a single var (read from the themed element, not :root)
 function resolveCssVariable(v: string): string { /* getComputedStyle(...).getPropertyValue */ }
@@ -115,15 +128,19 @@ const palette = chartTheme.getSeriesColors();    // --chart-series-1..N (with fa
 const heat    = chartTheme.getHeatmapColors();   // --chart-heatmap-1..N (cool→warm)
 const border  = chartTheme.border;               // fresh each access → reactive
 ```
+
 Use them in options: `itemStyle: { borderColor: chartTheme.border }`, `visualMap.inRange.color: heat`. View bindings can reference a getter as a string path token too: `color: ${vmKey}.chartTheme.textMuted`.
 
 ### Build a series in the VM, bind it in the view
+
 VM returns a typed fragment; the view binds it.
+
 ```ts
 // VM
 private _myChartSeries: ml.echarts.BarSeriesOption[] = null;
 public get myChartSeries() { return this._myChartSeries; }
 ```
+
 ```ts
 // view
 .chart({ viewName: "myChart", disableMenu: true,
@@ -138,7 +155,9 @@ public get myChartSeries() { return this._myChartSeries; }
 ```
 
 ### Heatmap with markArea / markLine overlays
+
 Cells are `[xIndex, yIndex, value]`; `visualMap` colors them; gaps drawn as `markLine` (multi-band) / `markArea` (full-scope spans), each with its own per-mark tooltip formatter.
+
 ```ts
 const heatmapSeries: ml.echarts.HeatmapSeriesOption = {
   type: "heatmap", name: "Coverage", data /* [x,y,v][] */,
@@ -148,10 +167,13 @@ const heatmapSeries: ml.echarts.HeatmapSeriesOption = {
   markArea: { z: 5, itemStyle: { color: gap, opacity: 0.7 }, data: areas },
 };
 ```
+
 Gotcha: on a **category** axis, `markLine`/`markArea` collapse to nothing when start === end, so single-band marks go through a custom series instead.
 
 ### Custom series + renderItem (timelines, single-cell overlays)
+
 `type: "custom"` + a `renderItem(params, api)` that returns a primitive shape. Use `api.value(dim)` to read the data tuple, `api.coord([x,y])` to convert data→pixels, `api.size([dx,dy])` for cell size, `api.style()` for the themed style. Clip to the plot rect with `ml.echarts.graphic.clipRectByRect`.
+
 ```ts
 public renderTimelineBar(params: ml.echarts.CustomSeriesRenderItemParams, api: ml.echarts.CustomSeriesRenderItemAPI): ml.echarts.CustomSeriesRenderItemReturn {
   const categoryIndex = api.value(0);
@@ -164,15 +186,20 @@ public renderTimelineBar(params: ml.echarts.CustomSeriesRenderItemParams, api: m
   return rectShape && { type: "rect", transition: ["shape"], shape: rectShape, style: api.style() };
 }
 ```
+
 The custom series declares `encode: { x: [1,2], y: 0 }` and `coordinateSystem: "cartesian2d"`. `renderItem` runs **per data item with no `this`** — capture needed values (e.g. `gapColor`, `groupCount`) in the closure before defining it. A full-height "all-rows" rect spans `api.coord([x,0])`→`api.coord([x, count-1])` ± half a cell (the single-band gap custom series pattern).
 
 ### dataset + encode (switchable X/Y/color axes)
+
 Switchable axes are easiest with a `dataset` and `encode` referencing dimension names.
+
 ```ts
 this._myDataset = [{ dimensions: ["x", "y", "group"], source: rows }];
 // series entry: { type: "bar", datasetIndex, encode: { x: "x", y: "y" }, stack }
 ```
+
 Reference lines for a selected/comparison value are a `markLine` on a dummy zero-data `line` series:
+
 ```ts
 { name: label, type: "line", z: 100, data: [], silent: true, tooltip: { show: false },
   markLine: { symbol: ["none","none"], label: { formatter: label.toUpperCase(), position: "insideEndTop", color },
@@ -180,7 +207,9 @@ Reference lines for a selected/comparison value are a `markLine` on a dummy zero
 ```
 
 ### No-data overlay via `graphic`
+
 Bind `options.graphic` to a VM getter; set it to a `{ elements: [{ type: "group", children: [rect, text] }] }` when empty, `[]` otherwise.
+
 ```ts
 this.myGraphicElements = { elements: [{ type: "group", left: "center", top: "middle", children: [
   { type: "rect", z: 100, shape: { width: 240, height: 90 }, style: {...} },
@@ -188,13 +217,16 @@ this.myGraphicElements = { elements: [{ type: "group", left: "center", top: "mid
 ```
 
 ### Click drilldown + dataZoom persistence
+
 ```ts
 chart.on("click", e => { if (e.seriesIndex === 0) { this._selectedRowData = e.data["allData"]; this.update(); } });
 chart.on("dataZoom", () => { const dz = chart.getOption().dataZoom; this._savedZoom = { start: dz[0].start, end: dz[0].end }; });
 ```
 
 ### Manual resize (chart in a collapsing/hidden container)
+
 A chart sized while its container is collapsed/`display:none` renders at the wrong size. Resize after layout settles.
+
 ```ts
 public resizeCharts() {
   const node = this.raptorDom.nodeT("myChart");
@@ -215,9 +247,23 @@ public resizeCharts() {
 - **Use `ml.echarts.*` types**, not `any`, for series/axis/dataset fields you build in the VM — they catch most shape errors before runtime.
 - **Setting `series`/`xAxis` is a merge.** Re-emitting a smaller option won't clear stale series unless you replace the whole getter value (return a fresh array) or use notMerge at the instance level.
 
+## Examples
+
+- "Stack the monthly counts by status in one bar chart" → one `ml.echarts.BarSeriesOption` per
+  status, all sharing the same `stack` value, returned from a single VM getter and bound as
+  `series: s.prefix(vmKey).getTypedProp("statusSeries") as any`; read `reference/bar.md` for
+  stack/label options before writing it.
+- "Color a coverage matrix cool-to-warm" → heatmap series with `data: [x, y, value][]` plus a
+  `visualMap` whose `inRange.color` comes from the theme helper's heatmap ramp
+  (`--chart-heatmap-N` CSS vars), never a hardcoded color array; read `reference/heatmap.md`
+  and `reference/visualmap.md`.
+- "My chart renders the text `vm.mySeries` instead of bars" → the `s.chart` node is missing
+  `bindings: { traverseRaptorChart: true }`, so the `getTypedProp` leaves inside `options` were
+  never walked; add it and the binding resolves.
+
 ## Related skills
 
 - `raptor` — the framework charts are mounted in (RSScriptor `s.chart`, `getTypedProp` bindings, ViewModel getters, `raptorDom.nodeT`).
 
 ---
-*A deeper option/DSL cheatsheet lives in `${CLAUDE_PLUGIN_ROOT}/skills/echarts/reference/echarts-reference.md`.*
+*Read `reference/echarts-reference.md` when a question is about the ECharts option model itself (component keys, merge behavior) rather than a specific series type.*

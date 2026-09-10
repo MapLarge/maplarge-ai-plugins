@@ -3,6 +3,7 @@
 Numeric range/value slider (`s.slider`, web component `<ml-slider>`) and a compact percentage popup slider (`s.percentSlider`). The range slider supports single-thumb or dual-thumb (`rangeMode`) selection, optional text inputs, ticks, tooltips, fill, gradient track, and automatic display/native unit conversion. Use it as a numeric filter on a data column or as a plain bound value picker.
 
 ## When to use
+
 - A numeric min/max **range filter** over a data column (dual-thumb, `rangeMode: true`).
 - A single value picker (one thumb) bound to a VM number.
 - Unit-aware numeric selection (column has `unitInfo`; slider shows display units, filters in native units).
@@ -11,6 +12,7 @@ Numeric range/value slider (`s.slider`, web component `<ml-slider>`) and a compa
 For a circular dial use `svg.md`; for time scrubbing use `time-slider.md`; for a paired min/max number-input filter widget see `numeric-range-filter.md`.
 
 ## Builder
+
 `s.slider(options: ViewDefinitions.ISlider)` produces node `type: "slider"`. Backing node class: `Slider extends RaptorNode`. Value type: `SliderValue = [number, number?]` (second element present only in `rangeMode`).
 
 Key `ISlider` fields: `min` (required), `max` (required), `step?`, `rangeMode?: boolean`, `direction?: 'Horizontal' | 'Vertical'`, `invertFill?: boolean`, `showFill?: boolean`, `showTextInputs?: boolean`, `showTooltips?: boolean`, `showTicks?: boolean`, `tickMarkStep?: number`, `gradientBackground?: [string, string]`, `unitInfo?: ml.data.table.IUnitInfo`, `showUnitLabel?: boolean`, `label?: ILabel | string`, `srOnly?`, `id?`. Note: `showTextInputs`, `showFill`, `showTooltips` default **true**; `rangeMode`, `invertFill`, `showTicks` default **false**.
@@ -34,7 +36,9 @@ s.percentSlider({ max: 1, tooltipPrefix: 'Opacity',
 ```
 
 ## Bindings & events
+
 `ISlider.bindings` (all optional, all `BindingProp`):
+
 - `value` — `SliderValue | number` (single number is auto-wrapped to `[n]`). Primary binding; written back on change.
 - `min`, `max`, `step` — `number`; rebind range/granularity reactively.
 - `disable` — `boolean`.
@@ -48,7 +52,9 @@ Data-source filtering events `filterBetween` / `filterNotBetween` are **not hand
 `IPercentSlider.bindings`: universal bindings + `data` (a `number`).
 
 ## ViewModel / instance API
+
 Reach the live node: `const sl = raptorDom.nodeT<Slider>("mySlider")`. Useful members:
+
 - Reactive setters that re-sync the web component: `min`, `max`, `step`, `direction`, `rangeMode`, `invertFill`, `showFill`, `showTooltips`, `showTicks`, `tickMarkStep`, `showTextInputs`, `gradientBackground`.
 - `getDisplayUnit(): string`, `getNativeUnit(): string` (unit-conversion mode).
 - `isConnectedToDataSource: boolean` — set true automatically once a dataset supplies `values`.
@@ -59,12 +65,15 @@ The web-component element (`Slider.root as SliderElement`) exposes `value: Slide
 `PercentSlider` instance: `percentValue` (number), `tooltipPrefix`, `show()` / `hide()` for the popup.
 
 ## Patterns
+
 **Single-value picker.** One-thumb slider bound to a VM number:
+
 ```ts
 s.slider({ viewName: 'level', min: 1, max: 10, step: 1,
     bindings: { value: s.getTypedProp(vm => vm.level) },
     events: [{ event: 'change', handler: vm => vm.onLevel }] });
 ```
+
 Handle: `public onLevel = (v: SliderValue) => { this.level = v[0]; };`
 
 **Column range filter (config-driven).** Register the slider's dataset with `{ dataSource, column }` via your control's config schema. `SliderDataSetContract` then computes the column Min/Max (`CalcColumnStats`), seeds `rangeMode: true`, populates the slider extent, and wires `filterBetween`/`filterNotBetween` filter actions automatically. You do not write the filter handlers — just supply `dataSource` and `column`.
@@ -74,6 +83,7 @@ Handle: `public onLevel = (v: SliderValue) => { this.level = v[0]; };`
 **Gradient / ticks.** `gradientBackground: ['#2b6', '#c33']` colors the track start→end; `showTicks: true` with `tickMarkStep` draws tick marks.
 
 ## Gotchas
+
 - `min` and `max` are **required**. Omitting them leaves the web component on its defaults (0/100).
 - `value` is a `SliderValue` (array) on the way out even for single-thumb — read `v[0]`. A bare number going *in* is accepted and auto-wrapped.
 - In `rangeMode`, the binding must hold a two-element array; a single number only moves one thumb.
@@ -82,6 +92,7 @@ Handle: `public onLevel = (v: SliderValue) => { this.level = v[0]; };`
 - The deprecated `data` binding (`{ value, min, max }`) coexists with `value`; prefer `value`. The contract path uses `data.values` internally — that is framework-internal, not something to author.
 
 ## Related skills
+
 - `raptor` — parent skill: View/VM split, RSScriptor, `bindings`/`events`, `update()`, `getTypedProp`, `raptorDom.nodeT`.
 - `numeric-range-filter.md` — paired min/max number-input filter widget (alternative range UI).
 - `time-slider.md` — time-scrubbing slider.

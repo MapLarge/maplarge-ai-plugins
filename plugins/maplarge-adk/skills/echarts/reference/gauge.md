@@ -9,6 +9,7 @@ ECharts `type: "gauge"` — a needle on a circular dial showing one numeric valu
 - Qualitative bands matter (red / amber / green zones) — gauges color the arc by value ratio.
 
 Prefer a sibling when:
+
 - Parts of a whole / proportions → **pie.md** (donut/ring).
 - Comparing many categories or values → **bar.md**.
 - Stage-to-stage conversion → **funnel.md**.
@@ -59,6 +60,7 @@ data: [
     detail: { offsetCenter: ["-40%", "92%"] } },
 ]
 ```
+
 `value` is plotted on the `min..max` scale (NOT 0..1). `name` shows in `title`; `value` shows in `detail`. Per-item `pointer`, `progress`, `title`, `detail`, and `itemStyle` override the series-level versions.
 
 ## Key options
@@ -84,6 +86,7 @@ From `ml.echarts.GaugeSeriesOption`:
 ## Patterns
 
 **Theme-reactive colors** — resolve CSS vars at access time (see parent skill), don't hardcode. Build the band array from theme getters:
+
 ```ts
 axisLine: { lineStyle: { width: 14, color: [
   [0.6, chartTheme.series(0)], [0.85, "#fac858"], [1, chartTheme.danger] ] } }
@@ -91,6 +94,7 @@ detail: { color: chartTheme.text, formatter: "{value}%" }
 ```
 
 **Progress-arc KPI (no scale clutter)** — hide ticks/labels, show only the arc + big number:
+
 ```ts
 { type: "gauge", startAngle: 90, endAngle: -270, radius: "100%",
   pointer: { show: false }, progress: { show: true, width: 18, roundCap: true },
@@ -101,6 +105,7 @@ detail: { color: chartTheme.text, formatter: "{value}%" }
 ```
 
 **Bind from a ViewModel getter** — return the whole series fragment typed, bind it in the view (requires `bindings: { traverseRaptorChart: true }`):
+
 ```ts
 // VM
 private _gaugeSeries: ml.echarts.GaugeSeriesOption[] = null;
@@ -126,6 +131,6 @@ public get gaugeSeries() { return this._gaugeSeries; }
 ## Related skills
 
 - `echarts` — parent: option model, `s.chart` binding, theming, `onChartCreated` events.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `raptorDom.nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `raptorDom.nodeT<RaptorChart>`).
 - `pie.md` — proportions / donut ring (the usual alternative for "share of total").
 - `bar.md` — comparing many values; `funnel.md` — stage conversion; `line.md` — trend over time.

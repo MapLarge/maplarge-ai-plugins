@@ -4,13 +4,13 @@ The patterns/overview layer for Raptor UI: which pattern to reach for, what v5 c
 editor-vs-custom-extension calls. The comprehensive design-patterns guide is included in full below;
 use the "When to Read What" index to jump to the relevant sections before writing UI code. For
 per-control *implementation* detail (exact options, bindings, methods, gotchas), use the control
-docs under `${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/` and the framework conventions
+docs under `controls/` (next to this file) and the framework conventions
 in the `raptor` skill body; charts are in the `echarts` skill.
 
 ## When to Read What
 
 | Task | Sections to Read |
-|------|-----------------|
+| ------ | ----------------- |
 | Answering "can this be done in v5?" | Available Raptor Controls, Dynamic Style Binding, Chart Interactions, DataGrid Advanced Patterns, Overview (v4 vs v5 table) |
 | Determining v5 editor vs custom extension | Overview, Extension Development Patterns, Available Raptor Controls |
 | Color coding / conditional formatting | Dynamic Style Binding, Chart Interactions (ECharts Gradient Colors), DataGrid Advanced Patterns (Custom Row ViewModel) |
@@ -211,7 +211,7 @@ layoutViewModel.addSidebarItem(
 ## Common Gotchas
 
 | Gotcha | Problem | Solution |
-|--------|---------|----------|
+| -------- | --------- | ---------- |
 | `traverseRaptorChart` is one-shot | Chart data set at render time, async data arrives later → empty chart | Manually call `chartInstance.setOption()` after data loads |
 | `onDataSourceChanged` not in .d.ts | TypeScript error on DynamicViewModel method | Cast: `(this as any).onDataSourceChanged(...)` |
 | `flexFill: true` for equal widths | Sets `flex-basis: auto` → unequal widths | Use `flexGrow: 1, flexShrink: 1` + `customCssClasses: "flex-basis-0"` |
@@ -228,7 +228,7 @@ layoutViewModel.addSidebarItem(
 These are tracked in the server repo under `docs/extensions/ml-docs-dev/client/`:
 
 | File | Content |
-|------|---------|
+| ------ | --------- |
 | `raptor-bindings.ts` | Binding examples |
 | `raptor-charts.ts` | Chart usage patterns |
 | `raptor-data-sources.ts` | Data source integration |
@@ -239,6 +239,7 @@ These are tracked in the server repo under `docs/extensions/ml-docs-dev/client/`
 | `code-examples/raptor-nodes/` | Individual control examples (accordion, chart, dataGrid, quickSelect, sidebar, table, tree, navTabs, dropdown, form) |
 
 Also see the `ml-docs-raptor` docs extension (`client/_static/markdown/`):
+
 - `intro-to-dashboard-development.md` — framework overview
 - `bindings.md` — binding mechanics
 - `events.md` — event handling
@@ -246,7 +247,7 @@ Also see the `ml-docs-raptor` docs extension (`client/_static/markdown/`):
 ## Key Framework Source Files
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `MapLarge.Server/src/framework/raptor/RaptorEngine.ts` | Main engine, module loading, navigation |
 | `MapLarge.Server/src/framework/raptor/RaptorNavigator.ts` | IRaptorModule interface, navigation |
 | `MapLarge.Server/src/framework/raptor/renderer/RSScriptor.ts` | Fluent builder API |
@@ -269,9 +270,9 @@ Also see the `ml-docs-raptor` docs extension (`client/_static/markdown/`):
 
 ---
 
-# MapLarge UI Design Patterns
+## MapLarge UI Design Patterns
 
-> **Comprehensive guide to MapLarge UI development patterns for Claude Code assistance.**
+> **Comprehensive guide to MapLarge UI development patterns.**
 
 This document covers the MapLarge UI component systems, patterns, and best practices. The focus is primarily on the modern **v5/Raptor** system, with coverage of the legacy **v4** system for maintenance purposes.
 
@@ -333,7 +334,7 @@ This document covers the MapLarge UI component systems, patterns, and best pract
 MapLarge has two UI systems:
 
 | Aspect | V4 (Legacy) | V5/Raptor (Modern) |
-|--------|-------------|-------------------|
+| -------- | ------------- | ------------------- |
 | **Status** | Maintenance | Primary/Active |
 | **Base Class** | `BaseControl<T>`, `BaseInputControl<T>` | `RaptorNode`, `RaptorNodeBase<T>` |
 | **DOM Manipulation** | jQuery-based | Pure DOM APIs / Web Components |
@@ -351,7 +352,7 @@ MapLarge has two UI systems:
 
 ## Key File Locations
 
-```
+```text
 MapLarge.Server/src/
 ├── framework/
 │   ├── raptor/                    # v5/Raptor system
@@ -415,7 +416,7 @@ export function MyView(): ViewDefinitions.IRenderingDefinition {
 #### Key Methods
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `RSScriptor.create<TViewModel>()` | Create new scriptor with typed ViewModel |
 | `.page(modelKey, friendlyName, layoutModelKey?, headerModelKey?, fullScreen?)` | Define the page |
 | `.view(name, buildFunc)` | Define a view within the page |
@@ -983,7 +984,7 @@ s.chart({
 These are v5-specific controls implemented as web components.
 
 | Control | Element | Purpose |
-|---------|---------|---------|
+| --------- | --------- | --------- |
 | `DateTime` | `<ml-datetime>` | Date/time picker |
 | `Slider` | `<ml-slider>` | Slider/range input |
 | `QuickSelect` | `<ml-quick-select>` | Dropdown selection |
@@ -1248,7 +1249,7 @@ public onReorder(event: { fromIndex: number, toIndex: number }): void {
 #### Foreach Rendering Modes
 
 | Mode | Behavior | Use When |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | `Auto` | Framework chooses best strategy | Default — works for most cases |
 | `RenderAll` | Renders all items immediately | Small lists (<100 items) |
 | `InfiniteScroll` | Loads items as user scrolls down | Large lists, vertical scroll |
@@ -1284,7 +1285,7 @@ This section covers how controls behave when nested inside flex containers, card
 
 DataGrid uses a **flex column + CSS grid hybrid layout**:
 
-```
+```text
 .ml-raptor-datagrid (display:flex; flex-direction:column)
 ├── .ml-datagrid-container (grid layout, flex-grow:1, flex-shrink:1)
 │   ├── .ml-datagrid-content (overflow:auto, height:100%)  ← scrollable data
@@ -1295,12 +1296,14 @@ DataGrid uses a **flex column + CSS grid hybrid layout**:
 ```
 
 **Key Components:**
+
 - `mainTable` - Primary data area (scrollable)
 - `headerTable` - Column headers (separate, synchronized)
 - `leftTable` - Pinned columns (optional)
 - `topleftTable` - Pinned column headers (optional)
 
 **CSS Structure (from Renderer.ts):**
+
 ```css
 .ml-raptor-datagrid {
     position: relative;
@@ -1327,7 +1330,7 @@ DataGrid uses a **flex column + CSS grid hybrid layout**:
 The inner `.ml-datagrid-content` uses `height: 100%`, which **only works when the parent has a defined height**.
 
 | Symptom | Root Cause |
-|---------|------------|
+| --------- | ------------ |
 | DataGrid collapses to 0 height | Parent flex container has no height constraint |
 | Content overflows instead of scrolling | `height: 100%` has no reference point |
 | Column widths calculated wrong | Height not applied → viewport width unknown |
@@ -1364,11 +1367,13 @@ interface IViewDefinition {
 ### The minHeight: 0 Rule
 
 **Why it matters:**
+
 - Default `min-height` in flex is `auto` (content size)
 - Flex children can't shrink below content size with `auto`
 - Setting `minHeight: 0` allows shrinking → enables scrolling
 
 **Where to apply:**
+
 ```typescript
 // Every flex container in the ancestor chain needs this
 s.div({
@@ -1378,6 +1383,7 @@ s.div({
 ```
 
 **Accordion items get this automatically** (from Renderer.ts line 7721):
+
 ```typescript
 style: { minHeight: "0" }
 ```
@@ -1408,6 +1414,7 @@ const frCount = sum(frFields.map(f => parseFloat(f.width)))
 ```
 
 **Column Width Persistence:**
+
 - `columnSizes[fieldName].setByUser: boolean` tracks manual resizes
 - User-resized columns NOT recalculated on viewport resize
 
@@ -1513,7 +1520,7 @@ s.dialogBody({ padding: { around: 3 } })
 ### Common Issues and Solutions
 
 | Issue | Cause | Solution |
-|-------|-------|----------|
+| ------- | ------- | ---------- |
 | DataGrid height 0 in flex | Parent has no height | Add `height: Xpx` to DataGrid OR ensure parent has `flex: { flexGrow: 1 }` with constrained ancestor |
 | Content overflows | Missing `minHeight: 0` on flex parent | Add `minHeight: 0` to all flex ancestors |
 | Columns calculate wrong | Grid renders before height applied | Use explicit `height` instead of `heightUtility` |
@@ -1541,6 +1548,7 @@ This section covers RaptorChart (ECharts wrapper) behavior in flex containers. K
 **Location:** `MapLarge.Server/src/framework/raptor/raptorDom/controls/Chart/RaptorChart.ts`
 
 RaptorChart uses a built-in resize mechanism:
+
 - Uses `dom.onResize` callback to detect container size changes
 - Calls `chart.resize()` on the ECharts instance when container resizes
 - **No custom ResizeObserver or setTimeout hacks are needed**
@@ -1555,6 +1563,7 @@ this.dom.onResize = () => {
 ```
 
 **Known behavior:**
+
 - Charts respond quickly when container **grows**
 - Slight lag when container **shrinks** (inherent ECharts canvas resize timing)
 - This is acceptable and not a bug to fix
@@ -1566,13 +1575,14 @@ this.dom.onResize = () => {
 **Root Cause:** The `flex-basis` property determines the starting size before flex-grow/shrink.
 
 | flex-basis value | Behavior |
-|------------------|----------|
+| ------------------ | ---------- |
 | `auto` (default) | Each item starts from its **content size** (unequal) |
 | `0` | Each item starts from **zero** (equal widths with flex-grow) |
 
 **The Framework Gap:**
 
 The `IFlexBehavior` interface (`FlexUtilities.ts`) provides:
+
 - ✅ `flexGrow: 0 | 1`
 - ✅ `flexShrink: 0 | 1`
 - ❌ `flexBasis` - **NOT available**
@@ -1661,6 +1671,7 @@ s.div({
 ```
 
 **Key points:**
+
 - Use `flex: { flexGrow: 1, flexShrink: 1 }` - NOT `flexFill: true`
 - Add `customCssClasses: "flex-basis-0"` to each card
 - Add `minWidth: 0` to allow shrinking below content size
@@ -1670,7 +1681,7 @@ s.div({
 ### What NOT to Do
 
 | Anti-pattern | Why it fails |
-|--------------|--------------|
+| -------------- | -------------- |
 | `setTimeout(() => chart.resize(), 1500)` | Unnecessary hack - charts resize automatically |
 | `ResizeObserver` in ViewModel | Duplicates built-in functionality |
 | `requestAnimationFrame` for resize | Not needed - `dom.onResize` handles timing |
@@ -1774,7 +1785,7 @@ series: [{
 The `chartDataSet.source` property determines how data is interpreted:
 
 | Source Type | Description | Data Shape |
-|-------------|-------------|------------|
+| ------------- | ------------- | ------------ |
 | `ColumnBasedDictionary` | Dict of column arrays | `{ "col1": [v1, v2], "col2": [v1, v2] }` |
 | `2DArray` | 2D array with header row | `[["x","y"], [1,2], [3,4]]` |
 | `RowBasedKeyValueObjectArray` | Array of objects | `[{ x: 1, y: 2 }, { x: 3, y: 4 }]` |
@@ -1834,6 +1845,7 @@ s.chart({
 Working production example: `MapLarge.Server/docs/extensions/ml-docs-dev/client/code-examples/charts/basicLine/example1/`.
 
 > **GOTCHAS (verified 2026-04-17):**
+>
 > - `CalcGroupMetric` constructor is `(vm, name, options, startDisabled?)` — vm comes FIRST, not an id. Confused with `BaseTransform` which is `(id, definition, sourceScope, destScope)`.
 > - `aggregate` must be `"Count" | "CountDistinct" | "Avg" | "Sum" | "Min" | "Max"` — lowercase is rejected by the Zod strict schema.
 > - Missing a `groupby` column on the data source is fine if you use a computed bucket via `sqlselect`, e.g., `sqlselect: ["*", "FLOOR(x/10)*10 AS bucket"]`, then group by `bucket`. But `FLOOR(confidence*10)/10` is integer division in MapLarge's SQL dialect — use `FLOOR(confidence*10)/10.0` to force float division.
@@ -2324,7 +2336,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Layout Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `div` | Generic container | flex, padding, margin, position |
 | `container` | Bootstrap container | fluid, maxWidth |
 | `row` | Bootstrap row | gutters |
@@ -2344,7 +2356,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Input Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `button` | Clickable button | kind, size, disabled, svgOptions |
 | `buttonGroup` | Grouped buttons | vertical, size |
 | `input` | Text input | inputType, placeholder, maxLength |
@@ -2364,7 +2376,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Display Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `h1`-`h6` | Headings | text, textColor |
 | `heading` | Dynamic heading | size, text |
 | `p` / `paragraph` | Paragraph text | text |
@@ -2382,7 +2394,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Data Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `dataGrid` | Data grid/table | columns, data, pagination, height |
 | `table` | HTML table | headers, rows, striped, bordered |
 | `tableHead` | Table header section | - |
@@ -2398,7 +2410,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Navigation Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `anchor` | Link | href, target, navLink |
 | `navTabs` | Tab navigation | tabs, activeTab |
 | `navTabItem` | Tab item | text, active |
@@ -2409,7 +2421,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Chart Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `chart` | Generic chart (ECharts) | options, height |
 | `lineChart` | Line chart | series, xAxis, yAxis |
 | `barChart` | Bar chart | series, orientation |
@@ -2422,7 +2434,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 ### Map Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `raptorMap` | MapLarge map | layers, center, zoom |
 | `legend` | Map legend | items, position |
 | `timeline` | Time animation | range, current |
@@ -2459,7 +2471,7 @@ this.defaultMapOptions = {
 **Cross-version behavior:**
 
 | Flag | 4.127 (pre-chrome refactor) | Stable_Trunk |
-|---|---|---|
+| --- | --- | --- |
 | `showEditor: true` | Inline `LayerListButton` via `RaptorMap.ts:443-476` | Routed through `RaptorMapChrome.mapChromeConfig` at `RaptorMapChrome.ts:194-218` |
 | `noLegacyButtons: true` | Ignored (option doesn't exist on 4.127) | Required to engage `RaptorMapChrome` at all (see `:193`) |
 | `mapChrome.rightButtonGroup` | Ignored — helper doesn't exist | Works; overrides the default config |
@@ -2469,14 +2481,14 @@ Setting both flags is safe on both cores. Default chrome render includes: `zoomi
 
 **What showEditor does NOT include:** a legend button. If the ticket requires a legend, either ship without one and argue the framework default is sufficient, or add a single standalone dropdown panel for legend content.
 
-**Framing rule when you see a "put buttons on the map" ask:** Before building, grep `.adk/types.d/MapLarge.Server.d.ts` for `showEditor`, `searchBox`, `mapChrome`, `noLegacyButtons`, `LayerList` — the framework option is likely already there. This lesson was learned the hard way on CORD-45061 after building a 300-LOC custom overlay that got replaced with two config lines.
+**Framing rule when you see a "put buttons on the map" ask:** Before building, grep `.adk/types.d/MapLarge.Server.d.ts` for `showEditor`, `searchBox`, `mapChrome`, `noLegacyButtons`, `LayerList` — the framework option is likely already there. This lesson was learned the hard way after building a 300-LOC custom overlay that got replaced with two config lines.
 
 ### Map Runtime API: Layer visibility and base layers
 
 Public API on `ml.ui.map.Map` (accessed via `raptorDom.node("TrackMap")._map`):
 
 | Operation | API | Source |
-|---|---|---|
+| --- | --- | --- |
 | Enumerate registered layers | `mlMap.layers` (array), `mlMap.getLayers()` (method) | `Map.ts:220`, `Map.ts:1872` |
 | Toggle a single layer | `layer.show()` / `layer.hide()` on `APILayer` | `APILayer.ts:113,131` |
 | Switch base layer | `await mlMap.updateBaseLayer(name)` | `Map.ts:1739-1789` |
@@ -2503,7 +2515,7 @@ Known built-in base-layer preset names for `updateBaseLayer`: `"color"` (streets
 ### Advanced Controls
 
 | Control | Description | Key Properties |
-|---------|-------------|----------------|
+| --------- | ------------- | ---------------- |
 | `codeEditorMonaco` | Monaco code editor | language, value, theme |
 | `dialog` | Modal dialog | title, size, footer, staticBackdrop |
 | `dialogHeader` | Dialog header | showCloseButton |
@@ -2674,7 +2686,7 @@ Button
 
 ### V4 Control Locations
 
-```
+```text
 MapLarge.Server/src/framework/controls/
 ├── input/           # Input controls
 │   ├── Button.ts
@@ -2703,7 +2715,7 @@ How to set up a new ADK extension from scratch: file structure, dashboard regist
 
 ### Extension Structure
 
-```
+```text
 extensions/MyExtension/
 ├── manifest.json
 ├── client/
@@ -2841,7 +2853,7 @@ export async function initModule(container: HTMLElement, route: ILocatedRoute): 
 #### Pattern Comparison
 
 | Pattern | Use Case | Reusability |
-|---------|----------|-------------|
+| --------- | ---------- | ------------- |
 | `registerPublicDashboard()` + `initModule()` | Standard standalone extension | Medium |
 | `defineModule()` returning `IRaptorModule` | Dynamically loaded by host extension | High |
 | Direct engine API (`addPage`/`addDialog`) | Full initialization control | Medium |
@@ -3516,7 +3528,7 @@ public loadWorkflow(item: any): void {
 Some production v4 controls have no Raptor v5 native counterpart. In principle you can wrap them with `DashboardWrapper`:
 
 | v4 Control | What it does | Glue transforms |
-|---|---|---|
+| --- | --- | --- |
 | `TimeSlider2` | Range/mark selection over a time domain | `TimeSlider2ToFilter` (slider → data source filter) |
 | `PlaybackControls` | Play / pause / step / speed buttons | `PlaybackControlsToTimeSlider2` (buttons ↔ slider state) |
 
@@ -3546,6 +3558,7 @@ new TimeSlider2ToFilter("TimeSliderFilter", {
 ```
 
 > **WARNING — this does not fully work in v5 pages today.** Verified 2026-04-17 in `udl-track-explorer`:
+>
 > - The `DashboardWrapper` div mounts, but the inner v4 control does not render (strip stays at `height: 0`).
 > - `TimeSlider2ToFilter`/`PlaybackControlsToTimeSlider2` constructors call `this.scopeData.timeColumnOut.subscribe(...)` on a `scopeData` that is undefined because the wrapped control hasn't published its scope. This throws a null-ref synchronously, aborting the entire `initialize()` method and breaking unrelated code (e.g., DataGrid setup) further down.
 > - **Mitigation:** Isolate these v4 transforms in their own `try { registerTransforms([...]) } catch {}` block so unrelated setup still succeeds.
@@ -4049,6 +4062,7 @@ export class MyPageViewModel extends RaptorViewModel {
 #### Always Include
 
 1. **Root container flex setup**:
+
    ```typescript
    flex: { dFlex: true, flexColumn: true, flexFill: true },
    minHeight: 0,
@@ -4056,6 +4070,7 @@ export class MyPageViewModel extends RaptorViewModel {
    ```
 
 2. **Scrollable content areas**:
+
    ```typescript
    overflow: 'auto',
    minHeight: 0  // Critical for scrolling to work
@@ -4083,7 +4098,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### RSScriptor Methods - Layout
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `.container(opts)` | Bootstrap container |
 | `.row(opts)` | Bootstrap row |
 | `.column(opts)` | Bootstrap column |
@@ -4101,7 +4116,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### RSScriptor Methods - Input
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `.button(opts)` | Button |
 | `.input(opts)` | Text input |
 | `.textArea(opts)` | Multiline text |
@@ -4116,7 +4131,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### RSScriptor Methods - Display
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `.h1(opts)` ... `.h6(opts)` | Headings |
 | `.p(opts)` / `.paragraph(opts)` | Paragraph |
 | `.span(opts)` | Inline span |
@@ -4131,7 +4146,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### Common Binding Properties
 
 | Binding | Type | Purpose |
-|---------|------|---------|
+| --------- | ------ | --------- |
 | `text` | string | Text content |
 | `visible` | boolean | Visibility |
 | `enable` | boolean | Enable/disable |
@@ -4144,7 +4159,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### Flex Utility Properties
 
 | Property | Values |
-|----------|--------|
+| ---------- | -------- |
 | `dFlex` | boolean |
 | `flexColumn` / `flexRow` | boolean |
 | `flexGrow` | 0, 1, true |
@@ -4158,7 +4173,7 @@ export class MyPageViewModel extends RaptorViewModel {
 ### Bootstrap Column Sizes
 
 | Property | Screen Size |
-|----------|-------------|
+| ---------- | ------------- |
 | `columnXxl` | >= 1400px |
 | `columnXl` | >= 1200px |
 | `columnLg` | >= 992px |
@@ -4171,7 +4186,7 @@ Values: 1-12 (12 = full width)
 ### Height Properties Priority
 
 | Property | Unit | Notes |
-|----------|------|-------|
+| ---------- | ------ | ------- |
 | `height` | px | Applied with `!important` |
 | `heightVH` | vh | Viewport height |
 | `heightPercentage` | % | Requires parent height |

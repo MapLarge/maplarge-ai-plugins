@@ -36,6 +36,7 @@ const option: ml.echarts.EChartsOption = {
 ## Key options
 
 Tooltip (`ml.echarts.TooltipComponentOption`, most fields via `CommonTooltipOption`):
+
 - `show?: boolean` — master toggle.
 - `trigger?: "item" | "axis" | "none"` — per-data-point, per-axis (all series at that category), or off.
 - `axisPointer?` — embedded indicator: `type?: "line" | "shadow" | "cross" | "none"`, plus `axis?`, `crossStyle`, `lineStyle`, `shadowStyle`, `label`. Only meaningful with `trigger: "axis"`.
@@ -55,6 +56,7 @@ Top-level `axisPointer` component (`ml.echarts.AxisPointerComponentOption`, exte
 ## Patterns
 
 ### Rich HTML formatter with the prebuilt marker
+
 ```ts
 tooltip: {
   trigger: "axis",
@@ -64,14 +66,17 @@ tooltip: {
   },
 }
 ```
+
 `p.marker` already emits the correct colored dot for the active `renderMode`; prefer it over hand-rolled swatches.
 
 ### Cross indicator on a line chart
+
 ```ts
 tooltip: { trigger: "axis", axisPointer: { type: "cross", label: { backgroundColor: "#6a7985" } } }
 ```
 
 ### Theme-reactive popup (read CSS vars at access time)
+
 ```ts
 tooltip: {
   backgroundColor: chartTheme.surface,
@@ -79,14 +84,17 @@ tooltip: {
   textStyle: { color: chartTheme.text },
 }
 ```
+
 See the parent `echarts` skill for the `chartTheme` CSS-variable resolver pattern; never hardcode popup colors.
 
 ### Escape a clipping container
+
 ```ts
 tooltip: { appendTo: "body", confine: true }   // popup overflows a scrolled/overflow:hidden panel
 ```
 
 ### Link axis pointers across charts
+
 ```ts
 // top-level, not inside tooltip
 axisPointer: { link: [{ xAxisIndex: "all" }], snap: true }
@@ -106,6 +114,6 @@ axisPointer: { link: [{ xAxisIndex: "all" }], snap: true }
 ## Related skills
 
 - `echarts` — parent: the overall option object, `setOption` merge behavior, the `chartTheme` CSS-var pattern, and event wiring.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart (and its tooltip) mounts in a Raptor view via `s.chart({ options })` with `traverseRaptorChart` bindings.
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart (and its tooltip) mounts in a Raptor view via `s.chart({ options })` with `traverseRaptorChart` bindings.
 - `echarts-axis`-bearing series whose hover this configures: `line.md`, `bar.md`, `scatter.md`, `candlestick.md`, `boxplot.md`, `heatmap.md`.
 - `datazoom.md` — pairs with `axisPointer` on the same axis for pan/zoom + crosshair.

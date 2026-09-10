@@ -78,6 +78,7 @@ registerCustomRoute({
 ```
 
 Local ADK URLs are:
+
 - `https://localhost:8443/dashboard/ext/my-extension/home`
 - `https://localhost:8443/dashboard/ext/my-extension/MyPageKey`
 The path points to the extension module dashboard. The route parameters are passed to `initModule` as `route.values`.

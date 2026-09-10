@@ -4,15 +4,14 @@ A Claude Code marketplace for MapLarge development tools and workflows.
 
 It contains the following plugins:
 
-| Plugin | Audience | Platform | Credentials |
-|--------|----------|----------|-------------|
-| **`maplarge-adk`** | Anyone building ADK extensions | macOS / Linux / Windows (Node) | None |
+| Plugin             | Audience                         | Platform                         | Credentials |
+|--------------------|----------------------------------|----------------------------------|-------------|
+| **`maplarge-adk`** | Anyone building ADK extensions   | macOS / Linux / Windows (Node)   | None        |
 
 ## Requirements
 
-- **Node.js ≥ 18** — runs all bundled helper scripts of the generic plugins.
+- **Node.js ≥ 22** (current LTS; pinned in `.tool-versions`) — runs the static check suite, whose `node --test` glob patterns need Node 21+. The `maplarge-adk` helper scripts themselves only need Node ≥ 18.
 - **git** — branch/PR workflows.
-- **PowerShell 7+** (`pwsh`).
 - **MapLarge CLI** (`maplarge`) and **.NET SDK 10.0** (`dotnet`) for ADK environment checks and the local server.
 
 ```bash
@@ -25,20 +24,18 @@ dotnet tool install -g MapLargeInc.CLI   # MapLarge CLI, if needed
 
 Example installation using Claude Code's remote marketplace-add:
 
+```bash
+/plugin marketplace add https://github.com/maplarge/maplarge-ai-plugins
 ```
-/plugin marketplace add https://github.com/maplarge/maplarge-ai-plugins-official
-```
-
 
 ### Install the plugin(s) you want
 
-```
-/plugin install maplarge-adk@maplarge-claude-marketplace
+```bash
+/plugin install maplarge-adk@maplarge-claude-marketplace-public
 /plugin list        # verify
 ```
 
-The `@maplarge-claude-marketplace` suffix is the marketplace's declared name (from `.claude-plugin/marketplace.json`); it does **not** depend on the folder name you cloned into.
-
+The `@maplarge-claude-marketplace-public` suffix is the marketplace's declared name (from `.claude-plugin/marketplace.json`); it does **not** depend on the folder name you cloned into.
 
 ### Updating
 
@@ -56,19 +53,28 @@ To standardize across machines, register and enable everything in your user `~/.
 ```jsonc
 {
   "extraKnownMarketplaces": {
-    "maplarge-claude-marketplace": {
-      "source": { "source": "directory", "path": "C:\\DevStuff\\repos\\claude-plugins" }
+    "maplarge-claude-marketplace-public": {
+      "source": { "source": "directory", "path": "/path/to/your/clone/maplarge-ai-plugins" }
     }
   },
   "enabledPlugins": {
-    "maplarge-adk@maplarge-claude-marketplace": true,
-    "maplarge-internal-tools@maplarge-claude-marketplace": true,
-    "maplarge-reference@maplarge-claude-marketplace": true
+    "maplarge-adk@maplarge-claude-marketplace-public": true
   }
 }
 ```
 
 The `extraKnownMarketplaces` key must match the marketplace's `name` from `.claude-plugin/marketplace.json`.
+
+## Contributing: run the checks
+
+Skill PRs must pass the static check suite - frontmatter schema, link resolution, banned terms, content rules:
+
+```bash
+npm install    # once per clone
+npm run check
+```
+
+The same rules run in-editor as you type; open this repo as its own VS Code workspace and accept the recommended extensions (markdownlint + Vale).
 
 ---
 
@@ -80,7 +86,7 @@ Customer-safe guidance for building MapLarge ADK extensions. No configuration or
 
 **Docs** (`plugins/maplarge-adk/docs/`): ADK CLI workflows, extension/manifest reference, JSON query authoring, server API access, Raptor dashboard patterns + cookbook, mockups, source-of-truth precedence, troubleshooting, workspace detection, and local-repo context.
 
-**Helper scripts** (`plugins/maplarge-adk/scripts/`, print JSON):
+**Helper scripts** (`plugins/maplarge-adk/scripts/`, print JSON). Resolve `<plugin-root>` as the directory containing `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`:
 
 ```bash
 node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd .

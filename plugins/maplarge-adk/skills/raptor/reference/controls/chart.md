@@ -3,9 +3,11 @@
 A Raptor control that wraps an Apache ECharts instance. `s.chart({...})` declares the node; the ECharts option object inside `options` is everything ECharts knows about (defer that detail to the `echarts` skill).
 
 ## When to use
+
 Any time a view needs a visualization (bar/line/pie/scatter/heatmap/custom-render timeline). Reach for this node, not a raw `ml.echarts.init`. If you only need a bare canvas with no Raptor chrome/binding, the lower-level `RawEChart` / `chart` (`type: "chart"`) nodes exist, but `raptorChart` is the standard control and the one with selection, theming, the overflow menu, async overlays, and data binding.
 
 ## Builder
+
 `s.chart(options?: ViewDefinitions.IRaptorChart)` — emits a node with `type: "raptorChart"`, backed by the `RaptorChart` node class and the `RaptorChartViewModel` chrome (overflow menu, click-action toggles, properties panel). Key `IRaptorChart` fields:
 
 - `options: IRaptorChartOption | ml.echarts.EChartsOption` — the ECharts option object (the bulk of the work; see `echarts`). `IRaptorChartOption` is `DeepAllowString<EChartsOption>`, i.e. an EChartsOption whose values may be **binding-path strings** resolved at render time when `traverseRaptorChart` is on.
@@ -24,10 +26,13 @@ s.view("myChart", s => s
         bindings: { chartOptions: "myChartOptions", value: "mySelection" }
     }));
 ```
+
 A ViewModel getter typed `ml.echarts.EChartsOption` returns the option object; the chart re-renders when `update()` runs and the bound property changed.
 
 ## Bindings & events
+
 `bindings` is `IRaptorUniversalBindings & IRaptorChartBinding & IRaptorDataBinding`:
+
 - `chartOptions` — a VM property holding the full `ml.echarts.EChartsOption`. Preferred way to drive the chart.
 - `data` — generic two-way data binding; the node's `applyBindingData({ data, options? })` runs on change (used by recipe/dataset wiring).
 - `chartDataSet: { source, dataSource, property, pivotColumn, ... }` + `source: IChartDataSetSourceType` (`'ColumnBasedDictionary' | '2DArray' | 'RowBasedKeyValueObjectArray' | 'DataSource' | 'SingleValue' | 'ValueArray' | 'TreeData'`) — binds a query/data source to populate series.
@@ -38,6 +43,7 @@ A ViewModel getter typed `ml.echarts.EChartsOption` returns the option object; t
 `events: IEvent_RaptorChart[]` — `event` is the usual pointer/keyboard/`change` union. The wrapper specifically dispatches a handler whose `event` is `"click"` **only in `inspect` mode**, calling `handler(param, null, e, null)` where `e.info` is `{ seriesIndex, dimensions, selectedValue, data }`. For `click`/`brush` selection, read the `value` binding instead of an event.
 
 ## Selection model
+
 - `click` mode: toggles items into a selection set; pushes `IRaptorChartSelection[]` to the `value` binding and fires the change event. Clicking empty space clears.
 - `brush` mode: rectangular brush selection over the data; same `value` output.
 - `inspect` mode: no persisted selection — each click fires the `click` event with the full row object.
@@ -45,7 +51,9 @@ A ViewModel getter typed `ml.echarts.EChartsOption` returns the option object; t
 `IRaptorChartSelection = { dimensions: {name, precision?}[]; values: any[]; dataSourceName?; chartName? }`. A platform helper `RaptorChartActions.buildRaptorChartFilter(action, selections, filterState)` converts selections into `IQueryWhere` for cross-filtering a data source.
 
 ## Instance API
+
 Reach the node: `raptorDom.nodeT<RaptorChart>("myChart")` (or the convenience `getChartByViewName("myChart", raptorDom)`). The backing chrome VM is `chart.vm` (`RaptorChartViewModel`). Useful members:
+
 - `onChartCreated(cb: ChartCreatedCallback): IDisposable` — `cb(chart: ml.echarts.ECharts)`; fires once the instance exists (immediately if already created). This is the hook for wiring native ECharts events (`chart.on("datazoom"/"click"/"datarangeselected", …)`) — keep the returned `IDisposable` and `dispose()` it on teardown.
 - `onChartUpdated(cb: ChartUpdatedCallback): IDisposable` — `cb(options)` after each `setOption`.
 - `chartInstance: ml.echarts.ECharts` — the live instance (null before creation; prefer `onChartCreated`).
@@ -55,28 +63,33 @@ Reach the node: `raptorDom.nodeT<RaptorChart>("myChart")` (or the convenience `g
 - `static RaptorChart.ensureEChartsFramework(): Promise<void>` — awaits ECharts being loaded.
 
 ## Patterns
+
 1. Reactive options from a getter:
-```ts
-public get myChartOptions(): ml.echarts.EChartsOption {
-    return { xAxis: { type: "category", data: this.labels },
-             yAxis: { type: "value" },
-             series: [{ type: "bar", data: this.values }] };
-}
-// view: .chart({ viewName: "myChart", options: {} as ml.echarts.EChartsOption,
-//                bindings: { chartOptions: "myChartOptions" } })
-// changes appear after this.update("myChart")
-```
+
+   ```ts
+   public get myChartOptions(): ml.echarts.EChartsOption {
+       return { xAxis: { type: "category", data: this.labels },
+                yAxis: { type: "value" },
+                series: [{ type: "bar", data: this.values }] };
+   }
+   // view: .chart({ viewName: "myChart", options: {} as ml.echarts.EChartsOption,
+   //                bindings: { chartOptions: "myChartOptions" } })
+   // changes appear after this.update("myChart")
+   ```
+
 2. Click-to-filter: bind `value: "myChartSelection"`; in the setter, build a `setFilter` / `buildRaptorChartFilter` query from `IRaptorChartSelection[]` and apply it to your data source.
 3. Native event wiring (zoom persistence, drilldown):
-```ts
-const node = this.raptorDom.nodeT<RaptorChart>("myChart");
-this._sub = node.onChartCreated(ec => {
-    ec.on("dataZoom", () => { /* persist this.zoomState = ec.getOption().dataZoom */ });
-});
-// dispose this._sub in the VM/node teardown
-```
+
+   ```ts
+   const node = this.raptorDom.nodeT<RaptorChart>("myChart");
+   this._sub = node.onChartCreated(ec => {
+       ec.on("dataZoom", () => { /* persist this.zoomState = ec.getOption().dataZoom */ });
+   });
+   // dispose this._sub in the VM/node teardown
+   ```
 
 ## Gotchas
+
 - The chart re-renders only when a **bound** property changes and `update()`/`update(viewName)` runs; mutating `options` in place without changing the bound reference may not repaint — return a fresh object or call the node's `setOption`/`updateChart`.
 - `updateChart()` calls `setOption` with `replaceMerge: ['series','dataZoom','graphic']`. Switching chart families (cartesian↔pie↔treemap) can leak stale axes/encode; use `applyOptionsFromEditor(opts, { clearFirst: true })` (or rebuild the option object) for structural changes. Merge semantics are an `echarts` topic.
 - Don't `echarts.init` on the chart's own root — ECharts owns an inner mount element; use `chartInstance` / `onChartCreated`.
@@ -85,6 +98,7 @@ this._sub = node.onChartCreated(ec => {
 - Theme/color: charts react to the app theme; drive colors via theme/CSS variables rather than hard-coding — see `echarts`.
 
 ## Related skills
+
 - `raptor` (parent) — View/VM split, RSScriptor, bindings/events, `update()`, `nodeT`, RaptorNode lifecycle.
 - `echarts` — the ECharts option object model (series/axis/tooltip/visualMap/dataZoom/`renderItem`), `setOption` merge modes, theming. Everything inside `options` lives here.
 - `data-grid.md`, `map.md`, `legend.md` — siblings often paired with a chart for cross-filtering/highlighting.
@@ -96,7 +110,7 @@ See the Reference section below for the full `IRaptorChart` field table, binding
 ## ViewDefinitions.IRaptorChart fields
 
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `type` | `"raptorChart"` | Set automatically by `s.chart()`. |
 | `options` | `IRaptorChartOption \| ml.echarts.EChartsOption` | The ECharts option object. `IRaptorChartOption = DeepAllowString<EChartsOption>` (values may be binding-path strings when `traverseRaptorChart`). |
 | `chartType` | `ChartType?` | Editor-oriented preset enum (see below); not required for hand-authored charts. |
@@ -113,7 +127,7 @@ See the Reference section below for the full `IRaptorChart` field table, binding
 ## IRaptorChartBinding keys
 
 | Key | Type | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `chartOptions` | `BindingProp<EChartsOption>` | Full option object from a VM property. Preferred driver. |
 | `data` | `BindingProp<TData>` | Generic two-way; triggers node `applyBindingData({ data, options? })`. |
 | `chartDataSet` | `IChartDataSetSourceBinding` | Bind a data source/query: `{ source, dataSource?, property?, pivotColumn?, ... }`. |
@@ -137,7 +151,7 @@ Plus all universal bindings (`visible`, `css`, `attr`, `prefixes`, …) from `IR
 ## RaptorChart public methods / accessors
 
 | Member | Signature | Use |
-|---|---|---|
+| --- | --- | --- |
 | `onChartCreated` | `(cb: ChartCreatedCallback) => IDisposable` | Wire native ECharts events once instance exists. |
 | `onChartUpdated` | `(cb: ChartUpdatedCallback) => IDisposable` | After each `setOption`. |
 | `chartInstance` | `ml.echarts.ECharts` (get/set) | Live instance (null pre-create). |

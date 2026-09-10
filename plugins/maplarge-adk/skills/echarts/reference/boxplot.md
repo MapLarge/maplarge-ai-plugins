@@ -9,6 +9,7 @@ Statistical box-and-whisker series (`type: "boxplot"`) that draws one box per ca
 - Pairs naturally with a sibling `scatter` series for outlier points (the ECharts boxplot transform emits those separately).
 
 Use a different series when:
+
 - **OHLC / financial candles** → `candlestick.md` (different 4-value semantics: open/close/low/high).
 - **Single aggregate per category** (just a mean or count) → `bar.md`.
 - **Raw points, no summarization** → `scatter.md`.
@@ -45,6 +46,7 @@ const option: ml.echarts.EChartsOption = {
 - **Object form** — `BoxplotDataItemOption = { value: [min,Q1,median,Q3,max], itemStyle?, label?, emphasis? }` to style/annotate a single box.
 
 You supply the **summary**, not raw samples. Two ways to compute it from raw arrays:
+
 - **ECharts dataset transform** (client-side): a raw dataset (rows of `[category, sample…]`) plus a transform dataset `{ transform: { type: "boxplot", config: { itemNameFormatter: "Grp {value}" } } }`. It outputs the 5-number boxes on `datasetIndex` 1 and the outliers as a named secondary result you bind to a `scatter` series. The boxplot series then uses `datasetIndex: 1`.
 - **MapLarge query transform** (server-side aggregation): `CalcGroupBoxplot` (`ICalcGroupBoxplotOptions { groupColumn, valueColumn, groupPrecision? }`) returns columns `group, min, q1, median, q3, max` per group. Map those columns into the tuples (or feed via `dataset` + `encode`).
 
@@ -63,6 +65,7 @@ You supply the **summary**, not raw samples. Two ways to compute it from raw arr
 ## Patterns
 
 **Outliers as a companion scatter.** The boxplot transform splits outliers out; render them as a second series so points beyond the whiskers stay visible:
+
 ```ts
 series: [
   { type: "boxplot", datasetIndex: 1 },
@@ -71,6 +74,7 @@ series: [
 ```
 
 **Horizontal layout for long category names.** Swap axis roles and set `layout: "horizontal"`:
+
 ```ts
 xAxis: { type: "value" }, yAxis: { type: "category", data: groups },
 series: [{ type: "boxplot", layout: "horizontal", data }]
@@ -79,6 +83,7 @@ series: [{ type: "boxplot", layout: "horizontal", data }]
 **Theme-reactive styling.** Don't hardcode colors — pull from the theme helper (see parent `echarts` skill): `itemStyle: { color: chartTheme.neutral, borderColor: chartTheme.border }`.
 
 **Per-box highlight.** Use the object datum to flag an outlier group:
+
 ```ts
 { value: [20,27,34,41,60], itemStyle: { borderColor: chartTheme.danger, borderWidth: 2 } }
 ```
@@ -98,10 +103,10 @@ series: [{ type: "boxplot", layout: "horizontal", data }]
 ## Related skills
 
 - `echarts` — parent: option model, dataset transforms, theming, `onChartCreated` events, `setOption` merge behavior.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, VM getters typed `ml.echarts.BoxplotSeriesOption[]`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, VM getters typed `ml.echarts.BoxplotSeriesOption[]`).
 - `candlestick.md` — sibling 4-value OHLC series (use for financial bars, not distributions).
 - `scatter.md` — companion for outlier points and for raw, unsummarized data.
 - `bar.md` — single aggregate per category when distribution isn't needed.
 - `dataset.md` — the `dataset` + `transform: "boxplot"` + `encode` plumbing.
 
-Official option reference (SPA — open in a browser): https://echarts.apache.org/en/option.html#series-boxplot
+Official option reference (SPA — open in a browser): <https://echarts.apache.org/en/option.html#series-boxplot>

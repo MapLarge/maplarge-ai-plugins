@@ -9,6 +9,7 @@ Hierarchical part-of-whole data drawn as nested rectangles whose **area is propo
 - Many leaves at once — a treemap packs far more nodes legibly than a pie.
 
 Use a different skill when:
+
 - **`sunburst.md`** — same hierarchy but you prefer concentric rings (better for showing depth at a glance, worse for many tiny leaves).
 - **`tree.md`** — you care about the parent/child *connections* (node-link diagram), not area.
 - **`pie.md`** — a single flat level of proportions, no nesting.
@@ -47,6 +48,7 @@ const option: ml.echarts.EChartsOption = {
 ## Data shape
 
 `series.data` is a recursive array of `TreemapSeriesNodeItemOption`:
+
 ```ts
 { name: "label",
   value: 120,                 // number, OR number[] — extra dims for visual/tooltip
@@ -54,6 +56,7 @@ const option: ml.echarts.EChartsOption = {
   id?, color?, decal?, cursor?,
   itemStyle?, label?, upperLabel? }   // per-node overrides
 ```
+
 - A **parent's `value` is optional** — if omitted it is computed as the sum of its children's values. Set it explicitly only to override the sum.
 - `value` may be a `number[]` (`TreemapSeriesDataValue = number | number[]`). The first element drives area by default; `visualDimension` picks which element drives color (see visualMin/Max).
 - There is **no top-level root node** — the array entries are the first visible level. Wrap them in a single node if you want one root rectangle.
@@ -81,11 +84,13 @@ From `ml.echarts.TreemapSeriesOption` and its mixins:
 ## Patterns
 
 **Drilldown one level at a time** — set `leafDepth: 1`, `nodeClick: "zoomToNode"`, `upperLabel.show: true`, and `breadcrumb.show: true`. Clicking a parent makes it the new root; the breadcrumb climbs back. Listen for the change via the live instance:
+
 ```ts
 chart.on("click", (e: any) => { /* e.data = clicked node, e.treePathInfo / e.treeAncestors = path */ });
 ```
 
 **Color by a value range (heat-style)** — drive color from a numeric dimension instead of per-node palette:
+
 ```ts
 series: [{ type: "treemap", visualDimension: 1, visualMin: 0, visualMax: 100,
   colorMappingBy: "value",
@@ -94,6 +99,7 @@ series: [{ type: "treemap", visualDimension: 1, visualMin: 0, visualMax: 100,
 ```
 
 **Theme-reactive borders/gaps** — resolve CSS vars at access time (see parent `echarts` skill) and feed them into `levels[].itemStyle`:
+
 ```ts
 levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
          { itemStyle: { borderColor: chartTheme.border, gapWidth: 1 } }]
@@ -112,7 +118,7 @@ levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
 ## Related skills
 
 - `echarts` — parent skill: the option model, `s.chart` binding, `onChartCreated`, theming via CSS vars.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `nodeT<RaptorChart>`).
 - `sunburst.md` — radial sibling for the same hierarchy.
 - `tree.md` — node-link layout when connections matter more than area.
 - `pie.md` — single flat level of proportions.
@@ -125,8 +131,9 @@ levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
 ## Treemap option cheatsheet
 
 ### `TreemapSeriesOption` (own + notable inherited fields)
+
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `type` | `'treemap'` | required |
 | `data` | `TreemapSeriesNodeItemOption[]` | recursive hierarchy (first visible level) |
 | `levels` | `TreemapSeriesLevelOption[]` | per-depth styling (index = depth) |
@@ -145,8 +152,9 @@ levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
 | `itemStyle` | `TreemapSeriesItemStyleOption` | global node fill/border/gap |
 
 ### `TreemapSeriesVisualOption` (inherited; also valid on levels & nodes)
+
 | Field | Type | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `visualDimension` | `number \| string` | which value-array element drives color |
 | `visualMin` / `visualMax` | `number` | value range mapped to color ramp |
 | `colorMappingBy` | `'value' \| 'index' \| 'id'` | how a node selects its color |
@@ -156,6 +164,7 @@ levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
 | `childrenVisibleMin` | `number` | hide children if parent area < value (px²) |
 
 ### `TreemapSeriesNodeItemOption` (a data node)
+
 ```ts
 { id?, name?, value?: number | number[], children?: TreemapSeriesNodeItemOption[],
   color?: ColorString[] | 'none', decal?, cursor?,
@@ -163,11 +172,14 @@ levels: [{ itemStyle: { borderColor: chartTheme.background, gapWidth: 2 } },
   visualDimension?, visualMin?, visualMax?,  // from TreemapSeriesVisualOption
   colorAlpha?, colorSaturation?, visibleMin?, childrenVisibleMin? }
 ```
+
 - `value` omitted on a parent → auto-summed from children.
 - `color: ColorString[]` on a node/level supplies the palette its children cycle through.
 
 ### `TreemapSeriesLevelOption`
+
 Extends the visual + state options, plus:
+
 ```ts
 { color?: ColorString[] | 'none', decal?: DecalObject[] | 'none',
   itemStyle?, label?, upperLabel?, emphasis?, blur?, select?,
@@ -175,6 +187,7 @@ Extends the visual + state options, plus:
 ```
 
 ### `TreemapSeriesItemStyleOption`
+
 ```ts
 { borderColor?, borderWidth?, gapWidth?,        // gapWidth = px gap between sibling rects
   borderColorSaturation?,                       // derive border color saturation from fill
@@ -184,8 +197,10 @@ Extends the visual + state options, plus:
 ```
 
 ### Callback params (`TreemapSeriesCallbackDataParams`)
+
 `name`, `value`, `dataIndex`, `data`, `color`, plus:
+
 - `treeAncestors?: { name, dataIndex, value }[]` — path from root to node (use for tooltips/breadcrumbs).
 - `treePathInfo` — deprecated alias of `treeAncestors`.
 
-Official reference: https://echarts.apache.org/en/option.html#series-treemap
+Official reference: <https://echarts.apache.org/en/option.html#series-treemap>

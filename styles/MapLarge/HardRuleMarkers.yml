@@ -1,0 +1,8 @@
+extends: existence
+message: "Hard rule marker ('%s') — allowed only on safety/data-loss rails; every other rule must carry its reason (skill template §4.2, checklist item 13)."
+level: suggestion
+ignorecase: false
+tokens:
+  - MUST
+  - NEVER
+  - ALWAYS

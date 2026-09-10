@@ -1,15 +1,23 @@
 ---
 name: ml-docgen
 description: Work on or run "ml-docgen", the MapLarge ADK config-documentation generator. It produces a Swagger-style reference (Markdown + self-contained HTML) for an extension's config.json, built from the extension's TypeScript config interfaces and real config.json examples. Use when extending/debugging the tool, adding it to a new repo or location, regenerating extension config docs, or onboarding a new ADK extension into it. The tool is a standalone Node/TypeScript CLI that can be checked out at any path; locate it by its package.json name "ml-docgen".
+metadata:
+  owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
+  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
+  verified-against: "ml-docgen CLI @ 2026-08 import baseline; manifest Config-block claims re-verified against live ADK extension repos 2026-09-09 (ARC-51)"
 ---
 
 # ml-docgen
 
 A standalone Node + TypeScript CLI that generates a per-extension **configuration reference**
 (`config-reference.md` + self-contained `config-reference.html`) for MapLarge ADK extensions,
-derived from the extension's TypeScript config types and its actual `config.json`.
+derived from the extension's TypeScript config types and its actual `config.json`. This skill
+covers running the tool, onboarding an extension into it, and changing the tool itself. It does
+not cover authoring the extension's `config.json`, schema, or manifest (that is `adk-extension-dev`),
+deploying the extension afterward (`deploy-extension`), or what the config values mean to the
+server at runtime.
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/ml-docgen/reference/ml-docgen-reference.md` for the full architecture, algorithms, and design
+Read `reference/ml-docgen-reference.md` (relative to this skill folder) for the full architecture, algorithms, and design
 decisions before making non-trivial changes. This file is the quick orientation.
 
 ## Where it lives
@@ -36,6 +44,18 @@ In CI: `npm ci && npm run ml-docgen -- --all`. Non-interactive; exits non-zero o
 Output is written to `extensions/<Name>/docs/config-reference.{md,html}` so it packages with
 the extension.
 
+## Examples
+
+- "The config docs for Reports are stale, regenerate them" →
+  `cd <tool-dir>` then `npm run ml-docgen -- Reports`. The files land in
+  `extensions/Reports/docs/config-reference.{md,html}`; never hand-edit them, they are derived output.
+- "Onboard the new Inventory extension into the config docs" → add
+  `"Config": { ..., "DocRootType": "IInventoryConfig" }` to `extensions/Inventory/manifest.json`
+  (matching the literal root shape of its config.json), then `npm run ml-docgen -- Inventory`.
+- "I added JSDoc to a shared config interface but the dependent extension's docs don't show it" →
+  rebuild the owning extension first (`maplarge adk build`) so `.adk/types.d/_<Ext>.d.ts`
+  regenerates, then rerun ml-docgen for the dependent.
+
 ## How an extension opts in
 
 In `extensions/<Name>/manifest.json`:
@@ -59,7 +79,7 @@ back to the convention `I<Name without punctuation>Config` if omitted.
 - `render.ts` — Markdown and self-contained HTML renderers (nav, sections, CSS, script).
 - `model.ts` — the IR (`DocModel` / `DocType` / `DocField`).
 
-## Top gotchas (details in ${CLAUDE_PLUGIN_ROOT}/skills/ml-docgen/reference/ml-docgen-reference.md)
+## Top gotchas
 
 - **Stale `.d.ts`:** dependency-extension types resolve to the ADK-generated
   `.adk/types.d/_<Ext>.d.ts`, which is only refreshed by a build (`mlcomp` / `maplarge adk
@@ -68,4 +88,5 @@ back to the convention `I<Name without punctuation>Config` if omitted.
 - **`//` comments are stripped** from generated `.d.ts`; only `/** */` JSDoc survives. Prefer
   JSDoc on shared config interfaces.
 - Comment fidelity, scope (which types expand vs stay opaque), subtypes, and the Shared Types
-  rule all have specific logic — see ${CLAUDE_PLUGIN_ROOT}/skills/ml-docgen/reference/ml-docgen-reference.md.
+  rule all have specific logic — when a type or comment you expected is missing or misplaced in
+  the output, read `reference/ml-docgen-reference.md` before patching the tool.

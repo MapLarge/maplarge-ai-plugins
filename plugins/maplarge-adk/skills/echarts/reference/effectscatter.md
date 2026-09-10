@@ -9,6 +9,7 @@ A scatter series whose markers continuously ripple/pulse to draw the eye. Same d
 - As a second series on top of a plain `scatter` or `line` to make a few points stand out.
 
 Prefer a sibling when:
+
 - You have the **full point cloud / dense bubbles** → use `scatter.md` (effectScatter animates every point and is expensive; keep it to a handful).
 - You want value→color/size mapping across many points → `scatter.md` + `visualmap.md`.
 - You want a static highlight with no animation → plain `scatter.md` with a distinct `itemStyle`/`symbolSize`.
@@ -84,7 +85,9 @@ From `ml.echarts.EffectScatterSeriesOption`:
 ## Patterns
 
 ### Highlight layer over a base scatter
+
 Two series in one chart: a quiet `scatter` cloud plus a few rippling points on top.
+
 ```ts
 series: [
   { type: "scatter", symbolSize: 6, itemStyle: { color: "#9aa5b1", opacity: 0.6 }, data: cloud },
@@ -95,21 +98,27 @@ series: [
 ```
 
 ### Ripple only on hover
+
 Keep the chart calm until the user interacts.
+
 ```ts
 { type: "effectScatter", showEffectOn: "emphasis",
   rippleEffect: { scale: 3 }, data: points }
 ```
 
 ### Theme-reactive color
+
 Resolve a CSS variable at access time (see parent skill) instead of hardcoding.
+
 ```ts
 { type: "effectScatter", itemStyle: { color: chartTheme.accent },
   rippleEffect: { color: chartTheme.accent, brushType: "stroke" }, data }
 ```
 
 ### Click on a highlight
+
 Wire via `onChartCreated` (see parent skill); `e.data` is the clicked point's tuple/object.
+
 ```ts
 chart.on("click", e => { if (e.componentSubType === "effectScatter") { /* e.data */ } });
 ```
@@ -126,6 +135,6 @@ chart.on("click", e => { if (e.componentSubType === "effectScatter") { /* e.data
 ## Related skills
 
 - `echarts` — parent skill: option model, `ml.echarts.*` types, `onChartCreated` events, theming.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how a chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how a chart mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
 - `scatter.md` — the plain (non-animated) scatter; use it for the full cloud and bubble charts.
 - `visualmap.md` — map a value dimension to color/size across many scatter points.

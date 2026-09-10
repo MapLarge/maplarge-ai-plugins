@@ -1,0 +1,10 @@
+extends: existence
+message: "Narrated reasoning ('%s') — skills state facts and commands, not how to think (skill template §4.1, checklist item 12)."
+level: error
+ignorecase: true
+tokens:
+  - think about
+  - first, think
+  - step back
+  - carefully consider
+  - reason through

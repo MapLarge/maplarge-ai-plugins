@@ -1,6 +1,9 @@
-action elements: a single clickable `s.button(...)`, an inline cluster `s.buttonGroup(...)`, and the modal/alert X via `s.closeButton(...)`.
+# Buttons
+
+Action elements: a single clickable `s.button(...)`, an inline cluster `s.buttonGroup(...)`, and the modal/alert X via `s.closeButton(...)`.
 
 ## When to use
+
 - Any clickable action — submit, toggle, open a dialog, trigger a handler.
 - An icon button (button with an SVG and optional text).
 - The toggle/split-toggle that opens a dropdown menu (`dropdownToggle` / `dropdownToggleSplit`) — see `dropdown.md` for the menu itself.
@@ -11,8 +14,9 @@ action elements: a single clickable `s.button(...)`, an inline cluster `s.button
 For non-button hyperlinks use `s.anchor`; for radio-as-button toggles see `forms.md` (`radioButtonGroup`).
 
 ## Builder
+
 | builder | node `type` | option interface | node class |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `s.button(opts)` | `"button"` | `ViewDefinitions.IButton` | `Button` (extends `RaptorNodeBase<IButton>`) |
 | `s.buttonGroup(opts)` | `"buttonGroup"` | `ViewDefinitions.IButtonGroup` | `ButtonGroup` |
 | `s.closeButton(opts)` | `"closeButton"` | `ViewDefinitions.ICloseButton` | (rendered inline) |
@@ -45,7 +49,9 @@ s.view("main", s =>
 ```
 
 ## Bindings & events
+
 Button `bindings` (`IRaptorUniversalBindings & IRaptorInputBinding & IRaptorTooltipBinding & IRaptorTextBinding & IRaptorSvgBinding`):
+
 - `enable` / `disable` (boolean — toggles the `disabled` attribute), `text`, `textColor`, `tooltip`, `disabledTooltip`, `svgKey`, `svgOptions`, `svgString`, plus universal `visible` / `css` / `style` / `attr`.
 - Two declared `@BindingHandler`s on the `Button` node react to live changes: `svgKey` and `svgOptions` (swap the icon in place without a full re-render).
 
@@ -54,19 +60,24 @@ Events — `Events.IEvent_Button<T>[]`, where `event` is a `PointerEventTypes | 
 ButtonGroup `bindings`: `IRaptorUniversalBindings & IRaptorTextBinding` only — no per-group enable/disable (set `enable`/`disabled` on the child buttons).
 
 ## ViewModel / instance API
+
 The handler runs on the owning ViewModel; reach the node when you must mutate it directly:
+
 ```ts
 const btn = this.raptorDom.nodeT<Button>("myButtonKey"); // if keyed
 ```
+
 Most state is driven through bindings (flip `enable` / `text` / `svgKey` on the VM and call `update()` / `update("viewName")`), not by calling node methods. The `Button` node has no public API beyond the two icon-update binding handlers.
 
 ## Patterns
+
 - **Icon-only button**: `s.button({ kind: "light", svgOptions: { key: "gear" }, title: "Settings", events: [{ event: "click", handler: "openSettings" }] })`.
 - **Reactive label + disabled state**: bind `text` and `enable` to VM getters; the button re-renders on `update()` — no manual DOM edits.
 - **Split dropdown**: a main `s.button({ dropdownToggle: true })` next to a second `s.button({ dropdownToggle: true, dropdownToggleSplit: true })` whose `contentTemplates` host the menu (`dropdown.md`).
 - **Right-click menu**: add an event with `event: "contextmenu"` alongside the `click` handler.
 
 ## Gotchas
+
 - `size` is `'large' | 'medium' | 'small'` (the `DisplayUtilities.ButtonSize` type), **not** `'sm' | 'md' | 'lg'` — the JSDoc on `IButton.size` says sm/md/lg but that abbreviation applies to a different (Choices toggle) validation path; trust the TS type.
 - A button without `kind` renders unstyled unless it sits in a list-group/accordion that supplies styling. Set `kind` for standalone buttons.
 - Use `disabledTooltip` (not `disabled` + `title`) when you need a tooltip on a disabled button — a truly `disabled` element swallows hover. With `disabledTooltip`, the button is soft-disabled (no native `disabled` attr).
@@ -75,6 +86,7 @@ Most state is driven through bindings (flip `enable` / `text` / `svgKey` on the 
 - `closeButton` defaults to `size: "small"` and `title: "Close"` when omitted.
 
 ## Related skills
+
 - `raptor` — parent: View/VM split, RSScriptor.create, bindings/events mechanics, `update()`.
 - `svg.md` — `ISvgOptions` / `svgKey` for button icons.
 - `dropdown.md` — dropdown menus opened by `dropdownToggle` / `dropdownToggleSplit` buttons.

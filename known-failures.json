@@ -1,0 +1,17 @@
+{
+	"$comment": "Ticketed findings the check suite reports without failing (ARC-15). Every entry needs rule (node-test rule id, Vale check name, or markdownlint MDnnn/rule-name), path (repo-relative, * matches anything), and ticket. Remove entries as their tickets land; an entry without a live ticket is a bug in this file. New findings outside these paths still block.",
+	"entries": [
+		{
+			"rule": "MapLarge.Deprecations",
+			"path": "plugins/maplarge-adk/skills/raptor/*",
+			"ticket": "DE-762",
+			"note": "The raptor skill still teaches the deprecated DataGrid (DE-761); DE-762 ships the dataTable reference and the skill update. Baselined as one glob because the whole skill is the update surface."
+		},
+		{
+			"rule": "MapLarge.Deprecations",
+			"path": "plugins/maplarge-adk/skills/adk-raptor-dev/SKILL.md",
+			"ticket": "DE-762",
+			"note": "Same DataGrid deprecation, referenced from the workflow skill."
+		}
+	]
+}

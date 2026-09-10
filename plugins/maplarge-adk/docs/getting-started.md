@@ -11,17 +11,17 @@ This plugin is designed to work from any of these starting points:
 The plugin is installed once at the user level through the Claude Code plugin system and reused across
 every ADK workspace:
 
-```
-/plugin marketplace add https://dev.azure.com/MapLarge/Internal/_git/claude-plugins
-/plugin install maplarge-adk@maplarge-claude-marketplace
+```text
+/plugin marketplace add https://github.com/maplarge/maplarge-ai-plugins
+/plugin install maplarge-adk@maplarge-claude-marketplace-public
 ```
 
 To develop or test the plugin from a local checkout of this repo, add the repo directory itself as a
 marketplace (`.claude-plugin/marketplace.json` at the repo root describes the available plugins):
 
-```
+```text
 /plugin marketplace add ./
-/plugin install maplarge-adk@maplarge-claude-marketplace
+/plugin install maplarge-adk@maplarge-claude-marketplace-public
 ```
 
 Install once, then reuse across as many ADK workspaces as you want, alongside other Claude Code plugins.
@@ -65,19 +65,19 @@ Use [`../config.example.json`](../config.example.json) as the template.
 To deliberately add validated local source repos, use:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/configure_local_repos.mjs --add core=/path/to/core --add maplarge-cli=/path/to/maplarge-cli
+node <plugin-root>/scripts/configure_local_repos.mjs --add core=/path/to/core --add maplarge-cli=/path/to/maplarge-cli
 ```
 
 To inspect candidates without writing config, pass explicit discovery roots:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/detect_maplarge_workspace.mjs --cwd . --discover-repos /path/to/search
+node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd . --discover-repos /path/to/search
 ```
 
 To inspect nearby sibling or cousin repos without writing config, use bounded nearby discovery:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/detect_maplarge_workspace.mjs --cwd . --discover-nearby
+node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd . --discover-nearby
 ```
 
 ## Bundled Helpers
@@ -86,11 +86,11 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/detect_maplarge_workspace.mjs --cwd . --disco
 - `scripts/check_adk_environment.mjs`: checks `maplarge`, `dotnet`, `node`, ADK markers, ADK URL context (`configuredRemoteServer`, default local run URLs), CLI upgrade guidance, ADK/CLI version alignment, and missing prerequisites
 - `scripts/configure_local_repos.mjs`: validates and writes explicit local repo paths
 
-All helpers print JSON to stdout, so Claude can consume their output directly. `${CLAUDE_PLUGIN_ROOT}` is set
-by Claude Code when a skill runs; from a local checkout of this repo you can substitute
-`plugins/maplarge-adk` for the plugin root.
+All helpers print JSON to stdout, so their output can be consumed directly.
+Resolve `<plugin-root>` as the directory containing `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`;
+from a local checkout of this repo you can substitute `plugins/maplarge-adk` for the plugin root.
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/detect_maplarge_workspace.mjs --cwd .
-node ${CLAUDE_PLUGIN_ROOT}/scripts/check_adk_environment.mjs --cwd .
+node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd .
+node <plugin-root>/scripts/check_adk_environment.mjs --cwd .
 ```

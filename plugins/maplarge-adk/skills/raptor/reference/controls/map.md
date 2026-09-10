@@ -58,14 +58,14 @@ Enums: `RaptorMapSyncMode` (`None`/`AllMaps`/`SelectedMaps`), `RaptorMapLayerMod
 
 ## Patterns
 
-**Zoom to a row's geometry**
+### Zoom to a row's geometry
 
 ```ts
 const rm = this.raptorDom.nodeT<RaptorMap>("mainMap");
 rm?.onMapCreated(m => m.map.zoomToWKT(wkt, 14));
 ```
 
-**Wire a geographic click after creation**
+### Wire a geographic click after creation
 
 ```ts
 this.raptorDom.nodeT<RaptorMap>("mainMap")?.onMapCreated(rm => {
@@ -106,7 +106,7 @@ Clear/skip the filter near whole-world span (≥360°). For a radius instead of 
 
 ---
 
-# RaptorMap — Reference
+## RaptorMap — Reference
 
 ## Import paths
 
@@ -121,7 +121,7 @@ Builder method: `s.raptorMap(options: ViewDefinitions.IRaptorMap)`. Node `type`:
 ## ViewDefinitions.IRaptorMap (option fields)
 
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `mapOptions` | `ml.ui.map.iMapOptions` | initial map config (see below) |
 | `bindings` | `IRaptorUniversalBindings & IRaptorMapBinding & IRaptorLayersBinding` | `data`, `mapOptions`, deprecated `layers` |
 | `events` | `IEvent_RaptorMap[]` | DOM-level pointer/contextmenu/keyboard events |
@@ -147,7 +147,7 @@ Quick-update props (no full reload): `lat`, `lng`, `z`, `rotation`, `baseLayer`,
 ## RaptorMap (node class) — public API
 
 | Member | Signature | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `onMapCreated` | `(cb: (rm: RaptorMap) => void) => void` | run when `map` exists (now or later) |
 | `map` | `ml.ui.map.Map` (get/set) | live map; null pre-create |
 | `mapContainer` | `HTMLElement` (get) | inner map div |

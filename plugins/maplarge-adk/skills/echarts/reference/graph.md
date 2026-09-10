@@ -14,6 +14,7 @@ A `type: "graph"` series draws a node-link network: circles (nodes) joined by li
 ## Minimal config
 
 A complete force-directed graph (`ml.echarts.EChartsOption`):
+
 ```ts
 const option: ml.echarts.EChartsOption = {
   tooltip: {},
@@ -80,7 +81,7 @@ Nodes may also be bare value arrays, but object form is almost always what you w
 
 **Fixed schematic (no physics).** Use `layout: "none"` and give every node `x`/`y` (and optionally `fixed: true`). Good for stable topology diagrams that must not reflow between renders.
 
-**Signature events.** On the live instance (`onChartCreated`, see the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`)), `chart.on("click", e => ...)` fires with `e.dataType === "node"` or `"edge"`; `e.data` is the node/edge object you supplied. Use it for drilldown or selection. `mouseover`/`mouseout` pair well with `emphasis.focus:'adjacency'`.
+**Signature events.** On the live instance (`onChartCreated`, see the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`)), `chart.on("click", e => ...)` fires with `e.dataType === "node"` or `"edge"`; `e.data` is the node/edge object you supplied. Use it for drilldown or selection. `mouseover`/`mouseout` pair well with `emphasis.focus:'adjacency'`.
 
 ## Gotchas
 
@@ -95,7 +96,7 @@ Nodes may also be bare value arrays, but object form is almost always what you w
 ## Related skills
 
 - `echarts` — parent skill: the option object model, `setOption` merge behavior, theming via CSS variables, `onChartCreated`.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, reaching the instance via `raptorDom.nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, reaching the instance via `raptorDom.nodeT<RaptorChart>`).
 - `sankey.md` — flow graphs with ribbon-width-encoded magnitude (sibling for weighted, conserved flows).
 - `tree.md` — strict hierarchy / parent-child layout.
 - `scatter.md` — points without connecting edges.
@@ -105,14 +106,14 @@ Nodes may also be bare value arrays, but object form is almost always what you w
 
 ---
 
-# Graph series — field cheatsheet
+## Graph series — field cheatsheet
 
-Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdgeItemOption`, `GraphCategoryItemOption`) from the bundled d.ts. Official section: https://echarts.apache.org/en/option.html#series-graph
+Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdgeItemOption`, `GraphCategoryItemOption`) from the bundled d.ts. Official section: <https://echarts.apache.org/en/option.html#series-graph>
 
 ## Series-level (`GraphSeriesOption`)
 
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `type` | `'graph'` | required |
 | `coordinateSystem` | `string` | default is the graph's own view; can be `'cartesian2d'`/`'polar'`/`'geo'`/`'calendar'`/`'none'` via the SeriesOn* mixins (advanced) |
 | `layout` | `'none' \| 'force' \| 'circular'` | positioning engine |
@@ -141,8 +142,9 @@ Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdg
 | `force` | see below | for `layout:'force'` |
 
 ### `force` object
+
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `initLayout` | `'circular' \| 'none'` | starting positions before sim |
 | `repulsion` | `number \| number[]` | inter-node repulsion; range scales by node value |
 | `gravity` | `number` | pull toward center (0–1 typical) |
@@ -151,8 +153,9 @@ Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdg
 | `layoutAnimation` | `boolean` | `false` = settle instantly (deterministic) |
 
 ## Node (`GraphNodeItemOption`)
+
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `id` | `string` | edge reference key |
 | `name` | `string` | label + fallback edge key |
 | `value` | `OptionDataValue \| OptionDataValue[]` | metadata / tooltip |
@@ -167,8 +170,9 @@ Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdg
 | `emphasis` / `blur` / `select` | states | per-node, `emphasis.focus` adds `'adjacency'` |
 
 ## Edge (`GraphEdgeItemOption`)
+
 | Field | Type | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `source` | `string \| number` | node id / name / index |
 | `target` | `string \| number` | node id / name / index |
 | `value` | `number` | metadata; can drive `edgeLength`/`repulsion` ranges |
@@ -180,9 +184,11 @@ Grounded in `ml.echarts.GraphSeriesOption` (and `GraphNodeItemOption`, `GraphEdg
 | `emphasis` / `blur` / `select` | states | per-edge |
 
 ## Category (`GraphCategoryItemOption`)
+
 `{ name, value, ...SymbolOptionMixin, itemStyle?, label?, emphasis?/blur?/select? }` — `name` ties to node `category` and legend `data`; supplies the category's default color/symbol.
 
 ## Choosing a layout
+
 - **force** — exploratory networks, clusters emerge naturally. Tune `repulsion` up and `gravity` down for sparser spread; set `layoutAnimation:false` for static output.
 - **circular** — show all nodes on a ring; good for relatively small node sets and chord-like relationship views (`circular.rotateLabel:true` for radial labels).
 - **none** — you control every `x`/`y`; deterministic schematic / saved layout.

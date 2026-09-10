@@ -1,0 +1,7 @@
+extends: existence
+message: "References 'evals/' — skill bodies and reference docs must never point at eval content, so assistants don't load it as guidance (skill template §7, checklist item 16)."
+level: error
+scope: raw
+ignorecase: true
+tokens:
+  - evals/

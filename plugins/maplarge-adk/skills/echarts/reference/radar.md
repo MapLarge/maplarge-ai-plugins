@@ -8,6 +8,7 @@ Plots each data item as a closed polygon across several shared radial axes, so a
 - The metrics share a meaningful per-axis scale and you want shape/area to read as "overall profile".
 
 Use a different chart when:
+
 - Many series or a continuous/ordered dimension → **echarts-parallel** (parallel coordinates) or **line.md**.
 - One quantity ranked across categories, or axes with wildly different units → grouped **bar.md**.
 - A single value vs a target → **gauge.md**.
@@ -61,6 +62,7 @@ data: [
 ## Key options
 
 Component `ml.echarts.RadarComponentOption` (the top-level `radar` key):
+
 - `indicator : RadarIndicatorOption[]` — the axes. Each: `name : string`, `max : number`, `min : number` (default 0), `color : string` (axis-name color), `axisType : "value"|"log"`.
 - `shape : "polygon" | "circle"` — straight web vs concentric rings (default polygon).
 - `radius : number|string|(number|string)[]` and `center : (number|string)[]` — size/position, e.g. `radius: "65%"`, `center: ["50%","50%"]`. Use `[inner, outer]` for a ring.
@@ -71,6 +73,7 @@ Component `ml.echarts.RadarComponentOption` (the top-level `radar` key):
 - `axisName : { show, formatter } & LabelOption`, `axisNameGap : number` — the per-axis name labels.
 
 Series `ml.echarts.RadarSeriesOption`:
+
 - `type : "radar"`, `coordinateSystem : "radar"` (implied).
 - `radarIndex : number` / `radarId : string` — which `radar` component to bind when several exist (default 0).
 - `data : (RadarSeriesDataItemOption | number[])[]` — see Data shape.
@@ -105,5 +108,5 @@ Multiple radars: declare `radar: [{...},{...}]` and point series at them with `r
 ## Related skills
 
 - `echarts` — parent: option model, the `s.chart` wiring, theming, event wiring on the live instance.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart node mounts in a Raptor view (`s.chart`, `traverseRaptorChart`, `getTypedProp` bindings).
 - `echarts-parallel`, `line.md`, `bar.md`, `gauge.md` — siblings to prefer for many series, ordered dimensions, ranked categories, or single-value-vs-target.

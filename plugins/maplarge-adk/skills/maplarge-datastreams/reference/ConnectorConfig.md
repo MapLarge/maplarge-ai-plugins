@@ -9,9 +9,9 @@
 An on-ramp has **two independent JSON configurations** edited in **two separate UI tabs**. The user never combines them — each tab has its own "Show JSON" button and its own JSON editor. Internally the server pairs them, but the user (and you) always work with them separately.
 
 | UI Tab | What you generate | Documented in |
-|--------|------------------|---------------|
+| -------- | ------------------ | --------------- |
 | **Connector tab** (this doc) | Flat JSON object with connector-specific properties | This file |
-| **Pipeline tab** | JSON object with `NumberOfWorkers` + `Steps` array | `PipelineConfig.claude.md` |
+| **Pipeline tab** | JSON object with `NumberOfWorkers` + `Steps` array | `PipelineConfig.md` |
 
 **When asked to configure a connector → output ONLY connector JSON. When asked to configure a pipeline → output ONLY pipeline JSON. NEVER merge them into one JSON object.**
 
@@ -46,7 +46,7 @@ An on-ramp has **two independent JSON configurations** edited in **two separate 
 
 ## Overview
 
-An **on-ramp** pairs a **connector** (data source + schedule; this doc) with a **pipeline** (parse/transform/commit; see `PipelineConfig.claude.md`). Connectors are plugins loaded by name at runtime, each with a `Config` class deserialized from the connector options JSON.
+An **on-ramp** pairs a **connector** (data source + schedule; this doc) with a **pipeline** (parse/transform/commit; see `PipelineConfig.md`). Connectors are plugins loaded by name at runtime, each with a `Config` class deserialized from the connector options JSON.
 
 ---
 
@@ -67,7 +67,7 @@ Property names in connector JSON are **case-insensitive**.
 ## Connector Type Categories
 
 | `ImportConnectorType` | Behavior | Connectors |
-|----------------------|----------|------------|
+| ---------------------- | ---------- | ------------ |
 | `Accepting` | Stays alive indefinitely, listening for pushed messages | Kafka, NATS, NATSJetStream, MQTT, Pulsar, ActiveMQ, WebSocket, PushedMessage, Video |
 | `Polling` | Wakes on schedule, fetches data, sleeps | Http, RelationalDB, WFS, ArcGIS, SQS (when recurring) |
 | `LongRunning` | Scans once through a dataset, optionally repeats | S3, Azure, GCS, SFTP, FileSystem, AttachedFilesystem, TiledImagery, SQS (when one-time) |
@@ -81,7 +81,7 @@ Many connectors dynamically choose between `Polling` and `LongRunning` based on 
 Shared by all connectors extending `BasePollingConnectorConfig`:
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndPoint` | string | `null` | Server URI / location — meaning varies per connector |
 | `PollingFrequencyMS` | int | `-1` | Milliseconds between polls. `-1` = one-time run, `0+` = recurring. Setting this clears `CronExpression` |
 | `CronExpression` | string | `""` | CRON expression (UTC, 5-field NCrontab format). Setting a valid expression clears `PollingFrequencyMS` |
@@ -95,16 +95,19 @@ Shared by all connectors extending `BasePollingConnectorConfig`:
 ### Scheduling Modes
 
 **One-time run** (scan once and stop):
+
 ```json
 { "PollingFrequencyMS": -1 }
 ```
 
 **Fixed interval** (poll every 5 minutes):
+
 ```json
 { "PollingFrequencyMS": 300000 }
 ```
 
 **CRON schedule** (run at specific times, UTC):
+
 ```json
 {
     "CronExpression": "0 */15 * * *",
@@ -119,7 +122,7 @@ Shared by all connectors extending `BasePollingConnectorConfig`:
 Extends `BasePollingConnectorConfig`. **Inherited by:** S3, Azure Storage, GCS. **NOT by:** HttpPolling, SFTP, ArcGIS, WFS, Elasticsearch, RelationalDB, SQS, AttachedFilesystem.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `CopyConfigToMessage` | bool | `false` | Include connector config in message context |
 | `MaxThreads` | int | `1` | Max concurrent file processing threads |
 | `RetryAttempts` | int | `2` | Retry count on failure per file |
@@ -139,6 +142,7 @@ Extends `BasePollingConnectorConfig`. **Inherited by:** S3, Azure Storage, GCS. 
 | `ProcessLogFilter` | ProcessLogConfig | `null` | Duplicate detection via process log table |
 
 **Property interactions:**
+
 - `PathTemplate` and `PathTemplateRegexPattern` are mutually exclusive. Setting `PathTemplate` auto-generates the regex and clears `PathTemplate` back to empty — the regex is authoritative.
 - `StartAfter` supports `"script:"` prefix for dynamic evaluation with `latestFileTimestamp` and `latestProcessLogTimestamp` variables.
 - `StopAfter` is prefix-based: collects objects until the key no longer starts with `StopAfter` after a match.
@@ -166,7 +170,7 @@ Given `data/us-east/2024/06/sensors.csv`, context gets `s3:pathinfo.region` = `"
 Prevents reprocessing already-imported files via a MapLarge tracking table.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Account` | string | | MapLarge account owning the tracking table |
 | `Table` | string | | Tracking table name |
 | `KeyColumn` | string | `"key"` | Column storing the file key/path |
@@ -200,7 +204,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 **PluginName**: `"KafkaConnector"` | **Type**: Accepting | **Base**: `AbstractTestableConnector`
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Topic` | string | `""` | Kafka topic to subscribe to (singular string, not array) |
 | `Endpoint` | string | `""` | Bootstrap server address (e.g., `"broker1:9092"`) |
 | `MultipleEndpoints` | string[] | `null` | Multiple broker addresses (alternative to `Endpoint`) |
@@ -233,7 +237,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 **Security protocol selection:**
 
 | `UseSSL` | `SaslMechanism` | Protocol |
-|----------|----------------|----------|
+| ---------- | ---------------- | ---------- |
 | `false` | `null` | Plaintext |
 | `true` | `null` | SSL |
 | `false` | set | SASL_PLAINTEXT |
@@ -242,7 +246,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 **Message context** (scopes: `"kafka"` and `"streaming-scope"` — all properties are set on both):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `message_timestamp` | Message timestamp (ISO 8601 via `.ToString("o")`) |
 | `topic` | The configured `Topic` value |
 | `id_property_scope` | `IdPropertyScope` value (only when `IdPropertyScope` is set) |
@@ -250,6 +254,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 | `<header_key>` | Header values as UTF-8 strings (only when `ReadMessageHeaders: true`) |
 
 **Example:**
+
 ```json
 {
     "Topic": "sensor-events",
@@ -261,6 +266,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 ```
 
 **Manual commit (at-least-once delivery):**
+
 ```json
 {
     "Topic": "critical-data",
@@ -283,7 +289,7 @@ Config extends `NatsConfigBase` (shared with NATSJetStreamConnector).
 **NatsConfigBase properties:**
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Endpoint` | string | `"1.2.3.4:4222"` | NATS server address with port |
 | `CredentialsPath` | string | `""` | Path to `.creds` file (JWT/NKey) |
 | `NatsJwtToken` | string | `""` | Inline JWT token (whitespace auto-stripped; takes precedence over file) |
@@ -298,7 +304,7 @@ Config extends `NatsConfigBase` (shared with NATSJetStreamConnector).
 **NATSConnector-specific properties:**
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Subjects` | string[] | `["example subject"]` | Subjects to subscribe to (supports NATS wildcards: `>`, `*`) |
 | `QueueGroupName` | string | `""` | Queue group for load balancing |
 
@@ -307,11 +313,12 @@ Config extends `NatsConfigBase` (shared with NATSJetStreamConnector).
 **Message context** (scope: `"nats"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `subject` | Message subject |
 | `<header_key>` | Individual header values (one property per header key-value pair) |
 
 **Example:**
+
 ```json
 {
     "Endpoint": "nats://nats-cluster.internal:4222",
@@ -332,7 +339,7 @@ Config extends `NatsConfigBase` (inherits all properties listed above under NATS
 **JetStream-specific properties:**
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Stream` | string | `"stream name"` | JetStream stream name |
 | `DurableConsumerName` | string | `""` | Durable consumer name (survives restarts) |
 | `DeliverPolicy` | string | `"All"` | Starting position (see table below) |
@@ -343,7 +350,7 @@ Config extends `NatsConfigBase` (inherits all properties listed above under NATS
 **Deliver policies:**
 
 | Policy | Behavior |
-|--------|----------|
+| -------- | ---------- |
 | `All` | Replay all messages from stream beginning (default) |
 | `Last` | Last message in the stream |
 | `New` | Only messages published after consumer creation |
@@ -354,6 +361,7 @@ Config extends `NatsConfigBase` (inherits all properties listed above under NATS
 Same auth, credential rotation, and message context as NATSConnector.
 
 **Example:**
+
 ```json
 {
     "Endpoint": "nats://nats-cluster.internal:4222",
@@ -372,7 +380,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 **PluginName**: `"MQTTConnector"` | **Type**: Accepting | **Base**: Direct `IMLPlugin`
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Topics` | string[] | `["example topic"]` | MQTT topics to subscribe to (supports `+` and `#` wildcards) |
 | `Endpoint` | string | `"localhost"` | MQTT broker hostname (passed to `WithTcpServer`) |
 
@@ -381,7 +389,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 **Message context** (scope: `"mqtt"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `topic` | Message topic |
 | `QOS` | Quality of Service level |
 | `content-type` | Message content type |
@@ -393,6 +401,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 | `receivedTime` | UTC receive timestamp (ISO 8601 via `.ToString("o")`) |
 
 **Example:**
+
 ```json
 {
     "Endpoint": "mqtt-broker.internal",
@@ -407,7 +416,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 **PluginName**: `"PulsarConnector"` | **Type**: Accepting | **Base**: `AbstractTestableConnector`
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Topic` | string | `""` | Pulsar topic (e.g., `"persistent://tenant/namespace/topic"`) |
 | `Subscription` | string | `""` | Subscription name |
 | `StartAtBeginning` | bool | `false` | `true` → `Earliest`; `false` → `Latest` |
@@ -432,13 +441,14 @@ Same auth, credential rotation, and message context as NATSConnector.
 **Message context** (scope: `"streaming-scope"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `message_timestamp` | Message timestamp (ISO 8601 via `.ToString("o")`) |
 | `topic` | The configured `Topic` value |
 | `id_property_scope` | `IdPropertyScope` value (only when `IdPropertyScope` is set) |
 | `id_property_name` | `IdPropertyName` value (only when `IdPropertyScope` is set) |
 
 **Example:**
+
 ```json
 {
     "Endpoint": "pulsar://pulsar-cluster.internal:6650",
@@ -455,7 +465,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 **PluginName**: `"ActiveMQConnector"` | **Type**: Accepting | **Base**: Direct `IMLPlugin`
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Endpoint` | string | `"http://server.com"` | Broker URI (e.g., `"activemq:tcp://localhost:61616"`) |
 | `QueueOrTopic` | string | `""` | Destination — prefix with `topic:` for topics (e.g., `"queue:sensor-data"`) |
 | `UserName` | string | `""` | Authentication username |
@@ -466,7 +476,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 **Message context** (scope: `"amq"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `delivery-mode` | NMS delivery mode |
 | `destination` | NMS destination |
 | `message-id` | NMS message ID |
@@ -476,6 +486,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 | `ttl` | NMS time-to-live |
 
 **Example:**
+
 ```json
 {
     "Endpoint": "activemq:tcp://amq-broker.internal:61616",
@@ -495,7 +506,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 Config extends `BasePollingConnectorConfig`.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `QueueEndpoint` | string | `"https://sqs.us-east-1.amazonaws.com/"` | SQS queue URL |
 | `AccessKey` | string | `null` | AWS access key |
 | `SecretKey` | string | `null` | AWS secret key |
@@ -508,12 +519,13 @@ Plus all `BasePollingConnectorConfig` properties (`PollingFrequencyMS`, `CronExp
 **Message context** (scope: `"SQSConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `MessageId` | SQS message ID |
 | `<attribute_key>` | Each SQS message attribute |
 | `ProcessTime` | UTC processing timestamp |
 
 **Example:**
+
 ```json
 {
     "QueueEndpoint": "https://sqs.us-east-1.amazonaws.com/123456789/my-queue",
@@ -533,7 +545,7 @@ Plus all `BasePollingConnectorConfig` properties (`PollingFrequencyMS`, `CronExp
 **PluginName**: `"WebSocketMessageConnector"` | **Type**: Accepting | **Base**: Direct `IMLPlugin`
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndPoint` | string | `null` | WebSocket URI (e.g., `"wss://stream.example.com/feed"`) |
 | `SubscriptionMessage` | string | `null` | Message to send upon connection |
 | `ConnectionDurationMS` | int | `-1` | Connection timeout in ms (`-1` = infinite) |
@@ -544,6 +556,7 @@ Plus all `BasePollingConnectorConfig` properties (`PollingFrequencyMS`, `CronExp
 **No message context properties** are set by this connector. No authentication options.
 
 **Example:**
+
 ```json
 {
     "EndPoint": "wss://stream.example.com/realtime",
@@ -562,18 +575,19 @@ Plus all `BasePollingConnectorConfig` properties (`PollingFrequencyMS`, `CronExp
 Exposes an HTTP POST endpoint. Query parameters can be promoted to message context.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `PromotableProperties` | PromotableProperty[] | `[{}]` | Maps HTTP query parameters to message context properties |
 
 **PromotableProperty fields:**
 
 | Field | Type | Default | Purpose |
-|-------|------|---------|---------|
+| ------- | ------ | --------- | --------- |
 | `ParameterName` | string | `""` | HTTP query parameter name |
 | `ContextScope` | string | `""` | Message context scope |
 | `ContextName` | string | `""` | Message context property name |
 
 **Example:**
+
 ```json
 {
     "PromotableProperties": [
@@ -599,7 +613,7 @@ When a POST hits `https://server/Api/DataStream/Push?rampId=xyz&source=sensor42`
 Config extends `BasePollingConnectorConfig` and implements `IEndpointPollableConnectorConfig`.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndPoint` | string | `null` | Target URL (inherited from `BasePollingConnectorConfig`) |
 | `MultipleEndpoints` | string[] | `null` | Query multiple URLs |
 | `UsePost` | bool | `false` | Use HTTP POST instead of GET |
@@ -641,7 +655,7 @@ HttpPollingConnector has **two independent placeholder systems**:
 Recalculated fresh on **every poll**, independent of `DoNotTrack` and the tracking system.
 
 | Placeholder | Resolves To |
-|-------------|-------------|
+| ------------- | ------------- |
 | `{now}` | Current UTC datetime |
 | `{today}` | Current UTC date |
 | `{now-30d}` | 30 days before now |
@@ -667,7 +681,7 @@ The connector saves each run's end date and uses it as the next run's start date
 **GET tracking placeholders** (in URL, substituted by `BuildUrl()`):
 
 | Placeholder | Resolves To |
-|-------------|-------------|
+| ------------- | ------------- |
 | `{year1}` | Start date year (previous run's end date, or `StartDate` config, or Jan 1 of current year) |
 | `{month1}` | Start date month |
 | `{day1}` | Start date day |
@@ -678,6 +692,7 @@ The connector saves each run's end date and uses it as the next run's start date
 **IMPORTANT: GET tracking is day-granularity only.** `date2` is hardcoded to `DateTime.Today` (midnight). No hour/minute/second placeholders exist. The connector skips the request if the built URL matches the previous poll's URL (same day = same URL = skip). **Suited for daily or less frequent polling only.**
 
 **For sub-day polling, use instead:**
+
 1. **Relative date tokens** (`{now}`, `{now-1h}`) with `DoNotTrack: true` — rolling window with full timestamp precision. No tracking state. Gaps possible if polls are missed.
 2. **POST tracking with `{{TRACKING_VALUE}}`** — tracked value can be any format (e.g., ISO timestamps). `FieldTrackingTransform` extracts new value from response. True "since last run" at any granularity with no gaps.
 
@@ -695,7 +710,7 @@ The connector saves each run's end date and uses it as the next run's start date
 **POST tracking placeholders** (in `PostPayload`):
 
 | Placeholder | Resolves To |
-|-------------|-------------|
+| ------------- | ------------- |
 | `{{TRACKING_VALUE}}` | The saved tracking value from the previous run (or `TrackingStartValue` on first run) |
 | `{{TRACKING_FIELD}}` | The configured `TrackingFieldName` |
 
@@ -737,11 +752,13 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 #### `DoNotTrack` Summary
 
 **`DoNotTrack: false` (default)** — enables tracking/bookmarking:
+
 - **GET:** Saves `EndDate`; next run starts from previous end date. Requires `{year1}` etc. in URL.
 - **POST:** Saves `PostTrackingValue`; next run substitutes into `{{TRACKING_VALUE}}`. Requires `FieldTrackingTransform`.
 - **Validation:** When `false` + `UsePost: false` + no cursor, URL must contain `{` (date placeholder), else throws `"Set DoNotTrack to true, or add parameters to the EndPoint."`
 
 **`DoNotTrack: true`** — disables tracking:
+
 - No tracking data read or saved between runs
 - Relative date tokens (`{now}`, `{now-1h}`) still work (separate system)
 - Date placeholders in URL still work — `DoNotTrack` only disables the bookmarking system, not date substitution
@@ -755,6 +772,7 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 - `UsePost` requires `PostPayload` (and vice versa); `MediaType` must be `"application/json"`, `"application/xml"`, or `"text/plain"`
 
 **Example — GET polling with date substitution:**
+
 ```json
 {
     "EndPoint": "https://api.example.com/data?since={now-1h}",
@@ -764,6 +782,7 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 ```
 
 **Example — POST with cursor pagination:**
+
 ```json
 {
     "EndPoint": "https://api.example.com/query",
@@ -786,7 +805,7 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 Config extends `AbstractPollingConnectorConfig`. Max threads: **50**.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Bucket` | string | `null` | S3 bucket name |
 | `AccessKey` | string | `null` | AWS access key ID |
 | `SecretKey` | string | `null` | AWS secret access key |
@@ -804,7 +823,7 @@ Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` prope
 **Message context** (scope: `"S3Connector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `BucketName` | S3 bucket name |
 | `Key` | S3 object key |
 | `Size` | Object size |
@@ -814,6 +833,7 @@ Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` prope
 When `CopyS3ConfigToMessage` is true, also copies `AccessKey`, `SecretKey`, `KMSKey` (marked sensitive), `Region`, `Bucket`, `ServiceUrl`, `UseHttp`.
 
 **Example:**
+
 ```json
 {
     "Bucket": "my-data-lake",
@@ -836,12 +856,13 @@ When `CopyS3ConfigToMessage` is true, also copies `AccessKey`, `SecretKey`, `KMS
 Config is `AzureStorageConfig` extending `AbstractPollingConnectorConfig`. Max threads: **25**.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Credentials` | Dictionary\<string, string\> | `{}` | Authentication credentials (connection string, SAS token, etc.) |
 
 Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` properties.
 
 The `Credentials` dictionary typically contains `"ConnectionString"`:
+
 ```json
 "Credentials": {
     "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
@@ -851,13 +872,14 @@ The `Credentials` dictionary typically contains `"ConnectionString"`:
 **Message context** (scope: `"AzureStorageConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `Name` | Blob name |
 | `ContentLength` | Blob size |
 | `LastModified` | Blob last modified timestamp |
 | `ProcessTime` | UTC processing timestamp |
 
 **Example:**
+
 ```json
 {
     "EndPoint": "my-container",
@@ -880,7 +902,7 @@ The `Credentials` dictionary typically contains `"ConnectionString"`:
 Config is `GCSConnectorConfig` extending `AbstractPollingConnectorConfig`. Max threads: **25**.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Bucket` | string | `null` | GCS bucket name |
 | `KeyFile` | string | `null` | Path to service account JSON key file |
 | `Anonymous` | bool | `false` | Unauthenticated access (public buckets) |
@@ -890,7 +912,7 @@ Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` prope
 **Message context** (scope: `"GoogleCloudStorageConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `Bucket` | GCS bucket name |
 | `KeyFile` | Service account key file path |
 | `Name` | Object name |
@@ -899,6 +921,7 @@ Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` prope
 | `ProcessTime` | UTC processing timestamp |
 
 **Example:**
+
 ```json
 {
     "Bucket": "my-data-bucket",
@@ -918,7 +941,7 @@ Plus all `AbstractPollingConnectorConfig` and `BasePollingConnectorConfig` prope
 Config implements `IMLAcceptsPushedRecordsConfig` directly (not via `BasePollingConnectorConfig`).
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `LocationToWatch` | string | `"C:/temp/"` | Directory path to scan (auto-created if missing) |
 | `Filter` | string | `"*"` | File pattern (e.g., `"*.csv"`) |
 | `PollingFrequencyMS` | int | `5000` | Scan interval in ms |
@@ -932,10 +955,11 @@ Config implements `IMLAcceptsPushedRecordsConfig` directly (not via `BasePolling
 **Message context** (scope: `"FileSystemConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `OriginalFileName` | File name (not full path) |
 
 **Example:**
+
 ```json
 {
     "LocationToWatch": "/data/incoming",
@@ -955,7 +979,7 @@ Config implements `IMLAcceptsPushedRecordsConfig` directly (not via `BasePolling
 Config extends `BasePollingConnectorConfig` (NOT `AbstractPollingConnectorConfig` — it has its own file-oriented properties). Max threads: **25**.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Host` | string | `null` | SFTP server hostname |
 | `Port` | string | `null` | SFTP port (string, parsed internally) |
 | `Username` | string | `null` | SSH username (supports `"scope:propertyName"` for context substitution) |
@@ -976,13 +1000,14 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 **Message context** (scope: `"SFTPConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `OriginalFileName` | Full file name on SFTP server |
 | `Length` | File size |
 | `LastWriteTimeUtc` | File last write timestamp |
 | `ProcessTime` | UTC processing timestamp |
 
 **Example:**
+
 ```json
 {
     "Host": "sftp.partner.com",
@@ -1006,7 +1031,7 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 Config extends `BasePollingConnectorConfig`.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Provider` | string | `""` | ADO.NET provider (`"System.Data.SqlClient"`, `"Npgsql"`, etc.) |
 | `ConnectionString` | string | `""` | Database connection string |
 | `Query` | string | `""` | Single SQL query |
@@ -1026,6 +1051,7 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 **Validation:** Provider, ConnectionString, and at least one query required. No message context properties.
 
 **Example:**
+
 ```json
 {
     "Provider": "Npgsql",
@@ -1047,7 +1073,7 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 Config extends `BasePollingConnectorConfig`.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndpointUri` | string | `"http://server.com/"` | Elasticsearch search URL (e.g., `"https://es:9200/myindex/_search"`) |
 | `Authorization` | string | `""` | Authorization header value (e.g., `"Basic base64..."` or `"Bearer token"`) |
 | `UseTimeStampField` | string | `""` | Field for incremental polling (e.g., `"@timestamp"`) — auto-adds range query |
@@ -1058,13 +1084,14 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 **Message context** (scope: `"ElasticsearchConnector"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `LAST_EXECUTION_TIMESTAMP` | Previous poll timestamp |
 | `NEW_LAST_EXECUTION_TIMESTAMP` | Timestamp for tracking update |
 | `REQUEST_METHOD` | `"Search"` or `"Scroll"` |
 | `SEARCH_BODY` | Raw JSON search body |
 
 **Example:**
+
 ```json
 {
     "EndpointUri": "https://es-cluster.internal:9200/logs-*/_search",
@@ -1083,7 +1110,7 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 Config extends `BasePollingConnectorConfig`.
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndPoint` | string | `null` | Feature service URL |
 | `MultipleEndpoints` | string[] | `null` | Multiple feature service URLs |
 | `ParallelFactor` | int | `1` | Parallel import threads per layer |
@@ -1102,6 +1129,7 @@ Config extends `BasePollingConnectorConfig`.
 Plus `BasePollingConnectorConfig` scheduling properties.
 
 **Example:**
+
 ```json
 {
     "EndPoint": "https://services.arcgis.com/.../FeatureServer/0",
@@ -1123,7 +1151,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **OgcConnectorConfig properties:**
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `AuthenticationType` | AuthenticationType | `None` | `None`, `ApiKeyInUrl`, `ApiKeyInHeaders`, `Basic` |
 | `Username` | string | `null` | Auth username |
 | `Password` | string | `null` | Auth password |
@@ -1136,7 +1164,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **WfsConnectorConfig properties:**
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `Features` | List\<string\> | `[]` | Feature type names to query |
 | `Hits` | long | `-1` | Max records to retrieve (`-1` = all) |
 | `PageSize` | int? | `0` | Features per request (`0` = use server default from GetCapabilities; set `> 0` to override). WFS 1.1.0 disables paging entirely regardless of this value. |
@@ -1150,11 +1178,12 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **Message context** (scope: `"wfs"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `version` | WFS version used |
 | `featureId` | Feature type identifier |
 
 **Example:**
+
 ```json
 {
     "EndPoint": "https://geoserver.example.com/wfs",
@@ -1179,7 +1208,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **PluginName**: `"AttachedFilesystemConnector"` | **Type**: LongRunning
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `RootPaths` | string[] | `null` | Base directories to scan |
 | `ArchiveMode` | ArchiveHandling | `Expand` | Archive handling: `None`, `Expand`, `BrowseOrExpand` |
 | `OutputMode` | OutMode | `FileName` | `FileName` (path string) or `Stream` (file stream) |
@@ -1199,7 +1228,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **Message context** (scope: `"FILE"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `LOCATION` | Canonical file path |
 | `CONTAINING_ARCHIVE` | Parent archive path (if inside archive) |
 | `PRESENTATION` | Presentation mode |
@@ -1208,6 +1237,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 | `RELATIVE_PATH` | Relative path from root |
 
 **Example:**
+
 ```json
 {
     "RootPaths": ["/mnt/nas/data"],
@@ -1226,7 +1256,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 **PluginName**: `"Tiled Imagery Connector"` *(note the spaces)* | **Type**: LongRunning
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `EndPoint` | string | `"http://server.com/"` | WMTS GetCapabilities URL, ArcGIS MapServer URL, or XYZ `{x}{y}{z}` template |
 | `MinZoom` | int | `-1` | Min zoom level (`-1` = auto-detect from capabilities) |
 | `MaxZoom` | int | `-1` | Max zoom level (`-1` = auto-detect from capabilities) |
@@ -1237,13 +1267,14 @@ Geographic bounds are read from WMTS capabilities (`WGS84BoundingBox`) at runtim
 **Message context** (scope: `"tile"`):
 
 | Key | Value |
-|-----|-------|
+| ----- | ------- |
 | `x` | Tile X coordinate |
 | `y` | Tile Y coordinate |
 | `z` | Tile zoom level |
 | `url` | Tile URL |
 
 **Example:**
+
 ```json
 {
     "EndPoint": "https://tiles.example.com/wmts/1.0.0/WMTSCapabilities.xml",
@@ -1260,7 +1291,7 @@ Geographic bounds are read from WMTS capabilities (`WGS84BoundingBox`) at runtim
 **PluginName**: `"VideoConnector"` | **Type**: Accepting
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `URL` | string | `"https://example.com/"` | RTSP or MJPEG stream URL |
 | `PixelThreshold` | int | `0` | Greyscale difference threshold for change detection (0-255) |
 | `PercentThreshold` | double | `0.0` | Percentage of changed pixels to consider frame significant |
@@ -1277,6 +1308,7 @@ For frame mode: `frame`, `frameNumber`, `frameId`.
 For segment mode: `file`, `segmentDuration`, `segment`, `streamStartTime`.
 
 **Example:**
+
 ```json
 {
     "URL": "rtsp://camera.internal:554/stream1",
@@ -1301,7 +1333,7 @@ Config mapping via `PushedRecordHelper.TranslateRecord<T>()`: clones config (thr
 ### Config Properties
 
 | Property | Type | Default | Purpose |
-|----------|------|---------|---------|
+| ---------- | ------ | --------- | --------- |
 | `RunInAcceptingMode` | bool | `false` | Switch from active polling to passive waiting |
 | `PushedRecordIsConfig` | bool | `false` | Map pushed record fields directly to config properties by name |
 | `PushedDataMapping` | MLPushedRecordMapping[] | `null` | Explicit source→destination mappings |
@@ -1331,7 +1363,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ### Supported Connectors
 
 | Connector | Via |
-|-----------|----|
+| ----------- | ---- |
 | `FileSystemConnector` | Config directly implements `IMLAcceptsPushedRecordsConfig` |
 | All `BasePollingConnectorConfig` descendants | Inherits from `BasePollingConnectorConfig` which implements `IMLAcceptsPushedRecordsConfig` |
 | Messaging connectors (Kafka, NATS, etc.) | N/A — already accepting by nature |
@@ -1343,7 +1375,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ### Scheduling
 
 | Gotcha | Detail |
-|--------|--------|
+| -------- | -------- |
 | **`RunOnStartup` scope is limited** | Only checked by `AbstractPollableConnector` descendants (S3, Azure, GCS, SFTP) and only with `CronExpression`. `BasePollingConnector` descendants (HttpPolling, ArcGIS, WFS, RelationalDB, Elasticsearch) always run first poll immediately. |
 | **2500ms minimum poll interval** | Even with `PollingFrequencyMS: 0`, minimum is 2.5s. S3/Azure/GCS/SQS enforce this independently. Delay is additive: `max(2500ms - elapsed, 0) + configuredInterval`. |
 | **Invalid `CronExpression` silently becomes one-time** | Invalid cron clears `PollingFrequencyMS` to `-1` and sets schedule to null → `IsOneTime = true`. Runs once, stops, no error. |
@@ -1352,7 +1384,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ### Validation
 
 | Gotcha | Detail |
-|--------|--------|
+| -------- | -------- |
 | **Validation runs at save time AND startup** | Invalid configs fail to save with `ArgumentException`. |
 | **`EndPoint` required even in accepting mode** | Validation runs before `RunInAcceptingMode` check. Provide a placeholder. |
 | **On-ramp save validation** | `Name`, `ConnectorAppName`, `ConnectorPluginName`, `ConnectorOptions` must be non-empty, JSON valid, and either `WellKnownPipelineId` or `PipelineDefinition` must be provided. |
@@ -1369,19 +1401,23 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ### Runtime Behavior
 
 **Destructive operations:**
+
 - **FileSystemConnector DELETES files** after successful processing
 - **SQS deletes messages** after successful processing
 
 **No reconnection:**
+
 - **MQTT** — connects once; silent failure on disconnect
 - **ActiveMQ** — no reconnection; only supports text messages (`ITextMessage` cast); failed durable subscription silently falls back to non-durable
 
 **Reconnection with backoff:**
+
 - **Kafka/Pulsar** — 5-second delay then retry, indefinitely
 - **HttpPolling** — single retry with 5s delay; if retry fails, throws (or returns null if `IgnoreErrors: true`)
 - **WebSocket** — no backoff when `IgnoreErrors: true` (immediate retry); connection duration expiry = permanent exit (no reconnect)
 
 **Message handling:**
+
 - **Kafka/Pulsar `MultipleEndpoints`** creates parallel independent consumers, not one consumer with multiple brokers
 - **Pulsar `SubscriptionType`** hardcoded to `Exclusive` (one consumer per subscription)
 - **Pulsar acknowledges messages even on processing failure** (fire-and-forget)
@@ -1392,6 +1428,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 - **Kafka `ManualConsumerSettings`** overlays ALL consumer config including `GroupId` and security
 
 **Other:**
+
 - **HttpPolling duplicate URL skipping** — GET tracking skips poll if built URL matches previous poll's URL
 - **WebSocket `ConnectionSpan`** takes precedence over `ConnectionDurationMS`
 - **`FaultedRetryAttempts: 3`** = 4 total executions (1 initial + 3 retries). Retry delay has 0-1000ms random jitter.
@@ -1400,7 +1437,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ### Connector-Specific Nuances
 
 | Connector | Nuance |
-|-----------|--------|
+| ----------- | -------- |
 | **AttachedFilesystem** | `Recursive` config property is **never read** — always recurses. Use `STOP_RECURSION` context property to halt. Reconciliation **deletes rows** when source files removed. |
 | **TiledImagery** | Resumes via `LAST_TILE_XYZ` metadata. Per-tile errors non-fatal. One-shot: processes all tiles then exits. |
 | **SFTP** | Uses both `PasswordAuthenticationMethod` and `KeyboardInteractiveAuthenticationMethod`. `Port` string→int; invalid = default SSH port. NOT recursive. Context substitution (`scope:propertyName`) breaks if value contains a colon. |
@@ -1416,7 +1453,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 ## Connector Quick-Reference Table
 
 | PluginName (exact) | Category | Config Base | Key Properties |
-|--------------------|----------|-------------|----------------|
+| -------------------- | ---------- | ------------- | ---------------- |
 | `KafkaConnector` | Accepting | standalone | Topic, Endpoint, GroupId, EnableAutoCommit, UseSSL, SaslMechanism |
 | `NATSConnector` | Accepting | NatsConfigBase | Endpoint, Subjects, QueueGroupName, CredentialsPath |
 | `NATSJetStreamConnector` | Accepting | NatsConfigBase | Endpoint, Stream, DurableConsumerName, DeliverPolicy, FilterSubjects |
@@ -1449,6 +1486,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 The primary monitoring interface is in the MapLarge Admin UI. Navigate via the **gear icon** (left sidebar) → **Data Streams**. This opens the Data Streams admin page (`/dashboard/repo/v5/Admin/DataStream`) with four tabs: **On Ramps** (default), **Off Ramps**, **Pipelines**, **Well-known Resources**.
 
 **On-Ramps List Grid** shows all configured on-ramps with columns:
+
 - Name, Requested Status, **Actual Status** (with color indicator), Connector (App/Plugin), Effective User, Cluster Role, Server count
 
 **Status indicators:** Green = Running, Orange + warning icon = Running with warnings, Red = Faulted, Gray = Stopped
@@ -1473,7 +1511,7 @@ Server node selector dropdown. Shows message-level logs with timestamps. Click a
 These are on-ramp-level settings configured in the UI form (not in connector or pipeline JSON):
 
 | Setting | Default | Purpose |
-|---------|---------|---------|
+| --------- | --------- | --------- |
 | `verboseLogging` | `false` | Logs detailed step execution info (step name, type, plugin, start/end times, exceptions, record counts, context variables) to in-memory log queue. Viewable in the Detailed Logging tab. |
 | `tableLogging` | `false` | Persists step execution details to the `_system/datastream_log` table. **Warning: negatively affects performance.** Use for debugging, not production. Table auto-caps at 100,000 rows. |
 
@@ -1486,23 +1524,29 @@ These are on-ramp-level settings configured in the UI form (not in connector or 
 You can also query ramp status directly using SQL Table-Valued Functions in the MapLarge query interface. This is useful for building dashboards or automated monitoring.
 
 **Cluster-wide ramp overview:**
+
 ```sql
 SELECT * FROM ml_rampserverstats(ramptype='on', asof='{{now}}')
 ```
+
 Returns: `UniqueID`, `Name`, `ServerName`, `ActualStatus`, `ErrorMessage`, `QueueDepth`, `MessagesProcessed`, `RecordsProcessed`, `RecordsSkipped`, `RecordsFailed`, `MessagesFailed`, `AvgLatencyMS`, `LastProcessedTimestamp`, `LastStateChangeTime`, `HasWarnings`
 
 Optional parameters: `local='true'` (local server only), `nondeleted='true'` (exclude deleted ramps). Use `ramptype='off'` for off-ramps.
 
 **Message-level logs for a specific ramp:**
+
 ```sql
 SELECT * FROM ml_ramplog(id='<ramp-unique-id>', ramptype='on', asof='{{now}}')
 ```
+
 Returns: `MessageId`, `MessageStart`, `MessageEnd`, `UniqueID`, `ServerName`, `NumStepsWithException`, `RecordsProcessed`
 
 **Step-level detail within messages:**
+
 ```sql
 SELECT * FROM ml_rampsteplog(id='<ramp-unique-id>', ramptype='on', asof='{{now}}')
 ```
+
 Returns: `UniqueID`, `StepName`, `Count`, `Start`, `End`, `Exceptions`, `MessageContext`, `MessageId`, `MessageStart`, `MessageEnd`, `ServerName`, `NumStepsWithException`
 
 Optional: add `messageid='<message-id>'` to filter to a single message.

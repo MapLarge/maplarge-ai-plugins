@@ -70,7 +70,9 @@ On each **series** (`SeriesEncodeOptionMixin`, mixed into every series type):
 ## Patterns
 
 ### Switchable X / Y / color (one dataset, rebind encode)
+
 Keep `source` static; change only `encode` from a ViewModel getter. No data re-shaping.
+
 ```ts
 // VM returns the current series fragment:
 public get scatterSeries(): ml.echarts.ScatterSeriesOption[] {
@@ -80,7 +82,9 @@ public get scatterSeries(): ml.echarts.ScatterSeriesOption[] {
 ```
 
 ### Chained transforms — filter then sort
+
 Each dataset can derive from the previous. Index them and reference with `fromDatasetIndex`.
+
 ```ts
 dataset: [
     { source: rows },                                                  // 0: raw
@@ -89,9 +93,11 @@ dataset: [
 ],
 series: [{ type: "bar", datasetIndex: 2, encode: { x: "quarter", y: "revenue" } }],
 ```
+
 `filter` and `sort` are built in. `boxplot`, regression/`ecStat:*` etc. must be **registered first** (see Gotchas).
 
 ### Object-rows + encode by name
+
 ```ts
 dataset: { source: [
     { region: "North", units: 40, returns: 3 },
@@ -113,7 +119,7 @@ series: [{ type: "bar", encode: { x: "region", y: "units" } }],
 ## Related skills
 
 - `echarts` — parent: the option model, `setOption` merge behavior, and `ml.echarts.*` types.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts: `s.chart({ options })`, `traverseRaptorChart` bindings, binding `dataset.source` / `series` to ViewModel getters.
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts: `s.chart({ options })`, `traverseRaptorChart` bindings, binding `dataset.source` / `series` to ViewModel getters.
 - `line.md`, `bar.md`, `scatter.md`, `pie.md` — the per-series `data[]` alternative and the series that most commonly consume a dataset via `encode`.
 - `boxplot.md` — boxplot's `dataset` `transform: { type: "boxplot" }` workflow (registered transform).
 - `tooltip.md` — `encode.tooltip` controls which dataset columns appear in tooltips.
@@ -123,14 +129,14 @@ series: [{ type: "bar", encode: { x: "region", y: "units" } }],
 
 ---
 
-# dataset — option & field cheatsheet
+## dataset — option & field cheatsheet
 
 Type: `ml.echarts.DatasetComponentOption` (exported alias of internal `DatasetOption`). Top-level key `dataset?: DatasetComponentOption | DatasetComponentOption[]`.
 
 ## DatasetComponentOption fields (from d.ts)
 
 | field | type | notes |
-|---|---|---|
+| --- | --- | --- |
 | `source` | `OptionSourceData` | 2D array \| object rows \| column dict (see formats below). Omit when this dataset is derived via `transform`. |
 | `dimensions` | `DimensionDefinitionLoose[]` | `string` or `{ name?, type?, displayName? }`. Names enable string `encode`. |
 | `sourceHeader` | `boolean \| 'auto' \| number` | header row(s). `'auto'` = detect. |
@@ -144,13 +150,14 @@ Type: `ml.echarts.DatasetComponentOption` (exported alias of internal `DatasetOp
 
 ## Source formats (`OptionSourceData` union)
 
-```
+```text
 arrayRows    OptionSourceDataArrayRows    = Array<Array<value>>     // header row optional
 objectRows   OptionSourceDataObjectRows   = Array<{ [col]: value }> // keys are dimensions
 keyedColumns OptionSourceDataKeyedColumns = { [col]: value[] }      // each key a column
 original     OptionSourceDataOriginal     = ArrayLike<item>         // value | value[] | {value,...}
 typedArray   OptionSourceDataTypedArray   = ArrayLike<number>       // perf path
 ```
+
 `value` (`OptionDataValue`) = `string | number | Date | null | undefined`.
 
 `DimensionDefinition = { type?: DataStoreDimensionType; name?: string; displayName?: string }`. `DimensionDefinitionLoose = string | DimensionDefinition`.
@@ -158,7 +165,7 @@ typedArray   OptionSourceDataTypedArray   = ArrayLike<number>       // perf path
 ## series-side encode (`SeriesEncodeOptionMixin`, on every series)
 
 | field | type |
-|---|---|
+| --- | --- |
 | `datasetIndex` | `number` |
 | `datasetId` | `string \| number` |
 | `seriesLayoutBy` | `'column' \| 'row'` |
@@ -167,10 +174,11 @@ typedArray   OptionSourceDataTypedArray   = ArrayLike<number>       // perf path
 | `encode` | `OptionEncode` |
 
 ### OptionEncode roles
+
 Coordinate dims (open-ended `[coordDim: string]`): `x`, `y`, `radius`, `angle`, `value`, `single`, `lng`, `lat` ... plus visual roles from `OptionEncodeVisualDimensions`:
 
 | role | meaning |
-|---|---|
+| --- | --- |
 | `tooltip` | columns shown in tooltip |
 | `label` | column driving the on-chart label |
 | `itemName` | name per item (pie/funnel slice name) |
@@ -186,9 +194,11 @@ Each value is `DimensionLoose | DimensionLoose[]` — a dimension name (string),
 interface DataTransformOption { type: string; config?: unknown; print?: boolean; }
 type PipedDataTransformOption = DataTransformOption[];   // run in order
 ```
+
 `print: true` logs the transform output to console for debugging.
 
 Built in: `'filter'`, `'sort'`.
+
 ```ts
 // filter
 { type: "filter", config: { dimension: "year", gte: 2020 } }
@@ -198,9 +208,11 @@ Built in: `'filter'`, `'sort'`.
 { type: "sort", config: { dimension: "score", order: "desc" } }
 { type: "sort", config: [ { dimension: "cat", order: "asc" }, { dimension: "score", order: "desc" } ] }
 ```
+
 Filter comparators: `<`, `<=`, `>`, `>=`, `=`, `!=`, `reg` (regex), plus `and`/`or`/`not` nesting. `order`: `'asc' | 'desc'`. `parser: 'time'` / `'number'` / `'trim'` coerces a dimension before comparing.
 
 External plugins (must register before use):
+
 ```ts
 import * as ecStat from "echarts-stat";
 echarts.registerTransform(ecStat.transform.regression);
@@ -212,6 +224,7 @@ echarts.registerTransform(ecStat.transform.histogram);
 import { transform as boxplotTransform } from "echarts/extension/dataTool";  // registerTransform(...)
 { transform: { type: "boxplot", config: { itemNameFormatter: "expr {value}" } } }
 ```
+
 Boxplot returns two results — boxes (default index 0) and outliers — so the scatter overlay dataset uses `fromTransformResult: 1`.
 
 `registerExternalTransform({ type, transform })` is the lower-level API; a transform returns `{ data, dimensions? }` (`ExternalDataTransformResultItem`) or an array of them.
@@ -224,4 +237,4 @@ Boxplot returns two results — boxes (default index 0) and outliers — so the 
 - `xAxis.type: "category"` with a dataset reads categories from the encoded x dimension; do not also set `xAxis.data`.
 - Multiple `dataset` entries form a pipeline: a downstream entry's `fromDatasetIndex`/`fromDatasetId` + `transform` consumes an upstream entry.
 
-Official reference (SPA — open in a browser, do not scrape): https://echarts.apache.org/en/option.html#dataset
+Official reference (SPA — open in a browser, do not scrape): <https://echarts.apache.org/en/option.html#dataset>

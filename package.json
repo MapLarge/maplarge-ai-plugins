@@ -1,0 +1,17 @@
+{
+	"name": "maplarge-ai-plugins-public",
+	"private": true,
+	"type": "module",
+	"description": "Static check suite (ARC-15) and publish gate (ARC-10) for the MapLarge AI skill set. Run `npm run check` before opening a skill PR; `npm run publish` publishes to the GitHub mirror through the gate.",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"check": "node scripts/check.mjs",
+		"publish": "node scripts/publish.mjs",
+		"test": "node --test \"tests/*.test.mjs\""
+	},
+	"devDependencies": {
+		"markdownlint-cli2": "^0.23.2"
+	}
+}

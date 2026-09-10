@@ -1,6 +1,6 @@
 {
   "name": "maplarge-adk",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Portable, customer-safe guidance for building MapLarge ADK extensions: workspace detection, queries, Raptor dashboards, data modeling, server-side extension patterns, granular Raptor-control and Apache ECharts charting skill families, and the ml-docgen config-documentation tool.",
   "author": {
     "name": "MapLarge",
@@ -8,7 +8,7 @@
     "url": "https://maplarge.com"
   },
   "homepage": "https://docs.maplarge.com/dashboard/ext/docportal/portal",
-  "repository": "https://dev.azure.com/MapLarge/Internal/_git/claude-plugins",
+  "repository": "https://github.com/maplarge/maplarge-ai-plugins",
   "license": "Proprietary",
   "keywords": [
     "maplarge",

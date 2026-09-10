@@ -1,0 +1,22 @@
+# Deprecated MapLarge APIs (ARC-15 seed list). One line per deprecation:
+# left side is the banned term, right side is the replacement.
+# scope: raw so references inside code blocks and frontmatter are caught too
+# (the known DataGrid refs live in fenced examples and raptor's description).
+# Case-sensitive on purpose: TypeScript identifiers are case-sensitive, and the
+# deprecated control appears as the type (DataGrid), the builder (dataGrid), and
+# lowercase element strings (datagrid) — each swap suggests the matching-case
+# replacement. Add all forms when adding a new deprecation.
+# nonword: swaps match as substrings, not whole words (ARC-37): compound
+# identifiers like DataGridViewModel or MLDataGrid would slip through Vale's
+# default \b wrapping. Keys are regexes — write \b explicitly in a key if a
+# future deprecation really needs word-boundary semantics.
+extends: substitution
+message: "Deprecated API: use '%s' instead of '%s' (ARC-15 banned-term list, DE-761)."
+level: error
+scope: raw
+ignorecase: false
+nonword: true
+swap:
+  DataGrid: DataTable
+  dataGrid: dataTable
+  datagrid: datatable

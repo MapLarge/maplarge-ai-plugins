@@ -1,0 +1,9 @@
+extends: existence
+message: "Names an AI assistant ('%s') — skills are cross-model; write in terms of the task (skill template §3, checklist item 14)."
+level: error
+ignorecase: true
+tokens:
+  - claude
+  - copilot
+  - codex
+  - gpt

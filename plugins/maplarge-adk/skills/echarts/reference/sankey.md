@@ -8,6 +8,7 @@ Layered flow diagram: nodes in stages connected by ribbons whose width encodes a
 - You have a set of **named nodes** and weighted **links** between them, and want the layout (node columns, ribbon routing) computed automatically.
 
 Use a different skill when:
+
 - A single linear drop-off through ordered stages with no branching → `funnel.md`.
 - A general node-link network (no enforced left-to-right layering, force/circular layout, edges both ways) → `graph.md`.
 - Flows whose volume changes **over time** (stream/stacked-area by date) → `themeriver.md`.
@@ -16,6 +17,7 @@ Use a different skill when:
 ## Minimal config
 
 A complete `ml.echarts.EChartsOption` that renders a 3-stage flow:
+
 ```ts
 const option: ml.echarts.EChartsOption = {
   tooltip: { trigger: "item", triggerOn: "mousemove" },
@@ -40,11 +42,13 @@ const option: ml.echarts.EChartsOption = {
   }]
 };
 ```
+
 Sankey is its own `coordinateSystem: "view"` — there is **no** `xAxis`/`yAxis`/`grid`.
 
 ## Data shape
 
 Two parallel arrays inside the series:
+
 - **Nodes** — `data` (alias `nodes`): `SankeyNodeItemOption[]`, each at minimum `{ name: string }`. Names must be **unique**; links reference nodes by this `name` (or by index). Optional per-node: `value`, `depth`, `itemStyle`, `label`, `localX`/`localY`, `draggable`.
 - **Links** — `links` (alias `edges`): `SankeyEdgeItemOption[]`, each `{ source, target, value }` where `source`/`target` are node `name` strings (or indices) and `value: number` sets ribbon width. Optional per-link: `lineStyle`, `edgeLabel`.
 
@@ -53,6 +57,7 @@ The graph must be a **DAG** — no cycles, and ideally one connected component. 
 ## Key options
 
 From `ml.echarts.SankeySeriesOption`:
+
 - `orient: 'horizontal' | 'vertical'` — flow direction (default horizontal, left→right).
 - `nodeAlign: 'justify' | 'left' | 'right'` — how terminal nodes are pinned. `justify` spreads columns edge to edge; `left`/`right` push leaf nodes to that side.
 - `nodeWidth: number` — thickness of each node rectangle (px).
@@ -70,12 +75,14 @@ From `ml.echarts.SankeySeriesOption`:
 ## Patterns
 
 **Link color tied to an endpoint.** Color each node, then let ribbons inherit:
+
 ```ts
 data: [{ name: "Hub", itemStyle: { color: chartTheme.getSeriesColors()[0] } }, /* … */],
 lineStyle: { color: "source", opacity: 0.45 }  // 'target' or 'gradient' also valid
 ```
 
 **Per-column theming with `levels`.** Color stages instead of individual nodes:
+
 ```ts
 levels: [
   { depth: 0, itemStyle: { color: c0 }, lineStyle: { color: "source", opacity: 0.4 } },
@@ -85,18 +92,21 @@ levels: [
 ```
 
 **Vertical flow with inside edge labels.**
+
 ```ts
 { type: "sankey", orient: "vertical", label: { rotate: 0 },
   edgeLabel: { show: true, position: "inside", formatter: (p:any) => p.value } }
 ```
 
 **Click to drill.** Sankey click params expose `dataType` (`'node'` or `'edge'`) and the item:
+
 ```ts
 chart.on("click", (e: any) => {
   if (e.dataType === "node") this.selectNode(e.name);
   else if (e.dataType === "edge") this.selectLink(e.data.source, e.data.target);
 });
 ```
+
 (See the parent `echarts` skill for wiring events via `onChartCreated`.)
 
 ## Gotchas
@@ -112,5 +122,5 @@ chart.on("click", (e: any) => {
 ## Related skills
 
 - `echarts` (parent) — option model, `onChartCreated` events, theme-reactive CSS-variable colors, setOption merge behavior.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `raptorDom.nodeT`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart`, `raptorDom.nodeT`).
 - Siblings: `funnel.md` (linear drop-off), `graph.md` (general network), `themeriver.md` (flow over time), `tree.md` / `sunburst.md` / `treemap.md` (hierarchy).

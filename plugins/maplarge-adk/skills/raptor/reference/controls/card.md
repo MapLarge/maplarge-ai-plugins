@@ -3,6 +3,7 @@
 A bordered container surface with optional header / body / footer sections, built from the `s.card()` RSScriptor builder and its nested section builders. Use it for grouped content panels, summary boxes, and clickable picker tiles.
 
 ## When to use
+
 - Grouping related content into a visually bounded panel (renders the Bootstrap-style `.card` box).
 - Building a clickable tile/selector surface — set `linkCard: true` for the shared hover treatment.
 - Header/body/footer structure where each region needs its own padding, background, or events.
@@ -10,16 +11,18 @@ A bordered container surface with optional header / body / footer sections, buil
 For a row of equal-height cards use the sibling `cardGroup` (`ICardGroup`); for a masonry/column flow use `cardColumns` (`ICardColumns`). For free-form boxes without card chrome, just use `s.div`.
 
 ## Builder
+
 `s.card(options?: ViewDefinitions.ICard)` — node `type: "card"`. It returns a templated scriptor (`ICardScriptor`), so chain `.contentTemplates(...)` (or `.cardHeader/.cardBody/.cardFooter/.div/.image` directly) to fill it. Nested builders:
 
 | Builder | Node `type` | Interface | Renders class |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `s.card(o?)` | `card` | `ICard` | `.card` (`data-rn="card"`) |
 | `s.cardHeader(o?)` | `cardHeader` | `ICardHeader` | `.card-header` |
 | `s.cardBody(o?)` | `cardBody` | `ICardBody` | `.card-body` |
 | `s.cardFooter(o?)` | `cardFooter` | `ICardFooter` | `.card-footer` |
 
 Key `ICard` option fields:
+
 - `linkCard?: boolean` — marks a clickable surface; picks up the standard primary-tint hover (background + border + soft shadow). Prefer this over one-off `customCssClasses` for picker tiles.
 - `noHover?: boolean` — removes the hover visual effect (adds `ml-card-noHover`).
 - `textBgColor?: ColorDefinitions.TextBgKind` — combined text+background color variant (from `IViewDefinition`).
@@ -43,21 +46,26 @@ s.view('myCard', s => s
 ```
 
 ## Bindings & events
+
 All four nodes carry `bindings?: Bindings.IRaptorUniversalBindings` — so `visible` (show/hide), `style`, `attr`, and `css` (conditional classes), with `prefixes` for scoping. Use `visible` to toggle a whole section.
 
 Events:
+
 - `ICard` / `ICardHeader` / `ICardFooter` (`IEvent_Card` etc.): `PointerEventTypes | ContextMenuEventType | KeyboardEventTypes` — e.g. `pointerdown`, `contextmenu`, `keydown`. Wire `pointerdown`/`keydown` on a `linkCard` to make the tile actuate.
 - `ICardBody` (`IEvent_CardBody`): the above **plus** `DragEventTypes` — the body is the only section that supports drag events (drop targets, draggable content).
 
 ## ViewModel / instance API
+
 There is no dedicated card ViewModel. The runtime class is `Card extends RaptorNode` (a passive container that just holds its `nodeModel: ICard`); it exposes no card-specific methods. Drive cards entirely through their `bindings`/`events` and the content nodes inside them. If you need the element imperatively, reach it like any node via `raptorDom.nodeT<...>("viewName")` or `root.closest('[data-rn="card"]')`, but you almost never need to.
 
 ## Patterns
+
 - **Clickable picker tile.** `s.card({ linkCard: true }).events(e => e.pointerdown('onPick').keydown('onPickKey'))`, set `attr: { tabindex: '0', role: 'button' }` via a binding so it is keyboard-focusable.
 - **Collapsible section.** Bind `visible` on a `cardBody` to a VM boolean, and toggle it from a `cardHeader` click handler that calls `this.update("myCard")`.
 - **Row of equal cards.** Wrap several `s.card(...)` in `s.cardGroup(...)` so they share height; or place cards in a `row`/`column` layout (see `layout.md`).
 
 ## Gotchas
+
 - `s.card()` is a *templated* builder: content must go through `.contentTemplates(...)` (or the section builders); options alone render an empty box.
 - Don't reach for the deprecated `title`/`bodyText`/`footerText` props — they are slated for removal; compose sections instead.
 - `flex` only affects `cardBody`/`cardFooter`; setting it on the outer `card` or on `cardHeader` is ignored by the Renderer.
@@ -65,6 +73,7 @@ There is no dedicated card ViewModel. The runtime class is `Card extends RaptorN
 - `noHover` and `linkCard` are opposites — `linkCard` adds hover affordance, `noHover` strips it; don't set both.
 
 ## Related skills
+
 - Parent: `raptor` (View/VM split, `RSScriptor.create`, `contentTemplates`, bindings/events, `update()`).
 - `layout.md` — `row`/`column`/`cardGroup`/`cardColumns` arrangement around cards.
 - `image.md`, `text.md`, `button.md` — common content nodes placed inside card sections.

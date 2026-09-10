@@ -8,6 +8,7 @@ Funnel/pyramid series (`type: "funnel"`): ordered horizontal bands whose width e
 - A pyramid (just `sort: "ascending"`, narrow-to-wide).
 
 Use a sibling instead when:
+
 - The values are part-of-a-whole shares without a natural order, or you want a ring/donut → `pie.md`.
 - Volume flows *between* multiple stages/nodes (with branching) → `sankey.md`.
 - You're comparing magnitudes across categories with axes → `bar.md`.
@@ -73,13 +74,16 @@ From `ml.echarts.FunnelSeriesOption`:
 ## Patterns
 
 ### Pyramid (narrow-to-wide)
+
 ```ts
 { type: "funnel", sort: "ascending", funnelAlign: "center",
   label: { position: "inside" }, data }
 ```
 
 ### Side-by-side comparison (two funnels)
+
 Two series in one box, each half the width, mirrored via `funnelAlign`:
+
 ```ts
 series: [
   { type: "funnel", name: "Plan",   left: "5%",  width: "40%", funnelAlign: "right",
@@ -90,15 +94,20 @@ series: [
 ```
 
 ### Theming hook
+
 Pull colors from the app's CSS variables (see parent skill) rather than hardcoding:
+
 ```ts
 itemStyle: { borderColor: chartTheme.border, borderWidth: 1 },
 label: { color: chartTheme.text },
 ```
+
 Leave per-band fill to the resolved series palette (`color: chartTheme.getSeriesColors()` at the option root) so light/dark themes track.
 
 ### Signature event (click drilldown)
+
 Funnels emit standard item events; `params.data` is the clicked datum, `params.percent` the share.
+
 ```ts
 chart.on("click", (p) => { if (p.seriesType === "funnel") this.drillInto(p.name); });
 ```
@@ -115,7 +124,7 @@ chart.on("click", (p) => { if (p.seriesType === "funnel") this.drillInto(p.name)
 ## Related skills
 
 - `echarts` — parent: the option object model, `ml.echarts.*` types, theming via CSS vars, `setOption` merge behavior, events through `onChartCreated`.
-- the `raptor` skill's chart control (`${CLAUDE_PLUGIN_ROOT}/skills/raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart` bindings, `raptorDom.nodeT<RaptorChart>`).
+- the `raptor` skill's chart control (`../../raptor/reference/controls/chart.md`) — how the chart mounts in a Raptor view (`s.chart({ options })`, `traverseRaptorChart` bindings, `raptorDom.nodeT<RaptorChart>`).
 - `pie.md` — unordered part-of-whole shares / donut.
 - `sankey.md` — multi-node branching flow between stages.
 - `bar.md` — axis-based magnitude comparison across categories.
