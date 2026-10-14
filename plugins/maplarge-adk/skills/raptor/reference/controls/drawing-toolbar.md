@@ -93,3 +93,4 @@ VM (abstract) surface: getters `canClear`, `canUndo`, `drawingCount`, `drawingRe
 ## Related skills
 
 - `raptor` (parent), `map.md` (the map these tools attach to), `svg.md` (the button/toolbar icons), `button.md` (the underlying `IButton` options).
+- `map-3d-drawing.md`: drawing on the 3D Cesium globe, where the two drawing versions differ most.

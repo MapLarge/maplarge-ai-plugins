@@ -101,7 +101,7 @@ Reach the node: `raptorDom.nodeT<RaptorChart>("myChart")` (or the convenience `g
 
 - `raptor` (parent) — View/VM split, RSScriptor, bindings/events, `update()`, `nodeT`, RaptorNode lifecycle.
 - `echarts` — the ECharts option object model (series/axis/tooltip/visualMap/dataZoom/`renderItem`), `setOption` merge modes, theming. Everything inside `options` lives here.
-- `data-grid.md`, `map.md`, `legend.md` — siblings often paired with a chart for cross-filtering/highlighting.
+- `data-table.md`, `map.md`, `legend.md` — siblings often paired with a chart for cross-filtering/highlighting.
 
 See the Reference section below for the full `IRaptorChart` field table, binding keys, and `RaptorChart` public method list.
 

@@ -26,7 +26,7 @@ Interactive: `button({kind:"link",dropdownToggle,dropdownItem,accordionHeaderBut
 
 Accordion: `accordion`, `accordionItem({headerText, bindings:{collapsed}})`, `accordionItemHeader`, `accordionItemBody`.
 
-Data: `dataGrid({bindings:{data}})`, `tableHead`, `tableBody`, `tr`, `th`, `td`, `foreach(prop, s=>...)`.
+Data: `dataTable(dataTableOptions({data, schema, columns}))`, `table`, `tableHead`, `tableBody`, `tr`, `th`, `td`, `foreach(prop, s=>...)`.
 
 Dialog: `dialog({viewName,title,width,allowClose})`, `dialogHeader({visible})`, `dialogBody`.
 
@@ -111,9 +111,9 @@ Dialog view: `.dialog({viewName,title,width,allowClose,customCssClasses}).conten
 
 `setFilter(dsName, {name, filter: DataSourceFilter})`, `removeFilter(dsName, name)`, `getFilter(dsName, name)`, `onDataSourceChanged(name, cb, {filtersToIgnore:"All"})`. A common stored-filter naming convention is `DynamicFilter_<dataSourceName>__<column>` (single col) or `..__<col1>__<col2>` (multi). Filter values use `ml.data.query.IQueryWhere` ({col, test, value}); build OR groups by combining clauses.
 
-## Data grid
+## Data table (`data-ui/data-table`)
 
-`DataGridViewModel.fromDataSource(contextVM, dsName, { displayFields:[{name,label,...}], defaultSort:{field,direction:"asc"|"desc"}, viewModelFactory:(ctx,row)=>RowVM })`. Instance: `.behaviors.enableSelection`, `.pinnedFields`, `.unpinnedFields`, `.downloadData()`. Bind with `.dataGrid({ bindings:{ data:s.getTypedProp("grid") } })`.
+View: `s.dataTable(dataTableOptions<Row>({ data: data("dataStoreData", {dataStore:{binding:"dataStore"}, dataSourceName}), schema: createViewSchema({entries}), columns: [column({field, header, width: toPixels(n)})], filtering: filtering("dialogFiltering"), tableSelection: tableSelection("row") }))` with `const { column, virtualColumn } = defineColumns<Row, VM>()`. VM: `this.engine = dataStoreData({dataStore:this.dataStore, dataSourceName}); const { options, store } = createDataTable<Row>({ data: this.engine, schema: createSchema({entries}) })`, bind `bindings:{data:"dataTableOptions"}`, and `this.engine.dispose()` in `destroy()`. Store: `subscribe(actions.selectCell, ...)`, `getRowsFromDataEngine({rowIndices})`, `dispatch(actions.exportData())`, `mutations.insert/update/remove`. Fills its container (give it a height). Full reference and migration table: `controls/data-table.md`.
 
 ## RaptorMap
 

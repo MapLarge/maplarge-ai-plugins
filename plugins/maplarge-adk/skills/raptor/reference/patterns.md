@@ -11,15 +11,15 @@ in the `raptor` skill body; charts are in the `echarts` skill.
 
 | Task | Sections to Read |
 | ------ | ----------------- |
-| Answering "can this be done in v5?" | Available Raptor Controls, Dynamic Style Binding, Chart Interactions, DataGrid Advanced Patterns, Overview (v4 vs v5 table) |
+| Answering "can this be done in v5?" | Available Raptor Controls, Dynamic Style Binding, Chart Interactions, Data Table Patterns, Overview (v4 vs v5 table) |
 | Determining v5 editor vs custom extension | Overview, Extension Development Patterns, Available Raptor Controls |
-| Color coding / conditional formatting | Dynamic Style Binding, Chart Interactions (ECharts Gradient Colors), DataGrid Advanced Patterns (Custom Row ViewModel) |
+| Color coding / conditional formatting | Dynamic Style Binding, Chart Interactions (ECharts Gradient Colors), Data Table Patterns (Conditional Cell Styling) |
 | Creating a new extension from scratch | Extension Development Patterns (all subsections), Extension Structure |
 | Setting up dashboard registration | Dashboard Registration Patterns, IRaptorModule Interface |
 | Creating a new page/view | RSScriptor Fluent API, Views and Pages, ViewModels |
 | Building a layout with sidebar/header | Navigation System, Layout Elements, Sidebar Pattern |
 | Adding data binding | Data Binding, Events, Foreach and Iteration |
-| Building a table/grid | DataGrid Advanced Patterns, DataGrid Architecture, Nested Control Behavior |
+| Building a table/grid | `controls/data-table.md`, Data Table Patterns, Nested Control Behavior |
 | Adding charts | Async Chart Data → Preferred: Framework binding via chartDataSet.source; Display Controls (chart), Charts in Flex Layouts, Chart Interactions |
 | Adding a dropdown selector | Advanced Control Patterns → QuickSelect Advanced Usage |
 | Adding a menu dropdown | Advanced Control Patterns → Dropdown Control |
@@ -67,17 +67,19 @@ if (chartNode?._chartInstance) {
 
 Use `setTimeout` with retries if the chart container isn't visible yet (e.g., behind a visibility binding).
 
-### DataGrid with Custom Row ViewModel
+### Tables Use DataTable
 
-Use `DataGridViewModel.fromDataSource()` with `viewModelFactory`:
+Build record grids with `s.dataTable(...)` from `data-ui/data-table`; the older grid builder is deprecated in the SDK. A table over a registered data source:
 
 ```typescript
-this._dataGridData = DataGridViewModel.fromDataSource(this, "my_data_source", {
-    viewModelFactory: (context, data) => new MyCustomRowVM(context, data)
-});
+s.div({ height: 400 }).contentTemplates(s => s.dataTable(dataTableOptions<Row>({
+    data: data("dataStoreData", { dataStore: { binding: "dataStore" }, dataSourceName: "my_data_source" }),
+    schema: rowSchema,
+    columns: [column({ field: "Name", header: "Name", flex: 1 })],
+})));
 ```
 
-The custom row VM extends `BasicDataGridRowViewModel`. Access row data via `gridvm.fields.ColumnName.value`.
+The table fills its container, so the container needs a height. Per-row computed values and styles go through `transformValue` and column `scope`, not a row view model. Full reference: `controls/data-table.md`.
 
 ### DynamicViewModel Data Sources
 
@@ -216,7 +218,7 @@ layoutViewModel.addSidebarItem(
 | `onDataSourceChanged` not in .d.ts | TypeScript error on DynamicViewModel method | Cast: `(this as any).onDataSourceChanged(...)` |
 | `flexFill: true` for equal widths | Sets `flex-basis: auto` → unequal widths | Use `flexGrow: 1, flexShrink: 1` + `customCssClasses: "flex-basis-0"` |
 | Missing `minHeight: 0` | Flex children can't shrink below content → overflow, no scroll | Add `minHeight: 0` on EVERY flex ancestor |
-| DataGrid height 0 | Parent flex has no height constraint | Use explicit `height: Npx` or ensure constrained ancestor chain |
+| Data table shows a header and no rows | The table fills its container, which has no height | Wrap it in a `div` with `height: N` or `heightVH: N`, or ensure a constrained ancestor chain |
 | QuickSelect `_ignoreNextUpdate` | Programmatic `selectedItems` change ignored after user interaction | Reset flag: `(qs as any)._ignoreNextUpdate = false` before setting |
 | NavTabs pane mismatch | Tab items and panes don't match | Panes match by ORDER, not by ID. 1st tab → 1st pane |
 | `heightUtility: 100` without parent height | `h-100` only works when parent has explicit height | Prefer explicit `height: Npx` or `heightVH: N` |
@@ -236,7 +238,8 @@ These are tracked in the server repo under `docs/extensions/ml-docs-dev/client/`
 | `raptor-events.ts` | Event handling |
 | `raptor-nodes.ts` | Node type reference |
 | `raptor-styling-theming.ts` | Theming guide |
-| `code-examples/raptor-nodes/` | Individual control examples (accordion, chart, dataGrid, quickSelect, sidebar, table, tree, navTabs, dropdown, form) |
+| `code-examples/raptor-nodes/` | Individual control examples (accordion, chart, quickSelect, sidebar, table, tree, navTabs, dropdown, form) |
+| `data-table/` | DataTable guide and runnable examples (engines, columns, cell templates, editing, layouts) |
 
 Also see the `ml-docs-raptor` docs extension (`client/_static/markdown/`):
 
@@ -260,8 +263,7 @@ Also see the `ml-docs-raptor` docs extension (`client/_static/markdown/`):
 | `MapLarge.Server/src/framework/raptor/raptorDom/RaptorNode.ts` | Base control class |
 | `MapLarge.Server/src/framework/raptor/raptorDom/viewModels/RaptorViewModel.ts` | Base ViewModel |
 | `MapLarge.Server/src/framework/raptor/raptorDom/viewModels/DynamicViewModel.ts` | Data source ViewModel |
-| `MapLarge.Server/src/framework/raptor/raptorDom/controls/DataGrid/DataGridViewModel.ts` | DataGrid data model |
-| `MapLarge.Server/src/framework/raptor/raptorDom/controls/DataGrid/BasicDataGridRowViewModel.ts` | Row ViewModel |
+| `MapLarge.Server/src/ui/data-ui/data-ui/data-table/data-table-node.ts` | DataTable node (`dataTable`) |
 | `MapLarge.Server/src/framework/raptor/raptorDom/controls/Chart/RaptorChart.ts` | Chart control |
 | `MapLarge.Server/src/framework/raptor/stores/ScopeDataStore.ts` | Full data store |
 | `MapLarge.Server/src/framework/raptor/stores/PagedData.ts` | Paging support |
@@ -294,11 +296,11 @@ This document covers the MapLarge UI component systems, patterns, and best pract
    - [Events](#events)
    - [Foreach and Iteration](#foreach-and-iteration)
 4. [Nested Control Behavior](#nested-control-behavior)
-   - [DataGrid Architecture](#datagrid-architecture)
+   - [Data Table Layout](#data-table-layout)
    - [Height Handling in Flex Contexts](#height-handling-in-flex-contexts)
    - [The minHeight: 0 Rule](#the-minheight-0-rule)
-   - [Column Width Calculation](#column-width-calculation)
-   - [Working Patterns for Nested DataGrids](#working-patterns-for-nested-datagrids)
+   - [Column Widths](#column-widths)
+   - [Working Patterns for Nested Data Tables](#working-patterns-for-nested-data-tables)
    - [Common Issues and Solutions](#common-issues-and-solutions)
 5. [Charts in Flex Layouts](#charts-in-flex-layouts)
    - [RaptorChart Resize Behavior](#raptorchart-resize-behavior)
@@ -318,7 +320,7 @@ This document covers the MapLarge UI component systems, patterns, and best pract
 10. [Dialog Lifecycle](#dialog-lifecycle)
 11. [Advanced Control Patterns](#advanced-control-patterns)
     - [QuickSelect Advanced Usage](#quickselect-advanced-usage)
-    - [DataGrid Advanced Patterns](#datagrid-advanced-patterns)
+    - [Data Table Patterns](#data-table-patterns)
     - [Tree Control](#tree-control)
     - [NavTabs with Content Panes](#navtabs-with-content-panes)
     - [Dropdown Control](#dropdown-control)
@@ -363,7 +365,7 @@ MapLarge.Server/src/
 │   │   │   └── Renderer.ts        # DOM rendering engine
 │   │   └── raptorDom/
 │   │       ├── controls/          # Web component controls
-│   │       │   └── DataGrid/      # DataGrid implementation
+│   │       │   └── Chart/         # e.g. RaptorChart
 │   │       └── viewModels/        # ViewModel base classes
 │   ├── controls/                  # v4 controls
 │   │   ├── input/                 # Input controls (Button, Textbox, etc.)
@@ -994,9 +996,8 @@ These are v5-specific controls implemented as web components.
 | `TimeSlider` | `<ml-time-slider>` | Time range slider |
 | `DateFilter` | `<ml-date-filter>` | Date range filter |
 | `Chart` | `<ml-chart>` | ECharts wrapper |
-| `DataGrid` | `<ml-data-grid>` | Data grid display |
 
-Location: `MapLarge.Server/src/framework/raptor/raptorDom/controls/`
+Location: `MapLarge.Server/src/framework/raptor/raptorDom/controls/`. The DataTable node (`s.dataTable`) lives separately under `MapLarge.Server/src/ui/data-ui/data-ui/data-table/`; see `controls/data-table.md`.
 
 ### Data Binding
 
@@ -1279,77 +1280,30 @@ s.foreach(s.getTypedProp('items'), s => s
 
 This section covers how controls behave when nested inside flex containers, cards, accordions, tabs, and other layout elements. Understanding these patterns is critical for avoiding layout and resizing issues.
 
-### DataGrid Architecture
+### Data Table Layout
 
-**Location:** `MapLarge.Server/src/framework/raptor/raptorDom/controls/DataGrid/DataGrid.ts`
+**Location:** `MapLarge.Server/src/ui/data-ui/data-ui/data-table/` (import from `data-ui/data-table`; the full control reference is `controls/data-table.md`)
 
-DataGrid uses a **flex column + CSS grid hybrid layout**:
+The table renders its own header, virtualized body, status bar, and optional footer inside a flex column:
 
 ```text
-.ml-raptor-datagrid (display:flex; flex-direction:column)
-├── .ml-datagrid-container (grid layout, flex-grow:1, flex-shrink:1)
-│   ├── .ml-datagrid-content (overflow:auto, height:100%)  ← scrollable data
-│   ├── .ml-datagrid-top (header table)
-│   ├── .ml-datagrid-left (pinned columns)
-│   └── .ml-datagrid-topleft (pinned headers)
-└── .ml-datagrid-footer
+.ml-data-table               (position:relative; height:100%)
+└── .ml-data-table-container (display:flex; flex-direction:column; height:100%; overflow:hidden)
+    ├── header
+    ├── virtualized body     ← only this part scrolls
+    ├── status bar
+    └── footer (opt-in)
 ```
 
-**Key Components:**
-
-- `mainTable` - Primary data area (scrollable)
-- `headerTable` - Column headers (separate, synchronized)
-- `leftTable` - Pinned columns (optional)
-- `topleftTable` - Pinned column headers (optional)
-
-**CSS Structure (from Renderer.ts):**
-
-```css
-.ml-raptor-datagrid {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-.ml-datagrid-container {
-    overflow: hidden;
-    flex-grow: 1;
-    flex-shrink: 1;
-}
-
-.ml-datagrid-content {
-    overflow: auto;
-    height: 100%;  /* CRITICAL: Only works when parent has defined height */
-}
-```
+The root is `height: 100%`, so the table is exactly as tall as its container. Rows are virtualized, so the body never grows with the data: a container without a definite height gives the table nothing to fill.
 
 ### Height Handling in Flex Contexts
 
-#### Why Nested DataGrids Fail
-
-The inner `.ml-datagrid-content` uses `height: 100%`, which **only works when the parent has a defined height**.
-
 | Symptom | Root Cause |
 | --------- | ------------ |
-| DataGrid collapses to 0 height | Parent flex container has no height constraint |
-| Content overflows instead of scrolling | `height: 100%` has no reference point |
-| Column widths calculated wrong | Height not applied → viewport width unknown |
-| Scrollbars misaligned with headers | ResizeObserver can't calculate without dimensions |
-
-#### ResizeObserver Pattern
-
-DataGrid uses **two ResizeObserver instances**:
-
-1. **Row Height Sync** - Observes rows for pinned column height synchronization
-2. **Viewport Resize** - Observes `.ml-datagrid-content` for column recalculation
-
-```typescript
-// Viewport resize triggers column recalc if ANY column lacks explicit px width
-if (dataModel.fields.some(p => !p.width?.includes("px") &&
-                                 !columnSizes[p.name]?.setByUser)) {
-    this.resetColumnWidthsOnResize();  // Debounced 500ms
-}
-```
+| Header draws over an empty body | Container has no definite height, so `height: 100%` resolves to nothing |
+| Table pushes the page instead of scrolling | A flex ancestor is missing `minHeight: 0` |
+| Table ignores a dialog's size | The `dialogBody` is unsized; give it `heightPercentage: 100` |
 
 #### Height Properties Available
 
@@ -1388,55 +1342,44 @@ s.div({
 style: { minHeight: "0" }
 ```
 
-### Column Width Calculation
+### Column Widths
 
-**Supported Width Formats (processed in order):**
+- `width: toPixels(n)` fixes a column's width.
+- `flex: n` gives a column a share of the space left after fixed widths; it is ignored once `width` is set or the user resizes the column.
+- `minWidth` / `maxWidth` clamp either kind.
+- Percentage and `fr` widths are not supported, and neither is auto-fit to content.
 
-1. **Fixed Pixels:** `"100px"` - Applied directly
-2. **Percentage:** `"25%"` - Calculated from viewport width
-3. **Fractional Units:** `"1fr"`, `"2fr"` - Divides remaining space
+Give identifier, date, and numeric columns fixed widths and let one or two text columns flex.
 
-**Calculation Flow:**
+### Working Patterns for Nested Data Tables
+
+The snippets below share one options object so only the container changes (`BusStopRow`, `busStopSchema`, and `column` come from the minimal example in `controls/data-table.md`):
 
 ```typescript
-// Step 1: Set fixed widths from definition
-// - px widths applied directly
-// - % widths calculated from viewport width
-
-// Step 2: Calculate unpinned field widths from header cells
-// Clamp to 250px max unless fullWidth behavior enabled
-width = clamp(thWidth, minWidth, 250)  // 250px DEFAULT CAP
-
-// Step 3: Distribute fractional (fr) units
-// Remaining space / total fr count
-const remainingWidth = viewportWidth - usedWidth
-const frCount = sum(frFields.map(f => parseFloat(f.width)))
+const busStopOptions = dataTableOptions<BusStopRow>({
+    data: data("dataStoreData", { dataStore: { binding: "dataStore" }, dataSourceName: "busstops" }),
+    schema: busStopSchema,
+    columns: [
+        column({ field: "StopName", header: "Stop Name", flex: 1, minWidth: toPixels(160) }),
+        column({ field: "Benches", header: "Benches", width: toPixels(100), align: "right" }),
+    ],
+});
 ```
 
-**Column Width Persistence:**
-
-- `columnSizes[fieldName].setByUser: boolean` tracks manual resizes
-- User-resized columns NOT recalculated on viewport resize
-
-### Working Patterns for Nested DataGrids
-
-#### Pattern 1: Fixed Height (Most Reliable)
+#### Pattern 1: Fixed-Height Container (Most Reliable)
 
 ```typescript
 s.card({})
 .contentTemplates(s => s
     .cardBody({})
     .contentTemplates(s => s
-        .dataGrid({
-            height: 600,           // Explicit pixel height
-            widthPercentage: 100,
-            bindings: { data: s.getTypedProp("gridData") }
-        })
+        .div({ height: 600 })      // the table fills this
+        .contentTemplates(s => s.dataTable(busStopOptions))
     )
 )
 ```
 
-#### Pattern 2: Fill Flex Container
+#### Pattern 2: Fill a Flex Region
 
 ```typescript
 s.div({
@@ -1447,95 +1390,70 @@ s.div({
 .contentTemplates(s => s
     // Header (auto height)
     .div({ padding: { y: 2 } })
-    .contentTemplates(s => s.h3({ text: "Data Grid" }))
+    .contentTemplates(s => s.h3({ text: "Bus Stops" }))
 
-    // DataGrid fills remaining space
+    // Table fills the remaining space
     .div({
         flex: { flexGrow: 1, flexShrink: 1 },
         minHeight: 0,    // Required for flex child scrolling
         overflow: 'hidden'
     })
-    .contentTemplates(s => s
-        .dataGrid({
-            heightUtility: 100,  // h-100 class
-            widthPercentage: 100,
-            bindings: { data: s.getTypedProp("gridData") }
-        })
-    )
+    .contentTemplates(s => s.dataTable(busStopOptions))
 )
 ```
+
+This works only when every ancestor up to a definite height (the page, a sized panel) follows the `minHeight: 0` rule. If the table collapses, fall back to Pattern 1.
 
 #### Pattern 3: In Accordion
 
 ```typescript
-// Accordion items get minHeight: 0 automatically
+// Accordion items get minHeight: 0 automatically, but the body still needs a height
 s.accordionItemBody({})
 .contentTemplates(s => s
-    .dataGrid({
-        height: 400,     // Still need explicit height inside accordion
-        widthPercentage: 100,
-        bindings: { data: s.getTypedProp("gridData") }
-    })
+    .div({ height: 400 })
+    .contentTemplates(s => s.dataTable(busStopOptions))
 )
 ```
 
-#### Pattern 4: In Tab Pane (Real Example)
+#### Pattern 4: In Tab Pane
 
 ```typescript
-// From QueryManagementDashboard.ts
 s.navTabPane({ widthPercentage: 100 })
 .contentTemplates(s => s
-    s.row({})
-    .contentTemplates(s => s
-        s.column({ widthPercentage: 100 })
-        .contentTemplates(s => s
-            s.dataGrid({
-                viewName: "runningGridView",
-                widthPercentage: 100,
-                height: 800,         // Fixed height
-                striped: true,
-                bordered: true,
-                bindings: { data: "runningDG" }
-            })
-        )
-    )
+    .div({ heightVH: 70 })     // viewport-relative height for a full-page tab
+    .contentTemplates(s => s.dataTable(busStopOptions))
 )
 ```
 
-#### Pattern 5: DataGrid in Dialog
+#### Pattern 5: In a Dialog
 
 ```typescript
-s.dialogBody({ padding: { around: 3 } })
+s.dialog({ draggableResizable: true, width: 980, height: 620 })
 .contentTemplates(s => s
-    .dataGrid({
-        widthPercentage: 100,
-        height: 300,      // Fixed height for dialogs
-        striped: true,
-        bordered: true,
-        bindings: { data: s.getTypedProp("dialogData") }
-    })
+    .dialogBody({ heightPercentage: 100 })   // the table then follows dialog resizes
+    .contentTemplates(s => s.dataTable(busStopOptions))
 )
 ```
+
+For a fixed-size dialog, a sized `div` inside the body (Pattern 1) works too.
 
 ### Common Issues and Solutions
 
 | Issue | Cause | Solution |
 | ------- | ------- | ---------- |
-| DataGrid height 0 in flex | Parent has no height | Add `height: Xpx` to DataGrid OR ensure parent has `flex: { flexGrow: 1 }` with constrained ancestor |
+| Header with no rows | Container has no definite height | Wrap the table in a `div` with `height`, `heightVH`, or a full percent chain |
 | Content overflows | Missing `minHeight: 0` on flex parent | Add `minHeight: 0` to all flex ancestors |
-| Columns calculate wrong | Grid renders before height applied | Use explicit `height` instead of `heightUtility` |
-| Horizontal scroll cuts pinned | Known browser behavior | DataGrid auto-adds `marginLeft/Right: 1px` |
-| Scrollbars misaligned | Pinned area not compensating | Ensure ResizeObserver can observe (has dimensions) |
-| Width % fails in nested flex | Parent has no explicit width | Use `widthPercentage: 100` with row/column structure |
+| Table ignores dialog resize | `dialogBody` unsized | `dialogBody({ heightPercentage: 100 })` |
+| Columns too narrow or wide | No `width` / `flex` set | Fixed `toPixels` widths for short columns, `flex` for text |
+| Width fails in nested flex | Parent has no explicit width | Use `widthPercentage: 100` with row/column structure |
 
-### Checklist for Nested DataGrids
+### Checklist for Nested Data Tables
 
-1. **Explicit height** on DataGrid (`height: 600` or `heightVH: 50`)
+1. **Sized container** around the table (`height: 600`, `heightVH: 50`, or `heightPercentage: 100` under a sized parent)
 2. **`minHeight: 0`** on all flex ancestors
-3. **`overflow: 'hidden'`** on immediate parent (prevents bleed)
-4. **`widthPercentage: 100`** for full-width (not just `widthUtility`)
-5. **Avoid `heightUtility: 100`** unless parent has explicit height
-6. **Column widths in px** for predictable sizing, or let auto-calc work
+3. **`overflow: 'hidden'`** on the immediate parent (prevents bleed)
+4. **`widthPercentage: 100`** for full width (not just `widthUtility`)
+5. **Column widths** as `toPixels(n)` or `flex`; never percentages
 
 ---
 
@@ -1939,19 +1857,19 @@ private onDataLoaded(ds: any) {
 }
 ```
 
-### DataGridViewModel.fromDataSource
+### Data Table over a Data Source
 
-Bind a DataGrid to a registered data source with optional custom row ViewModel:
+Point a DataTable at a source registered on `this.dataStore`:
 
 ```typescript
-this._dataGridData = DataGridViewModel.fromDataSource(this, "my_data", {
-    viewModelFactory: (context: DataGridViewModel, data: any) => {
-        return new MyCustomRowViewModel(context, data);
-    }
-});
+s.dataTable(dataTableOptions<Row>({
+    data: data("dataStoreData", { dataStore: { binding: "dataStore" }, dataSourceName: "my_data" }),
+    schema: rowSchema,
+    columns,
+}));
 ```
 
-The custom row VM extends `BasicDataGridRowViewModel`.
+The engine shares filters with the data store both ways by default: the table's column filters narrow other controls on the same source (a map layer, a chart), and their filters narrow the table. Sort stays local to the table. Pass `publishFilters: false` or `respectExternalFilters: false` to cut either direction. Details in `controls/data-table.md`.
 
 ### Table and Column Discovery APIs
 
@@ -2395,7 +2313,7 @@ Related: the equal-width-column CSS class is **`ml-flex-basis-0`**, not `flex-ba
 
 | Control | Description | Key Properties |
 | --------- | ------------- | ---------------- |
-| `dataGrid` | Data grid/table | columns, data, pagination, height |
+| `dataTable` | Virtualized records table (sort, filter, edit, select, export) | data, schema, columns, tableSelection; fills a sized container |
 | `table` | HTML table | headers, rows, striped, bordered |
 | `tableHead` | Table header section | - |
 | `tableBody` | Table body section | - |
@@ -3230,138 +3148,107 @@ const qs = vm.raptorDom?.node("MyFilter");
 })
 ```
 
-### DataGrid Advanced Patterns
+### Data Table Patterns
 
-#### DataGridViewModel Factory Methods
+The full option reference is `controls/data-table.md`; these are the recipes dashboards reach for most.
+
+#### Choosing a Data Engine
 
 ```typescript
-// Method 1: From a DynamicViewModel data source (most common)
-this._gridVM = DataGridViewModel.fromDataSource(this, "my_data_source", {
-    displayFields: [
-        { name: "name", label: "Name", width: "200px" },
-        { name: "status", label: "Status", width: "100px" }
-    ],
-    viewModelFactory: (dgvm, data) => new CustomRowVM(dgvm, data),  // Optional
-    defaultSort: { field: "name", direction: "asc" }                // Optional
-});
+// View: a data source registered on the VM's data store (shares filters with the map by default)
+data: data("dataStoreData", { dataStore: { binding: "dataStore" }, dataSourceName: "my_data_source" })
 
-// Method 2: From a paged API function
-this._gridVM = DataGridViewModel.fromApi(this, async (opts) => {
-    const resp = await fetch(`/api/items?start=${opts.start}&take=${opts.take}`);
-    const json = await resp.json();
-    return { data: json.items, totalSize: json.total };
-}, { /* opts */ });
+// View: an array property on the VM
+data: data("arrayData", { data: { binding: "rows" } })
 
-// Method 3: From an in-memory array
-this._gridVM = DataGridViewModel.fromArray(this, myDataArray, { /* opts */ });
-
-// Method 4: Manual construction with column metadata
-const config: ml.data.table.IColumnMetaDataCollection = {
-    Name: { label: "Name", columnType: ml.data.enums.ColumnTypes.STRING, sortOrder: 1 },
-    Age: { label: "Age", columnType: ml.data.enums.ColumnTypes.INT32, sortOrder: 2 }
-};
-this._gridVM = new DataGridViewModel(config, myData);
-this._gridVM.behaviors.enableSelection = false;
-this._gridVM.behaviors.enableRowCount = false;
-this._gridVM.behaviors.config.enableShowRowNumber = false;
+// ViewModel: live engines when code needs the store; bind with bindings: { data: "dataTableOptions" }
+this.engine = dataStoreData<Row>({ dataStore: this.dataStore, dataSourceName: "my_data_source" });
+const { options, store } = createDataTable<Row>({ data: this.engine, schema: rowSchema });
+// or: createDataTable<Row>({ data: new ArrayDataEngine<Row>({ data: rows }), schema: rowSchema })
 ```
 
-#### Custom Row Templates with Event Handlers
+A paged REST endpoint uses `pagedApiCallData`. Engines built in a ViewModel are yours to `dispose()` in `destroy()`.
+
+#### Per-Row Action Buttons
 
 ```typescript
-s.dataGrid({
-    striped: true, height: 400,
-    bindings: { data: s.getTypedProp("gridData") }
-})
-.contentTemplates(s => {
-    // Custom header
-    s.tableHead().contentTemplates(s => {
-        s.tr({}).contentTemplates(s => {
-            s.th({ verticalAlign: "middle" }).contentTemplates(s => s.span({ text: "" }))
-            s.th({ verticalAlign: "middle" }).contentTemplates(s => s.span({ text: "Name" }))
-            s.th({ verticalAlign: "middle" }).contentTemplates(s => s.span({ text: "Actions" }))
-        })
-    })
+const { column, virtualColumn } = defineColumns<Row, MyVm>();
 
-    // Custom body with row iteration
-    s.tableBody().contentTemplates(table => {
-        table.foreach(s.getTypedProp("gridData"), _s => {
-            // Cast to ITableContentScriptor for typed field access
-            const s = _s as unknown as ITableContentScriptor<BasicDataGridRowViewModel>;
-            s.tr({
-                events: [{ event: "click", handler: table.getTypedProp("onRowClick") }],
-                bindings: {
-                    style: {
-                        property: s.prefix("fields").prefix("Selected").getTypedProp("value"),
-                        trueStyles: { border: "solid 1.5px blue" },
-                        falseStyles: {},
-                        useStyleDeclarationBinding: true
-                    }
-                }
-            }).contentTemplates(s => {
-                // Checkbox cell
-                s.td({ verticalAlign: "middle" }).contentTemplates(s => {
-                    s.checkbox({
-                        value: false,
-                        events: [{ event: "pointerup", handler: table.getTypedProp("toggleSelect") }]
-                    })
-                })
-                // Data cell — access row fields via prefix("fields").prefix("ColumnName").getTypedProp("value")
-                s.td({ verticalAlign: "middle" }).contentTemplates(s => {
-                    s.span({
-                        bindings: { text: s.prefix("fields").prefix("Name").getTypedProp("value") }
-                    })
-                })
-                // Action button cell
-                s.td({ verticalAlign: "middle" }).contentTemplates(s => {
-                    s.button({
-                        kind: "link", size: "small",
-                        svgOptions: { key: 'mlsvg-info', width: 10, height: 10 },
-                        tooltip: "Details",
-                        events: [{ event: "pointerup", handler: table.getTypedProp("getRowInfo") }]
-                    })
-                })
-            })
-        })
-    })
-})
+columns: [
+    column({ field: "Name", header: "Name", flex: 1 }),
+    virtualColumn({
+        key: "actions",
+        header: "",
+        width: toPixels(60),
+        scope: { showInfo: { binding: "showInfo" } },
+        contentTemplates: cell => cell.s.button({
+            kind: "link", size: "small",
+            svgOptions: { key: "mlsvg-info", width: 10, height: 10 },
+            tooltip: "Details",
+            events: [{ event: "click", handler: cell.bindingPaths.scope.showInfo }],
+        }),
+    }),
+]
 
-// ViewModel handlers receive BasicDataGridRowViewModel
-public getRowInfo(gridvm: BasicDataGridRowViewModel): void {
-    const name = gridvm.fields.Name.value;
-    const id = gridvm.fields.Id.value;
-    console.log(`Row: ${name} (${id})`);
-}
-
-public toggleSelect(gridvm: BasicDataGridRowViewModel): void {
-    // Toggle selection in source data, recreate DataGridViewModel, call this.update()
+// ViewModel: scope handlers receive a context object, not the row itself
+public showInfo(ctx: { readonly row: Row }): void {
+    console.log(`Row: ${ctx.row.Name} (${String(ctx.row.Id)})`);
 }
 ```
 
-#### Custom Row ViewModel
+#### Conditional Cell Styling
+
+A column's `scope` can also expose a per-row predicate, which feeds an ordinary `css` (or `style`) binding inside the cell template:
 
 ```typescript
-class MyRowVM extends BasicDataGridRowViewModel {
-    constructor(context: DataGridViewModel, data: any) {
-        super(context, data);
-    }
+column({
+    field: "Status",
+    header: "Status",
+    width: toPixels(120),
+    scope: { isActive: { binding: "isActive" } },
+    contentTemplates: cell => cell.s.span({
+        bindings: {
+            text: cell.bindingPaths.displayValue,
+            css: { property: cell.bindingPaths.scope.isActive, trueClasses: ["text-success"], falseClasses: ["text-danger"] },
+        },
+    }),
+}),
 
-    // Add computed properties for the view
-    public get statusColor(): string {
-        const status = this.fields.Status?.value;
-        return status === "Active" ? "green" : "red";
-    }
-
-    public get cellStyle(): string {
-        return `background-color:${this.statusColor};color:white;font-weight:600;padding:4px 8px;`;
-    }
+// ViewModel
+public isActive({ row }: { readonly row: Row }): boolean {
+    return row.Status === "Active";
 }
+```
 
-// Register in DataGridViewModel factory
-DataGridViewModel.fromDataSource(this, "my_data", {
-    viewModelFactory: (dgvm, data) => new MyRowVM(dgvm, data)
+For a static class on every cell of a column, `customSlotCssClasses: "justify-content-end"` is enough.
+
+#### Row Click and Selection
+
+There is no row-click event. Turn selection on and listen to the store:
+
+```typescript
+// View-authored: tableSelection("row") in the options
+// ViewModel-authored:
+const { options, store } = createDataTable<Row>({ data: this.engine, schema: rowSchema, tableSelection: overlaySelection({ type: "row" }) });
+this.unsubscribe = store.subscribe(actions.selectCell, ({ selection }) => {
+    void this.onRowSelected(selection.coordinates.row as number);
 });
 ```
+
+Rows outside the loaded segments are not in `store.getRow(i)`; fall back to `await store.getRowsFromDataEngine({ rowIndices: [i] })`. Checkbox multi-select is `checkboxRows: { showSelectAll: true }` plus `store.getCheckboxRowsSelectedIndices()`.
+
+#### Replacing a Custom Row ViewModel
+
+Older grid code often wrapped each row in its own view model to add computed properties. The DataTable splits that job:
+
+| Row VM did | DataTable equivalent |
+| --- | --- |
+| Formatted a value (`formatValue`, a getter) | `transformValue`, or `formatter` + `formatterArgs` |
+| Computed a per-row style | A `scope` predicate plus a `css`/`style` binding (above) |
+| Held per-row click handlers | A `virtualColumn` with `scope` handlers (above) |
+| Tracked selection in row state | `tableSelection` / `checkboxRows` and the store |
+
+The rest of the old-to-new mapping is the migration table in `controls/data-table.md`.
 
 ### Tree Control
 
@@ -3445,11 +3332,8 @@ s.navTabs({
         })
         // Pane 3 (matches "Tab 3")
         s.navTabPane({}).contentTemplates(s => {
-            s.div({ padding: { around: 2 } }).contentTemplates(s => {
-                s.dataGrid({
-                    height: 400, widthPercentage: 100,
-                    bindings: { data: s.getTypedProp("gridData") }
-                })
+            s.div({ padding: { around: 2 }, height: 400 }).contentTemplates(s => {
+                s.dataTable(tableOptions)   // built with dataTableOptions(...); see Data Table Patterns
             })
         })
     })
@@ -3560,11 +3444,11 @@ new TimeSlider2ToFilter("TimeSliderFilter", {
 > **WARNING — this does not fully work in v5 pages today.** Verified 2026-04-17 in `udl-track-explorer`:
 >
 > - The `DashboardWrapper` div mounts, but the inner v4 control does not render (strip stays at `height: 0`).
-> - `TimeSlider2ToFilter`/`PlaybackControlsToTimeSlider2` constructors call `this.scopeData.timeColumnOut.subscribe(...)` on a `scopeData` that is undefined because the wrapped control hasn't published its scope. This throws a null-ref synchronously, aborting the entire `initialize()` method and breaking unrelated code (e.g., DataGrid setup) further down.
+> - `TimeSlider2ToFilter`/`PlaybackControlsToTimeSlider2` constructors call `this.scopeData.timeColumnOut.subscribe(...)` on a `scopeData` that is undefined because the wrapped control hasn't published its scope. This throws a null-ref synchronously, aborting the entire `initialize()` method and breaking unrelated code (e.g., table setup) further down.
 > - **Mitigation:** Isolate these v4 transforms in their own `try { registerTransforms([...]) } catch {}` block so unrelated setup still succeeds.
 > - **Ultimate fix:** either port the control to Raptor v5 natively, or page-bridge the user to a v4 dashboard URL for time-scrubbed views. Do not assume this pattern works end-to-end until verified in the target MapLarge version.
 
-`DashboardWrapper.ts` enumerates supported wrapped control types in its `addDefaultsForControls` switch, including `TimeSlider2`, `MLDataGrid`, `Gauge`, `LayerControl`, `ColumnValuePicker`, and others — but being enumerated does not guarantee functional integration in a v5 Raptor page.
+`DashboardWrapper.ts` enumerates supported wrapped control types in its `addDefaultsForControls` switch, including `TimeSlider2`, the v4 grid control, `Gauge`, `LayerControl`, `ColumnValuePicker`, and others - but being enumerated does not guarantee functional integration in a v5 Raptor page.
 
 ### Custom Control Types via element()
 
@@ -3637,9 +3521,9 @@ public switchToEditor(): void {
 }
 ```
 
-### Per-Row ViewModel Pattern (Non-DataGrid)
+### Per-Row ViewModel Pattern (Hand-Built Tables)
 
-For custom HTML tables where each row needs its own ViewModel with methods:
+For custom HTML tables (not the DataTable, which handles per-row behavior through column `scope`) where each row needs its own ViewModel with methods:
 
 ```typescript
 // Model class — each row is a ViewModel instance
@@ -4140,7 +4024,7 @@ export class MyPageViewModel extends RaptorViewModel {
 | `.svg(opts)` | SVG icon |
 | `.anchor(opts)` | Link |
 | `.table(opts)` | HTML table |
-| `.dataGrid(opts)` | Data grid |
+| `.dataTable(opts)` | Data table (`controls/data-table.md`) |
 | `.chart(opts)` | Chart (ECharts) |
 
 ### Common Binding Properties
@@ -4203,7 +4087,8 @@ Values: 1-12 (12 = full width)
 - **Raptor Controls**: `MapLarge.Server/src/framework/raptor/raptorDom/controls/`
 - **v4 Controls**: `MapLarge.Server/src/framework/controls/`
 - **Good Extension Examples**: the extensions in your ADK workspace (`extensions/`)
-- **Official Control Examples**: `docs/extensions/ml-docs-dev/client/code-examples/raptor-nodes/` (accordion, chart, dataGrid, quickSelect, sidebar, table, tree, navTabs, dropdown, form)
+- **Official Control Examples**: `docs/extensions/ml-docs-dev/client/code-examples/raptor-nodes/` (accordion, chart, quickSelect, sidebar, table, tree, navTabs, dropdown, form)
+- **Data Table Docs**: `docs/extensions/ml-docs-dev/client/data-table/` (guide and runnable examples)
 - **Chart Examples**: `docs/extensions/ml-docs-dev/client/code-examples/charts/` (bar, line, pie, area, scatter)
 - **Binding Docs**: `docs/extensions/ml-docs-dev/client/raptor-bindings.ts`
 - **Event Docs**: `docs/extensions/ml-docs-dev/client/raptor-events.ts`

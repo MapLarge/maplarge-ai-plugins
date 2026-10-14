@@ -7,7 +7,7 @@ Vertical lists of repeated items: the styled `listGroup` card and plain `list` (
 - A clickable/selectable stack of rows (a "list group" card) — use `s.listGroup`.
 - A plain semantic bulleted/numbered list, or nav/tab/dropdown menu styling — use `s.list`.
 - Term/description pairs — `s.descriptionList` (see Related).
-- For data tables with columns/sorting, use `s.dataGrid` instead (data-grid.md).
+- For data tables with columns/sorting, use `s.dataTable` instead (data-table.md).
 
 ## Builder
 
@@ -85,7 +85,7 @@ A `listGroup` node materializes as the `ListGroup extends RaptorNode` class. Rea
 - Parent: `raptor` (View/VM split, RSScriptor, foreach/contentTemplates, update()).
 - `foreach.md` — the repeating-content pattern these lists rely on.
 - `nav-tabs.md`, `navbar.md`, `dropdown.md` — list styling variants (navTabs/navPills/dropdownMenu).
-- `data-grid.md` — when columns/sorting are needed; `tree.md` — hierarchical/expandable lists; `card.md`, `button.md` — common item content.
+- `data-table.md` — when columns/sorting are needed; `tree.md` — hierarchical/expandable lists; `card.md`, `button.md` — common item content.
 
 ---
 *A deeper reference cheatsheet lives in the Reference section below.*

@@ -1,13 +1,13 @@
 # Table (plain semantic table)
 
-Static, structural HTML `<table>` built declaratively from RSScriptor. It is *not* the DataGrid — there is no built-in sorting, paging, virtualization, or data source. Use it for fixed layouts you populate yourself (key/value pairs, small summaries, `foreach`-driven row lists). The rendered node is a thin `Table extends RaptorNode` that just wraps `ViewDefinitions.ITable`; all behavior is in the view definition.
+Static, structural HTML `<table>` built declaratively from RSScriptor. It is *not* the DataTable — there is no built-in sorting, paging, virtualization, or data source. Use it for fixed layouts you populate yourself (key/value pairs, small summaries, `foreach`-driven row lists). The rendered node is a thin `Table extends RaptorNode` that just wraps `ViewDefinitions.ITable`; all behavior is in the view definition.
 
 ## When to use
 
 - A small/medium static or `foreach`-driven table where you control every cell.
 - Bootstrap-styled tables (striped/bordered/hover/responsive/compact) with semantic `<thead>/<tbody>/<tfoot>`.
 - Key/value or summary panels.
-- Reach for **data-grid.md** instead when you need column sorting, paging, selection, virtualization, or binding to an `IPagedData`/data source.
+- Reach for **data-table.md** instead when you need column sorting, filtering, selection, virtualization, or binding to a data source.
 
 ## Builder
 
@@ -67,7 +67,7 @@ The `Table` node has only `nodeModel: ITable`; it holds no view state of its own
 
 ## Gotchas
 
-- Not a grid. No sort/page/filter/selection comes for free; if you find yourself building those, switch to **data-grid.md**.
+- Not a grid. No sort/page/filter/selection comes for free; if you find yourself building those, switch to **data-table.md**.
 - `responsive` changes the returned root element to a wrapping `<div>` — account for that if you query/style by the table element directly.
 - Cells show `text` only when empty of children; adding `contentTemplates` to a `td`/`th` suppresses its `text`/`text`-binding.
 - `striped`+`stripedColumns` are mutually exclusive in effect (Bootstrap); pick one.
@@ -80,7 +80,7 @@ For "let the user choose a stored table", use the `tablePicker` node (`@Register
 ## Related skills
 
 - **raptor** — parent skill: View/VM split, RSScriptor.create, `getTypedProp`, `update()`, `foreach`, bindings/events basics.
-- **data-grid.md** — the interactive, sortable, paged grid; use it instead for real data tables.
+- **data-table.md** — the interactive, sortable, virtualized table; use it instead for real data tables.
 - **foreach.md** — driving `<tbody>` rows from a VM array.
 - **list-group.md**, **card.md** — alternative layouts for non-tabular records.
 - **select.md**, **dropdown.md** — simpler pickers when you don't need the full TablePicker.

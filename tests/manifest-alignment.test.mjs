@@ -17,7 +17,7 @@ import { everySkill, repoRoot } from "./common.mjs";
 // deliberate act, and the count bump in this file is part of the same change
 // (the same ritual the internal suite uses).
 
-const EXPECTED_SKILLS = new Map([["maplarge-adk", 12]]);
+const EXPECTED_SKILLS = new Map([["maplarge-adk", 16]]);
 
 function pluginDirs() {
 	const pluginsRoot = path.join(repoRoot, "plugins");

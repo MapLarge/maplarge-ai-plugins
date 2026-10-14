@@ -1,6 +1,6 @@
 {
   "name": "maplarge-adk",
-  "version": "1.0.0",
+  "version": "1.5.2",
   "description": "Portable, customer-safe guidance for building MapLarge ADK extensions: workspace detection, queries, Raptor dashboards, data modeling, server-side extension patterns, granular Raptor-control and Apache ECharts charting skill families, and the ml-docgen config-documentation tool.",
   "author": {
     "name": "MapLarge",
@@ -20,6 +20,7 @@
     "charts",
     "dashboard",
     "map",
+    "layers",
     "data",
     "server",
     "manifest",

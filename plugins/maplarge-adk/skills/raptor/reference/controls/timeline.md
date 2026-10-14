@@ -73,7 +73,7 @@ Both nodes are reached from the VM via the parent skill's `this.raptorDom.nodeT<
 
 - `raptor` — parent: View/VM split, RSScriptor.create, `update()`, `nodeT`, bindings/events mechanics, data sources & `setFilter`.
 - `time-slider.md` — sibling single value/range time picker (the other `ITimelineBasedControl`).
-- `data-grid.md`, `map.md` — common filter targets for a timeline brush.
+- `data-table.md`, `map.md` — common filter targets for a timeline brush.
 - `echarts` — for arbitrary custom time/Gantt charts beyond these two purpose-built nodes.
 
 ---

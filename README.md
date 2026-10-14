@@ -38,9 +38,9 @@ dotnet tool install -g MapLargeInc.CLI   # MapLarge CLI, if needed
 
 Customer-safe guidance for building MapLarge ADK extensions. No configuration or credentials required.
 
-**Workflow skills** (procedural, end to end): `adk-extension-dev`, `adk-query-dev`, `adk-raptor-dev`, `adk-data-dev`, `adk-clean-cache`, `deploy-extension`.
+**Workflow skills** (procedural, end to end): `adk-extension-dev`, `adk-query-dev`, `adk-raptor-dev`, `adk-map-layers`, `adk-data-dev`, `adk-clean-cache`, `adk-ui-testing`, `create-table`, `deploy-extension`.
 
-**Reference skills** (routers with on-demand reference docs): `maplarge-database` (tables, queries, versions, permissions across the CLI, REST, ProcessDirect, and plugin API surfaces), `raptor` (the Raptor control catalog and view patterns), `echarts` (every chart type and component), `maplarge-datastreams` (on-ramp and off-ramp pipelines), `maplarge-notebooks`, `ml-docgen`.
+**Reference skills** (routers with on-demand reference docs): `maplarge-database` (tables, queries, versions, permissions across the CLI, REST, ProcessDirect, and plugin API surfaces), `raptor` (the Raptor control catalog and view patterns), `echarts` (every chart type and component), `maplarge-datastreams` (on-ramp and off-ramp pipelines), `maplarge-notebooks`, `maplarge-query-dialect` (query runtime semantics: filter separators, aggregates that land in totals, take defaults, ordering by an aggregate, and where the JSON, SQL and REST endpoints disagree), `ml-docgen`.
 
 **Docs** (`plugins/maplarge-adk/docs/`): ADK CLI workflows, extension/manifest reference, JSON query authoring, server API access, Raptor dashboard patterns + cookbook, mockups, source-of-truth precedence, troubleshooting, workspace detection, and local-repo context.
 
@@ -51,6 +51,7 @@ node <plugin-root>/scripts/detect_maplarge_workspace.mjs --cwd .
 node <plugin-root>/scripts/check_adk_environment.mjs --cwd .
 node <plugin-root>/scripts/configure_local_repos.mjs --add core=/path/to/core
 node <plugin-root>/scripts/clean_adk_cache.mjs --all [--include-output]
+node <plugin-root>/scripts/create_table.mjs --table-name Vehicles --profile local --csv-file /tmp/vehicles.csv
 node <plugin-root>/scripts/deploy_extension.mjs --extensions Ext1 --profile local --preserve-config
 ```
 
@@ -79,13 +80,24 @@ Verified with gh 2.100.0. Two practical notes:
 
 ### Codex
 
-Codex picks up project-scope skills from `.agents/skills/`, which `gh skill install` populates (see above). For the full set with docs and helper scripts, clone this repository instead and add a pointer in your project's `AGENTS.md` standing instructions, for example: "For MapLarge work, consult the skills under `<clone-path>/plugins/maplarge-adk/skills/` and follow the matching skill before acting."
+Codex picks up project-scope skills from `.agents/skills/`, which `gh skill install` populates (see above). For the full set with docs and helper scripts, clone this repository instead and add a pointer in your project's `AGENTS.md` standing instructions, for example: "This repo is a MapLarge ADK extension. Before acting, consult the skills under `<clone-path>/plugins/maplarge-adk/skills/` and follow the matching skill."
+
+Nothing detects "MapLarge work" automatically; the assistant infers it from the repo and the prompt, so state it outright in a project's `AGENTS.md`. For a personal `~/.codex/AGENTS.md` that applies to every repo, keep the condition but spell out what counts: "For MapLarge work (a repo with a MapLarge extension manifest or an `.adk/` folder, or a task involving Raptor, the `maplarge` CLI, or a MapLarge server), consult the skills under `<clone-path>/plugins/maplarge-adk/skills/` and follow the matching skill before acting."
 
 ### Cursor
 
 `gh skill install ... --agent cursor` places skills where Cursor's Agent Skills support reads them, or clone the repository and wire the skills into your workspace.
 
 ## Updating
+
+If you installed through `/plugin marketplace add` (the [Quickstart](#quickstart-claude-code)), refresh the marketplace, then update the plugin:
+
+```bash
+/plugin marketplace update maplarge-claude-marketplace-public
+/plugin update maplarge-adk@maplarge-claude-marketplace-public
+```
+
+Restart Claude Code (or run `/reload-plugins`) to load the new version, and check it with `/plugin list`. To skip the manual step, enable auto-update for the marketplace in the `/plugin` menu. Updates arrive when the plugin's `version` changes, and every release bumps it.
 
 If you registered the marketplace from a clone (see [Declarative setup](#declarative-setup-no-slash-commands)), it loads **in place from your clone** - there is no separate cached copy - so updating is just a pull + reload:
 

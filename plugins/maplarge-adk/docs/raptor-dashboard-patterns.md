@@ -4,7 +4,7 @@ Use these patterns when building ADK extension dashboards, pages, layouts, route
 
 ## UI baseline
 
-- Build dashboards with Raptor primitives first: layouts, pages, view models, bindings, charts, DataGrid, dialogs, layers, and platform classes.
+- Build dashboards with Raptor primitives first: layouts, pages, view models, bindings, charts, DataTable, dialogs, layers, and platform classes.
 - Avoid custom layout systems, injected HTML, and broad CSS. Add custom CSS only for small gaps that Raptor or platform classes do not cover.
 - Preserve MapLarge dashboard chrome, spacing, and interaction patterns unless the user explicitly authorizes a different direction.
 - Use Roboto typography. Do not introduce or import non-Roboto font families.
@@ -150,9 +150,9 @@ return ml.util.Text.formatDate(this.timestamp, "ShortDate ShortTime", tz, format
 - Flex layouts that contain grids or scrollable content usually need `minHeight: 0` on every shrinking flex ancestor.
 - For dialogs, destroy both the dialog DOM and the view-model instance when closing a dialog that owns its own model key.
 
-## DataGrid and metadata patterns
+## Data table and metadata patterns
 
-Use a custom row view model when per-row behavior, actions, or conditional styles exceed simple text binding. For table metadata, prefer server-cache table metadata helpers already used by the extension before adding new server calls.
+Build record tables with the DataTable (`s.dataTable` from `data-ui/data-table`), inside a container with a height; the older grid builder is deprecated. When per-row behavior, actions, or conditional styles exceed plain text, use column `transformValue`, a `scope` predicate bound into a cell template, or a `virtualColumn` with buttons, rather than a per-row view model. The `raptor` skill's `controls/data-table.md` has the full reference. For table metadata, prefer server-cache table metadata helpers already used by the extension before adding new server calls.
 
 ## Add A Page To An Existing Extension
 

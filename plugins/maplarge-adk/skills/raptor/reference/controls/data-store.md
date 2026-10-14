@@ -9,7 +9,7 @@ The dashboard-level manager for **named data sources and their filters**. It is 
 - You want to subscribe a VM getter / control to *filtered* live results via `onDataSourceChanged`.
 - You need stored-filter semantics: each filter has a stable **name** key, so re-setting it replaces the prior clause and other controls can read/remove it.
 
-**Not** an RSScriptor node — there is no `s.dataStore(...)` / `s.dataSource(...)` builder. It is a programmatic API on the view-model. Map layers bound to a source use the sibling `map.md` layer store; bind controls to a source by passing a `dataSourceName` string (see `data-grid.md`, `numeric-range-filter.md`).
+**Not** an RSScriptor node — there is no `s.dataStore(...)` / `s.dataSource(...)` builder. It is a programmatic API on the view-model. Map layers bound to a source use the sibling `map.md` layer store; bind controls to a source by passing a `dataSourceName` string (see `data-table.md`, `numeric-range-filter.md`).
 
 ## Reaching the store
 
@@ -93,7 +93,7 @@ public clearSelection() { this.dataStore.removeFilter("myThing", "selection"); }
 ## Related skills
 
 - Parent: **raptor** (View/VM split, `update()`, `DynamicViewModel`, `RSScriptor.create`).
-- **data-grid.md** and **numeric-range-filter.md** — controls that bind to a source by `dataSourceName` and read/write store filters.
+- **data-table.md** and **numeric-range-filter.md** — controls that bind to a source by `dataSourceName` and read/write store filters (the data table publishes its column filters to the store by default).
 - **map.md** — the layer store and map layers driven off registered data sources.
 - **quick-select.md**, **select.md**, **date-time.md** — common producers of named filters.
 - **echarts** — chart series fed from a subscribed data source.

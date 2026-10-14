@@ -105,7 +105,7 @@ s.select({
 ## Gotchas
 
 - Prefer `s.quickSelect` over `s.select` for new code — `select` is deprecated.
-- `s.choices` is only for a small number of items; large lists belong in QuickSelect/DataGrid.
+- `s.choices` is only for a small number of items; large lists belong in QuickSelect/DataTable.
 - Choices `value` binding before `items` arrive is buffered as a pending value and applied once `items` load (especially with paged data).
 - Choices `valueProperty`/`labelProperty` default to `"value"`/`"label"`; string/number arrays are auto-wrapped to `{ label, value }`, so omit the property options for primitive lists.
 - Select stores the *display string* in `selectedValues` for primitive options; for object options always set both `optionsText` and `optionsValue` or the value display/round-trip breaks.

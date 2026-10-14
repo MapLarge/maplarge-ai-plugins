@@ -78,4 +78,4 @@ A `Foreach` instance is created per loop. Public surface you may touch from a ho
 
 - `raptor` — parent skill: View/VM split, RSScriptor basics, bindings/events, `getTypedProp`/`prefix`/`pushDataContext` scoping, `update()`.
 - `list-group.md`, `nav-tabs.md`, `select.md`, `table.md`, `accordion.md`, `card.md`, `carousel.md`, `pagination.md`, `breadcrumb.md` — controls that build on / expose `.foreach(...)`.
-- `data-grid.md` — its row rendering is foreach-backed (`IForeachAwareViewModel`, `noAutoBindings`); see for large virtualized lists.
+- `data-table.md` — for large record sets; it virtualizes rows with its own view engine instead of a foreach.

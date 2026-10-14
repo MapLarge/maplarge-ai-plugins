@@ -19,4 +19,5 @@ nonword: true
 swap:
   DataGrid: DataTable
   dataGrid: dataTable
-  datagrid: datatable
+  # mlsvg-datagrid-outline is an icon name, not the deprecated control.
+  (?<!mlsvg-)datagrid: datatable

@@ -4,7 +4,7 @@ description: "Builds UI in MapLarge ADK extensions with the Raptor MVVM framewor
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "MapLarge ADK Raptor typings @ 2026-08 import baseline; RegisterNode/commitPage/DynamicViewModel declarations spot-verified against framework typings, trunk 119ba585c6e, 2026-09-09 (ARC-50)"
+  verified-against: "MapLarge ADK Raptor typings @ 2026-08 import baseline; RegisterNode/commitPage/DynamicViewModel declarations spot-verified against framework typings, trunk 119ba585c6e, 2026-09-09 (ARC-50); reference/controls/map-3d.md, map-3d-layers.md and map-3d-drawing.md verified by browser runs against MapLarge Server 4.139.0.1043 and 4.142.0.1043 (4.131.0.1043 for the version notes) with CesiumJS 1.140.0, exceptions stated on each page; examples compiled against the 4.131 and 4.139 typings (Drawings V2 examples against 4.139 only), 2026-10-10 (ARC-91); DataTable API (data-ui/data-table) verified against Stable_Trunk source and ml-docs-dev data-table docs, 2026-10-13 (DE-761)"
 ---
 
 # Raptor MVVM (MapLarge ADK)
@@ -34,7 +34,7 @@ read `reference/patterns.md`.
 | code editor, Monaco | `controls/code-editor.md` |
 | color swatch / picker | `controls/color-swatch.md` |
 | custom RaptorNodes, @RegisterNode, @BindingHandler | `controls/custom-nodes.md` |
-| data grid, DataGrid, sortable/paged/filterable grid | `controls/data-grid.md` |
+| data table, data grid, sortable/filterable/editable records grid, migrating older grid code | `controls/data-table.md` |
 | data store, IDataStore, filters | `controls/data-store.md` |
 | date / time picker | `controls/date-time.md` |
 | dialog, modal | `controls/dialog.md` |
@@ -47,6 +47,9 @@ read `reference/patterns.md`.
 | legend | `controls/legend.md` |
 | list group | `controls/list-group.md` |
 | map, RaptorMap, layers, geometry | `controls/map.md` |
+| 3D map, globe, Cesium, `api: CESIUM`, 2D/3D switch, tilt, terrain, cesiumKey, Cesium viewer | `controls/map-3d.md` |
+| layers on a 3D globe, features at altitude, 3D Tiles, CZML, glTF model, `CesiumXYZLayer` | `controls/map-3d-layers.md` |
+| drawing on a 3D globe, `drawingsVersion: 2` | `controls/map-3d-drawing.md` |
 | markdown | `controls/markdown.md` |
 | nav tabs, tabbed panes | `controls/nav-tabs.md` |
 | navbar | `controls/navbar.md` |
@@ -86,7 +89,7 @@ import { RaptorNodeBase } from "raptor/raptorDom/controls/RaptorNodeBase";
 import { RegisterNode } from "raptor/decorators/RegisterNode.decorator";
 import { BindingHandler } from "raptor/decorators/BindingHandler.decorators";
 import { RaptorMap } from "raptor/raptorDom/controls/Map/RaptorMap";
-import { DataGridViewModel } from "raptor/raptorDom/controls/DataGrid/DataGridViewModel";
+import { createDataTable, dataTableOptions } from "data-ui/data-table"; // tables: controls/data-table.md
 import { IDataStore, DataSourceFilter } from "raptor/stores/Interfaces";
 import { MyControl } from "ext/<Ext>/RaptorNodes/MyControl"; // cross-extension import pattern
 ```
@@ -140,7 +143,7 @@ Element builders chain; nesting is via `.contentTemplates(s => s....)`:
 .contentTemplates(s => s.span({ bindings:{ text:s.getTypedProp("label") } }))
 ```
 
-Common builders (real usage): `div`, `span`, `label`, `h3/h4/h6`, `anchor`, `button`, `image`, `svg`, `list/listItem`, `card/cardBody`, `container/layoutContainer`, `navbar`, `dropdown`, `sidebar`, `accordion/accordionItem/accordionItemHeader/accordionItemBody`, `cssGrid/cssGridItem`, `dialog/dialogHeader/dialogBody`, `dataGrid` + `tableHead/tableBody/tr/th/td`, `foreach`, `raptorMap`, `mapLargeSvgLogo`, `element` (generic typed node), `chart`, and any registered custom nodes (your own RaptorNodes get a builder named by their `type`). `quickSelect`, `radio/radioButtonGroup` also exist.
+Common builders (real usage): `div`, `span`, `label`, `h3/h4/h6`, `anchor`, `button`, `image`, `svg`, `list/listItem`, `card/cardBody`, `container/layoutContainer`, `navbar`, `dropdown`, `sidebar`, `accordion/accordionItem/accordionItemHeader/accordionItemBody`, `cssGrid/cssGridItem`, `dialog/dialogHeader/dialogBody`, `dataTable`, `table` + `tableHead/tableBody/tr/th/td`, `foreach`, `raptorMap`, `mapLargeSvgLogo`, `element` (generic typed node), `chart`, and any registered custom nodes (your own RaptorNodes get a builder named by their `type`). `quickSelect`, `radio/radioButtonGroup` also exist.
 
 ### Bindings (`.bindings:{ ... }`)
 
@@ -249,7 +252,7 @@ this._dataStore.getFilter(dsName, name);
 
 A common naming scheme for stored filters is `DynamicFilter_<dataSourceName>__<column>`; filter values are `ml.data.query.IQueryWhere` ({col, test, value}) and OR groups are built by combining clauses.
 
-**Data grid**: `DataGridViewModel.fromDataSource(this, dsName, { displayFields, defaultSort:{field,direction}, viewModelFactory })`. Bind with `bindings:{ data:s.getTypedProp("grid") }` under `.dataGrid(...)`.
+**Data table**: `s.dataTable(dataTableOptions<Row>({ data: data("dataStoreData", { dataStore:{binding:"dataStore"}, dataSourceName }), schema, columns }))` inside a sized container; it shares the data store's filters both ways. Need the store (selection, mutations, refresh)? Build with `createDataTable` in the VM and bind `bindings:{ data:"dataTableOptions" }`. The older grid builder is deprecated; see `controls/data-table.md`.
 
 **A VM that is its own view**: a VM can build and return its own `IViewDefinition` with `const s = RSScriptor.create<any>(); ... return s.commit();`, then be rendered into a control target and wired up manually:
 

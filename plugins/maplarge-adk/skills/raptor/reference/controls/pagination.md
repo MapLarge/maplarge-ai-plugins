@@ -6,7 +6,7 @@ A presentational page-navigation strip (Bootstrap `pagination` markup). Use it t
 
 - You want a classic pager (`« 1 2 3 … »`) to drive a page index your VM already tracks.
 - You need clickable page links with `active`/`disabled` states you control.
-- Not for paging a data set automatically — the data-grid control owns its own paging UI (see `data-grid.md`). Pagination here is pure UI you bind to your own `currentPage`/`pageCount` state.
+- Not for paging a data set automatically — the data table loads rows in segments as the user scrolls (see `data-table.md`). Pagination here is pure UI you bind to your own `currentPage`/`pageCount` state.
 
 ## Builder
 
@@ -61,5 +61,5 @@ The backing node class is `Pagination extends RaptorNode` (`nodeModel: ViewDefin
 ## Related skills
 
 - `raptor` (parent) — View/VM split, `RSScriptor.create`, `.contentTemplates`, events, `update(viewName)`.
-- `data-grid.md` — when you actually want paged data; it has built-in paging.
+- `data-table.md` — when you actually want to browse a large data set; it fetches rows on scroll.
 - `button.md`, `nav-tabs.md`, `breadcrumb.md` — sibling navigation/action controls that share the same anchor/`IEvent` patterns.

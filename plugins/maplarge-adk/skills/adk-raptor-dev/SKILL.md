@@ -4,7 +4,7 @@ description: Raptor dashboard, page, layout, layer, chart, route, dialog, and vi
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "MapLarge ADK CLI 1.0.90 (new/run/package/deploy flags) verified live 2026-09-09 (ARC-44); Raptor patterns @ 2026-08 import baseline"
+  verified-against: "MapLarge ADK CLI 1.0.90 (new/run/package/deploy flags) verified live 2026-09-09 (ARC-44); Raptor patterns @ 2026-08 import baseline; table guidance moved to DataTable 2026-10-13 (DE-761)"
 ---
 
 # ADK Raptor Development
@@ -53,7 +53,7 @@ For coding tasks in an existing extension, inspect in this order:
 ## Raptor rules
 
 - Treat bundled dashboard and route patterns as the default baseline for new code.
-- Build dashboard UI with Raptor primitives first: layouts, pages, view models, bindings, charts, DataGrid, dialogs, layers, and platform classes.
+- Build dashboard UI with Raptor primitives first: layouts, pages, view models, bindings, charts, DataTable, dialogs, layers, and platform classes.
 - Avoid custom layout systems, injected HTML, and broad CSS. Add custom CSS only for small gaps that Raptor or platform classes do not cover.
 - Preserve MapLarge dashboard chrome, spacing, and interaction patterns unless the user explicitly authorizes a different direction.
 - Use Roboto typography. Do not introduce or import non-Roboto font families — the platform chrome renders in Roboto, so a foreign family makes the extension read as un-themed inside the product and drifts from every neighboring dashboard.
@@ -62,7 +62,7 @@ For coding tasks in an existing extension, inspect in this order:
 - Add layouts before pages and pages before view models.
 - For feasibility questions, distinguish work possible in existing dashboard/editor controls from work that needs a custom ADK extension.
 - For async chart data, remember that `traverseRaptorChart` is initial-render oriented; update the chart instance after data arrives.
-- For DataGrid rows with actions, colors, or computed labels, prefer a custom row view model over ad hoc view logic.
+- For tables, use the DataTable (`s.dataTable` from `data-ui/data-table`); the older grid builder is deprecated. Per-row actions, colors, or computed labels go through column `transformValue`, `scope`, and `virtualColumn` cell templates, not a row view model.
 - For dynamic colors, bind `attr.style` to a view-model string when boolean style bindings are too limited.
 - For table metadata, reuse existing server-cache helpers or local extension patterns before adding new API calls.
 - For dashboard date/time work, prefer Luxon. Use `import { DateTime } from "luxon"` in new module-based TypeScript, use `ml.luxon.DateTime` in legacy namespaced code, older ADK projects, or existing Raptor examples, apply user timezone/preferences for display, and treat Moment as legacy interop only.

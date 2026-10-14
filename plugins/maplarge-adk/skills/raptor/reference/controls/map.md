@@ -76,7 +76,7 @@ this.raptorDom.nodeT<RaptorMap>("mainMap")?.onMapCreated(rm => {
 
 **Drive layers from data sources** — on a `DynamicViewModel`, build `ml.ui.map.IMlUiLayerOptionsInterface[]` (each with a stable `id`, `query`/`sourceTable`, `style`, `visible`) and assign them to `mapState.layers` (or `registerLayers`); changing a layer's JSON reloads only that layer, hidden layers are removed.
 
-**Filter a data source (or grid) to the current viewport** — there is no built-in viewport filter on the Raptor DataGrid (only the legacy `MLDataGrid` has one), so wire it: on `center`/`zoom` change (debounced), read `getVisibleBB()`, build an `Overlaps` rectangle where-clause, and apply it as a named data-store filter.
+**Filter a data source (or table) to the current viewport** — a DataTable does this itself through its `mapViewportSync` integration, without touching the shared source (see `data-table.md`). For any other consumer, wire it: on `center`/`zoom` change (debounced), read `getVisibleBB()`, build an `Overlaps` rectangle where-clause, and apply it as a named data-store filter.
 
 ```ts
 const geo = ml.data.dataSource.getDefaultGeoColumn(ds);       // resolve the geo column
@@ -101,7 +101,9 @@ Clear/skip the filter near whole-world span (≥360°). For a radius instead of 
 - Parent: `raptor` (View/VM split, RSScriptor, `update()`, `nodeT`).
 - `legend.md` — the legend control / `IRaptorMapLegendOptions` / `LegendMode`.
 - `drawing-toolbar.md` — drawing tools and `drawComplete`/draw-to-select.
-- `data-grid.md` — the common map + grid linked-selection pairing.
+- `map-3d.md`: switching the map to the 3D Cesium globe (`api: CESIUM`), and what changes there.
+- `map-3d-layers.md`: how layers render on the globe.
+- `data-table.md` — the common map + table pairing (viewport sync, row selection driving the map).
 - See the Reference section below for the full option/enum/method tables.
 
 ---

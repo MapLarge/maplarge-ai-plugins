@@ -13,7 +13,7 @@ import type { Descriptors, Descriptor, Layout, DynamicLayoutProvider } from "dat
 - A form that edits many properties of one object: settings panels, parameter editors, entity/record editors, "add / edit" forms.
 - You want field definitions to live as **data** (a descriptor map on the VM) rather than hand-written `s.input`/`s.checkbox` trees — add/remove a field by editing the map, not the view.
 - You need reactive fields: a label/options/visibility that depends on the current values (dynamic attributes), or a layout that changes as the user edits (dynamic layout).
-- **Not** this: a single standalone input or checkbox → `forms.md`. A single dropdown → `select.md`. A tabular grid of records → `data-grid.md`.
+- **Not** this: a single standalone input or checkbox → `forms.md`. A single dropdown → `select.md`. A tabular grid of records → `data-table.md`.
 
 ## Placing the editor
 
@@ -195,7 +195,7 @@ public set data(v: Record<string, any>) {
 - `select.md` — standalone `quickSelect` dropdown (the ObjectEditor's `Select`/`MultiSelect` descriptors wrap the same picker).
 - `date-time.md` — standalone date/time pickers (behind the `DateTime` descriptor).
 - `layout.md` — row/column/flex primitives used by the `columns`/`flex` layout rows and `templatedRows`/`fieldTemplate` callbacks.
-- `data-grid.md` — editing a table of records rather than one object.
+- `data-table.md` — editing a table of records rather than one object.
 - Exact type/field/binding tables: see the Reference section below in this doc.
 
 ---

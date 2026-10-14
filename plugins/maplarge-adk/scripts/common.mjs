@@ -58,6 +58,62 @@ export function isExecutedAsScript(metaUrl, scriptPath = process.argv[1]) {
 	return canonicalPath(fileURLToPath(metaUrl)) === canonicalPath(scriptPath);
 }
 
+// Progress/log lines go to stderr so stdout stays a clean JSON payload.
+export function log(message) {
+	process.stderr.write(`${message}\n`);
+}
+
+export function output(payload) {
+	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+}
+
+// Wraps a script main() so failures print a clean message and set exit code 1.
+export async function runMain(main) {
+	try {
+		await main();
+	} catch (error) {
+		process.stderr.write(`\nError: ${error?.message ?? error}\n`);
+		process.exitCode = 1;
+	}
+}
+
+// Strict flag parser: unknown flags, missing values for string flags, and
+// out-of-set values are hard errors.
+// spec: { "flag-name": { type: "string"|"boolean", values?: [..] } }
+export function parseFlagsStrict(argv, spec) {
+	const flags = {};
+	for (const [name, def] of Object.entries(spec)) {
+		if (def.type === "boolean") {
+			flags[name] = false;
+		}
+	}
+	for (let index = 0; index < argv.length; index += 1) {
+		const token = argv[index];
+		if (!token.startsWith("--")) {
+			throw new Error(`Unexpected argument: ${token}`);
+		}
+		const key = token.slice(2);
+		const def = spec[key];
+		if (!def) {
+			throw new Error(`Unknown flag: --${key}. Known flags: ${Object.keys(spec).map((k) => `--${k}`).join(", ")}`);
+		}
+		if (def.type === "boolean") {
+			flags[key] = true;
+			continue;
+		}
+		const next = argv[index + 1];
+		if (next === undefined || next.startsWith("--")) {
+			throw new Error(`Flag --${key} requires a value.`);
+		}
+		if (def.values && !def.values.includes(next)) {
+			throw new Error(`Invalid value for --${key}: ${next}. Allowed: ${def.values.join(", ")}`);
+		}
+		flags[key] = next;
+		index += 1;
+	}
+	return { flags };
+}
+
 export function pathExists(targetPath) {
 	try {
 		fs.accessSync(targetPath);

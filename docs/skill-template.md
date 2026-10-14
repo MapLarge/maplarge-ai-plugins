@@ -32,6 +32,18 @@ Ask: *could a competent engineer hold the whole topic in their head at once?*
 - No, it's a domain with 10+ distinct subtopics a reader dips into → **Shape B**.
 - A workflow guide whose body is approaching the 500-line cap (§4.4) is usually a router in denial — split the detail into `reference/` and convert rather than compressing prose to stay under the limit.
 
+### Multi-surface topics
+
+Most platform operations can be reached through several surfaces: the CLI, REST, ProcessDirect, TypeScript in ADK code, and C# plugins. The two shapes split that work as follows:
+
+- **A Shape B router owns the surface catalog.** It documents the operation across the surfaces it owns, names the sibling that owns any it doesn't, and is where "which surface should I use?" gets answered.
+- **A Shape A workflow guide owns one user intent down one opinionated path.** Offering alternative transports turns a rail into a menu, and the model goes back to improvising the steps the bundled scripts exist to pin down.
+- **A different intent is a different skill.** Related skills connect through `Hand-offs` sections (Shape A), the scope paragraph's exclusions (Shape B), and description-level triggers, not by absorbing each other's surfaces.
+
+Reviewer test: if a workflow-guide PR adds "or do the same thing through X", the alternative belongs in the router's catalog, and the workflow guide gets a Hand-offs line pointing there.
+
+*Worked example:* [`create-table`](../plugins/maplarge-adk/skills/create-table/SKILL.md) owns the intent "make this table exist for me" and runs it through one bundled script. [`maplarge-database`](../plugins/maplarge-adk/skills/maplarge-database/SKILL.md) catalogs table operations across the CLI, REST, ProcessDirect, and the plugin API. When the user wants extension or application code that creates tables at runtime, `create-table`'s Hand-offs route to `maplarge-database` for the surfaces, with `adk-data-dev` for the ADK-side patterns.
+
 ---
 
 ## 2. Directory layout

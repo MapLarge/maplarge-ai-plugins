@@ -93,7 +93,7 @@ In the `change` handler, parse the `"<min>/<max>"` ISO string and call `dataStor
 - `raptor` — parent skill (View/VM split, RSScriptor, bindings/events, `nodeT`, dialogs).
 - `timeline.md` — sibling timeline viewer sharing `ITimelineBasedControl`.
 - `date-time.md` — date pickers / `dateFilter` used alongside the slider (e.g. in the dialog header).
-- `map.md` / `data-grid.md` — the typical filter targets a time selection drives.
+- `map.md` / `data-table.md` — the typical filter targets a time selection drives.
 - `echarts` — for general (non-time-brush) charting.
 
 ---
