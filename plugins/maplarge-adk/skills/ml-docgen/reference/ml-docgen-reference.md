@@ -102,7 +102,9 @@ the extension's real **config.json**.
   Usually `I<Name>Config`, but it can be a differently-named or wrapper type — e.g. a root
   interface that wraps an inner config, declared as `{ MyExt: IMyExtConfig }`.
 - **Stale `.d.ts`:** a dependent extension sees a shared type via `.adk/types.d/_<Dep>.d.ts`,
-  refreshed only by a build (`mlcomp "<Name>"` / `maplarge adk build`). Source edits to shared
+  refreshed only by a build (`mlcomp "<Name>"` / `maplarge adk build`) that compiles `<Dep>`'s
+  declarations (a bare `maplarge adk build`, not a single-extension build; see
+  [Failure modes](../../../docs/extension-dependencies.md#failure-modes)). Source edits to shared
   types appear in the OWNING extension's docs immediately but in dependents only after rebuild.
 - Prefer `/** */` JSDoc (not `//`) on shared/dependency config interfaces — only JSDoc survives
   `.d.ts` generation.

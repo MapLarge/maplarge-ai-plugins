@@ -1,10 +1,10 @@
 ---
 name: raptor
-description: "Builds UI in MapLarge ADK extensions with the Raptor MVVM framework — the router for all Raptor view/control work AND for v5 feasibility questions. Core: the View/ViewModel split, the RSScriptor fluent DSL (element builders, .bindings/.events, getTypedProp/prefix scoping), reusable RaptorNodes (@RegisterNode/@BindingHandler), reactive update() re-rendering, the VM base classes, IDataStore, dialogs, child views, and state persistence. Use when writing or editing any Raptor view, view-model, RaptorNode, filter, or page-registration code — anything importing from raptor/..., \"index\", or ext/<Ext>/... — and when answering what v5 can do, editor-vs-custom-extension, or which pattern to reach for. Per-control reference docs cover the full catalog (data grid, map, foreach, dialog, select, forms, layout, theming, and more); charts belong to the sibling echarts skill. Triggers on \"RSScriptor\", \"RaptorNode\", \"view model\", \"*View.ts\", \"update()\", \"renderDialog\", \"data grid\", \"raptor map\", \"foreach\", \"v5 feasibility\"."
+description: "Builds UI in MapLarge ADK extensions with the Raptor MVVM framework — the router for all Raptor view/control work AND for v5 feasibility questions. Core: the View/ViewModel split, the RSScriptor fluent DSL (element builders, .bindings/.events, getTypedProp/prefix scoping), reusable RaptorNodes (@RegisterNode/@BindingHandler), reactive update() re-rendering, the VM base classes, IDataStore, dialogs, child views, and state persistence. Use when writing or editing any Raptor view, view-model, RaptorNode, filter, or page-registration code — anything importing from raptor/..., \"index\", or ext/<Ext>/... — and when answering what v5 can do, editor-vs-custom-extension, or which pattern to reach for. Per-control reference docs cover the full catalog (map, foreach, dialog, select, forms, layout, theming, and more); charts belong to the sibling echarts skill. Triggers on \"RSScriptor\", \"RaptorNode\", \"view model\", \"*View.ts\", \"update()\", \"renderDialog\", \"raptor map\", \"foreach\", \"v5 feasibility\"."
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "MapLarge ADK Raptor typings @ 2026-08 import baseline; RegisterNode/commitPage/DynamicViewModel declarations spot-verified against framework typings, trunk 119ba585c6e, 2026-09-09 (ARC-50); reference/controls/map-3d.md, map-3d-layers.md and map-3d-drawing.md verified by browser runs against MapLarge Server 4.139.0.1043 and 4.142.0.1043 (4.131.0.1043 for the version notes) with CesiumJS 1.140.0, exceptions stated on each page; examples compiled against the 4.131 and 4.139 typings (Drawings V2 examples against 4.139 only), 2026-10-10 (ARC-91); DataTable API (data-ui/data-table) verified against Stable_Trunk source and ml-docs-dev data-table docs, 2026-10-13 (DE-761)"
+  verified-against: "MapLarge ADK Raptor typings @ 2026-08 import baseline; RegisterNode/commitPage/DynamicViewModel declarations spot-verified against framework typings, trunk 119ba585c6e, 2026-09-09 (ARC-50); reference/controls/map-3d.md, map-3d-layers.md and map-3d-drawing.md verified by browser runs against MapLarge Server 4.139.0.1043 and 4.142.0.1043 (4.131.0.1043 for the version notes) with CesiumJS 1.140.0, exceptions stated on each page; examples compiled against the 4.131 and 4.139 typings (Drawings V2 examples against 4.139 only), 2026-10-10 (ARC-91); DataTable API (data-ui/data-table) verified against Stable_Trunk source and ml-docs-dev data-table docs, 2026-10-13 (DE-761); Full-Screen Page recipe, both layouts and the blank-page diagnosis verified in the browser on CLI 1.0.95, layer query literal compiled against the 4.141 declarations, 2026-10-14 (ARC-64); table routing pointed at the data-table skill after with/without agent runs showed plain-table drift on the team-list prompt, 2026-10-16 (ARC-112); cross-extension ext/<Ext>/ imports: Dependencies-ordered builds and TS2307 when the providing extension's types file is empty verified live on ADK CLI 1.0.94, 2026-11-03 (ARC-25)"
 ---
 
 # Raptor MVVM (MapLarge ADK)
@@ -34,7 +34,8 @@ read `reference/patterns.md`.
 | code editor, Monaco | `controls/code-editor.md` |
 | color swatch / picker | `controls/color-swatch.md` |
 | custom RaptorNodes, @RegisterNode, @BindingHandler | `controls/custom-nodes.md` |
-| data table, data grid, sortable/filterable/editable records grid, migrating older grid code | `controls/data-table.md` |
+| data table, data grid, any table or list of records or rows (even a short one), sortable/filterable/editable grid | the `data-table` skill |
+| data grid migration: older grid code to the data table | `controls/data-table.md` |
 | data store, IDataStore, filters | `controls/data-store.md` |
 | date / time picker | `controls/date-time.md` |
 | dialog, modal | `controls/dialog.md` |
@@ -62,7 +63,7 @@ read `reference/patterns.md`.
 | sidebar | `controls/sidebar.md` |
 | slider | `controls/slider.md` |
 | svg | `controls/svg.md` |
-| table | `controls/table.md` |
+| table (static layout only): key/value panel, small fixed summary | `controls/table.md` |
 | text, labels, headings | `controls/text.md` |
 | theming, colors, dark mode, CSS variables | `controls/theming.md` |
 | time slider, playback | `controls/time-slider.md` |
@@ -89,12 +90,12 @@ import { RaptorNodeBase } from "raptor/raptorDom/controls/RaptorNodeBase";
 import { RegisterNode } from "raptor/decorators/RegisterNode.decorator";
 import { BindingHandler } from "raptor/decorators/BindingHandler.decorators";
 import { RaptorMap } from "raptor/raptorDom/controls/Map/RaptorMap";
-import { createDataTable, dataTableOptions } from "data-ui/data-table"; // tables: controls/data-table.md
+import { createDataTable, dataTableOptions } from "data-ui/data-table"; // tables: the data-table skill
 import { IDataStore, DataSourceFilter } from "raptor/stores/Interfaces";
 import { MyControl } from "ext/<Ext>/RaptorNodes/MyControl"; // cross-extension import pattern
 ```
 
-The third form, `ext/<Ext>/...`, imports something another extension exports (a shared RaptorNode, helper, or VM). Replace `<Ext>` with the providing extension's name.
+The third form, `ext/<Ext>/...`, imports something another extension exports (a shared RaptorNode, helper, or VM). Replace `<Ext>` with the providing extension's manifest `Name`, and declare it in your manifest's `Dependencies` array; without that entry the build can fail with `TS2307`, depending on build order. See [Declaring a dependency](../../docs/extension-dependencies.md#declaring-a-dependency).
 
 ## Finding a definition (no repo-wide grep)
 
@@ -127,7 +128,8 @@ All take `(raptorDom: RaptorDom, raptorEngine: RaptorEngine)` and expose `this.r
 
 ```ts
 const s = RSScriptor.create<MyViewModel>();
-s.page("MODELKEY", "Display Title");        // page-level views only
+s.page("MODELKEY", "Display Title"); // page views only; add undefined, undefined, true for fullScreen
+// .page(modelKey, friendlyName, layoutModelKey?, headerModelKey?, fullScreen?)
 s.view("main", s => s./* element tree */);  // a named render region
 return s.commitPage();                       // page view → IRenderingDefinition
 // (control/sub views return s.commit() and use RSScriptor.create<VM>() without .page)
@@ -252,7 +254,7 @@ this._dataStore.getFilter(dsName, name);
 
 A common naming scheme for stored filters is `DynamicFilter_<dataSourceName>__<column>`; filter values are `ml.data.query.IQueryWhere` ({col, test, value}) and OR groups are built by combining clauses.
 
-**Data table**: `s.dataTable(dataTableOptions<Row>({ data: data("dataStoreData", { dataStore:{binding:"dataStore"}, dataSourceName }), schema, columns }))` inside a sized container; it shares the data store's filters both ways. Need the store (selection, mutations, refresh)? Build with `createDataTable` in the VM and bind `bindings:{ data:"dataTableOptions" }`. The older grid builder is deprecated; see `controls/data-table.md`.
+**Data table**: `s.dataTable(...)` from `data-ui/data-table` inside a sized container; it shares the data store's filters both ways. The `data-table` skill covers its options, store, recipes and view definition JSON. The older grid builder is deprecated; `controls/data-table.md` maps it across.
 
 **A VM that is its own view**: a VM can build and return its own `IViewDefinition` with `const s = RSScriptor.create<any>(); ... return s.commit();`, then be rendered into a control target and wired up manually:
 
@@ -288,12 +290,14 @@ A dialog view uses `.dialog({ viewName, title, width, allowClose }).contentTempl
 - Folder naming is inconsistent across extensions: some use `client/view-models/`, others `client/viewModels/`. Match the file you're editing.
 - Functions can't be passed through bindings; wire callbacks imperatively after the node initializes.
 - Inside `.foreach`, scope is the item — use `prefix("<selfGetterVm>")` to reach page-level props.
+- **A page that fills the screen (a map, a full-height dashboard) needs two things, and either one missing renders the page blank** (grey or white, depending on the shell) with no console error and no failed request: `fullScreen: true` as the fifth `.page()` argument, and `heightUtility: 100` on the layout's `modulePageContent` host div in `LayoutView.ts`. As of CLI 1.0.95, the default `raptor` extension template and `maplarge adk new component page` scaffold neither; `maplarge adk new extension <name> -t raptor-map` scaffolds both. To diagnose a blank page, walk up from the map element and print each ancestor's height: the first one at 0px shows which piece is missing. Recipe and diagnosis: [Full-Screen Page](reference/patterns.md#full-screen-page).
 - Page views end with `s.commitPage()`; non-page (control/dialog/self) views use `s.commit()`. Mismatching breaks rendering.
 - RaptorNodes need both `@RegisterNode` (instantiation) **and** `RSScriptor.register(...)` (DSL builder). Some nodes self-register at module load (the registration runs as a side effect of importing the file); others export a register function you must call explicitly — check the node before using it.
 - Don't edit anything under `.adk/` — it's toolchain-managed.
 
 ## Related skills
 
+- `data-table` — tables are rendered through the Raptor `s.dataTable(...)` node; see that skill for every option, engine, recipe and starter.
 - `echarts` — charts are rendered through the Raptor `s.chart({ options })` node; see that skill for option-model, series, and `renderItem` specifics.
 - `reference/patterns.md` — the patterns/overview layer: cross-cutting design patterns and "what can v5 do" feasibility. Start there for the pattern, return to the control docs for per-control implementation.
 

@@ -19,7 +19,7 @@ in the `raptor` skill body; charts are in the `echarts` skill.
 | Creating a new page/view | RSScriptor Fluent API, Views and Pages, ViewModels |
 | Building a layout with sidebar/header | Navigation System, Layout Elements, Sidebar Pattern |
 | Adding data binding | Data Binding, Events, Foreach and Iteration |
-| Building a table/grid | `controls/data-table.md`, Data Table Patterns, Nested Control Behavior |
+| Building a table/grid | the `data-table` skill, Data Table Patterns, Nested Control Behavior |
 | Adding charts | Async Chart Data → Preferred: Framework binding via chartDataSet.source; Display Controls (chart), Charts in Flex Layouts, Chart Interactions |
 | Adding a dropdown selector | Advanced Control Patterns → QuickSelect Advanced Usage |
 | Adding a menu dropdown | Advanced Control Patterns → Dropdown Control |
@@ -79,7 +79,7 @@ s.div({ height: 400 }).contentTemplates(s => s.dataTable(dataTableOptions<Row>({
 })));
 ```
 
-The table fills its container, so the container needs a height. Per-row computed values and styles go through `transformValue` and column `scope`, not a row view model. Full reference: `controls/data-table.md`.
+The table fills its container, so the container needs a height. Per-row computed values and styles go through `transformValue` and column `scope`, not a row view model. Full reference: the `data-table` skill.
 
 ### DynamicViewModel Data Sources
 
@@ -222,6 +222,7 @@ layoutViewModel.addSidebarItem(
 | QuickSelect `_ignoreNextUpdate` | Programmatic `selectedItems` change ignored after user interaction | Reset flag: `(qs as any)._ignoreNextUpdate = false` before setting |
 | NavTabs pane mismatch | Tab items and panes don't match | Panes match by ORDER, not by ID. 1st tab → 1st pane |
 | `heightUtility: 100` without parent height | `h-100` only works when parent has explicit height | Prefer explicit `height: Npx` or `heightVH: N` |
+| Full-screen page renders blank (grey or white) | `.page()` called without `fullScreen: true`, or the layout's `modulePageContent` host lacks `heightUtility: 100`; no console error, no failed request | Fix both; see [Full-Screen Page](#full-screen-page) for the recipe and a console check that finds the 0px element |
 | Column types are PascalCase | `"Int32"` not `"int32"` from server | Always compare `.toLowerCase()` |
 | `table/list` ProcessDirect action | Doesn't exist despite permission quad | Use `table/getactivetables` instead |
 
@@ -463,6 +464,59 @@ export function AlertsView(): ViewDefinitions.IRenderingDefinition {
 }
 ```
 
+#### Full-Screen Page
+
+A page that fills the screen, such as a map or a full-height dashboard, needs two pieces. With either one missing, the page renders blank (grey or white, depending on the shell), with no console error and no failed request:
+
+1. **`fullScreen: true` on the page**, the fifth `.page()` argument. Without it the page scrolls inside its target instead of filling it, and its content measures 0px tall.
+2. **`heightUtility: 100` on the layout's page host**, the `modulePageContent` div in `LayoutView.ts`. Without it the host measures 0px tall even when the page sets `fullScreen`, and so does everything inside it.
+
+As of CLI 1.0.95, the default `raptor` extension template and `maplarge adk new component page` scaffold neither piece. For a new extension built around a full-screen map, `maplarge adk new extension <name> -t raptor-map` scaffolds both.
+
+The layout:
+
+```typescript
+export function LayoutView(): ViewDefinitions.IRenderingDefinition {
+    const s = RSScriptor.create().page("Layout", "Layout");
+    s.view("main", s =>
+        s.div({ controlTargetKey: "modulePageContent", heightUtility: 100 })
+    );
+    const renDef = s.commitPage();
+    renDef.modulePageTarget = "modulePageContent";
+    return renDef;
+}
+```
+
+The page:
+
+```typescript
+export function MapPageView(): ViewDefinitions.IRenderingDefinition {
+    const s = RSScriptor.create<MapPageViewModel>();
+    // page(modelKey, friendlyName, layoutModelKey?, headerModelKey?, fullScreen?)
+    s.page("MapPage", "Map", undefined, undefined, true);
+
+    s.view("main", s =>
+        // heightUtility: 100 carries the page's height down to the map host;
+        // every ancestor of the map needs it (or an explicit height).
+        s.div({ heightUtility: 100, widthUtility: 100, overflow: "hidden" })
+         .contentTemplates(s =>
+            s.raptorMap({ viewName: "map", heightUtility: 100, mapOptions: {}, bindings: { data: s.getTypedProp("mapData") } })
+         )
+    );
+
+    return s.commitPage();
+}
+```
+
+**Diagnosing a blank page.** Run this in the browser console. It walks up from the map and prints each ancestor's height; the first element at 0px is where the chain breaks:
+
+```js
+for (let el = document.querySelector(".ml-map-mapdiv"); el && el !== document.body; el = el.parentElement)
+    console.log(el.className || el.tagName, Math.round(el.getBoundingClientRect().height));
+```
+
+`ml-raptor-content` at 0px means the page is missing `fullScreen`. `ml-raptor-content` at full height with the div directly inside it at 0px means the layout host is missing `heightUtility: 100`. A host with a height and the page inside it at 0px means the host gets its height from flex growth inside a column that has only a minimum height; see [Layout with Module Page Target](#layout-with-module-page-target). For a page without a map, start from the element that should fill the screen.
+
 #### Layout with Module Page Target
 
 ```typescript
@@ -492,6 +546,8 @@ export function LayoutView(): ViewDefinitions.IRenderingDefinition {
     return renDef;
 }
 ```
+
+This layout suits scrolling pages, but a [full-screen page](#full-screen-page) inside it renders blank. `minViewportHeight100` sets only a minimum height, so the host still fills the space below the header, but the page inside it measures 0px, and adding `heightUtility: 100` to the host does not change that. For a full-screen page, replace `minViewportHeight100: true` with `heightVH: 100` on the outer column; the host then sizes the page, and no `heightUtility` is needed on it.
 
 ### ViewModels
 
@@ -3150,7 +3206,7 @@ const qs = vm.raptorDom?.node("MyFilter");
 
 ### Data Table Patterns
 
-The full option reference is `controls/data-table.md`; these are the recipes dashboards reach for most.
+The full option reference is the `data-table` skill; these are the recipes dashboards reach for most.
 
 #### Choosing a Data Engine
 

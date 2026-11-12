@@ -1,12 +1,13 @@
 # MapLarge DataStream Connector Configuration Guide
 
 > **Scope**: Reference for the **Connector Options** JSON that goes into the **Connector tab** of the MapLarge on-ramp create/edit dialog. This document covers connector types, per-connector options, scheduling, credentials, and examples.
+> **Last updated**: 2026-09-11
 
 ---
 
-## IMPORTANT: Two Separate Configs — Do NOT Combine
+## IMPORTANT: Two Separate Configs - Do NOT Combine
 
-An on-ramp has **two independent JSON configurations** edited in **two separate UI tabs**. The user never combines them — each tab has its own "Show JSON" button and its own JSON editor. Internally the server pairs them, but the user (and you) always work with them separately.
+An on-ramp has **two independent JSON configurations** edited in **two separate UI tabs**. The user never combines them - each tab has its own "Show JSON" button and its own JSON editor. Internally the server pairs them, but the user (and you) always work with them separately.
 
 | UI Tab | What you generate | Documented in |
 | -------- | ------------------ | --------------- |
@@ -39,8 +40,9 @@ An on-ramp has **two independent JSON configurations** edited in **two separate 
 - [Polling / LongRunning Connectors](#polling--longrunning-connectors)
 - [Specialty Connectors](#specialty-connectors)
 - [Accepting Mode (Pushed Records)](#accepting-mode-pushed-records)
+- [Encrypted Configuration Fields](#encrypted-configuration-fields)
 - [Connector Quick-Reference Table](#connector-quick-reference-table)
-- [Monitoring, Logging & Debugging](#monitoring-logging--debugging)
+- [Monitoring, Logging & Debugging](#monitoring-logging--debugging) - ramp TVFs, ProcessDirect verbs, pipeline sandbox, server logs, reset tracking
 
 ---
 
@@ -52,9 +54,9 @@ An **on-ramp** pairs a **connector** (data source + schedule; this doc) with a *
 
 ## On-Ramp Context
 
-The UI manages on-ramp-level fields (name, connector plugin selection, effective user, retry settings, etc.) through its own form controls — you do not generate these. The only JSON you produce is the connector options that go into the Connector tab.
+The UI manages on-ramp-level fields (name, connector plugin selection, effective user, retry settings, etc.) through its own form controls - you do not generate these. The only JSON you produce is the connector options that go into the Connector tab.
 
-Other on-ramp-level fields of note: `verboseLogging` (bool, enables detailed pipeline logging), `requiredClusterRole` (string, restricts which cluster nodes run this on-ramp), `wellKnownPipelineId` (string, references a saved pipeline instead of an inline pipeline definition — takes precedence if both are provided), `faultedRetryAttempts`/`faultedRetryIndefinitely`/`faultedRetryDelay`/`faultedRetryExponentialBackoff` (retry behavior when connector faults).
+Other on-ramp-level fields of note: `verboseLogging` (bool, enables detailed pipeline logging), `requiredClusterRole` (string, restricts which cluster nodes run this on-ramp), `wellKnownPipelineId` (string, references a saved pipeline instead of an inline pipeline definition - takes precedence if both are provided), `faultedRetryAttempts`/`faultedRetryIndefinitely`/`faultedRetryDelay`/`faultedRetryExponentialBackoff` (retry behavior when connector faults).
 
 ---
 
@@ -82,7 +84,7 @@ Shared by all connectors extending `BasePollingConnectorConfig`:
 
 | Property | Type | Default | Purpose |
 | ---------- | ------ | --------- | --------- |
-| `EndPoint` | string | `null` | Server URI / location — meaning varies per connector |
+| `EndPoint` | string | `null` | Server URI / location - meaning varies per connector |
 | `PollingFrequencyMS` | int | `-1` | Milliseconds between polls. `-1` = one-time run, `0+` = recurring. Setting this clears `CronExpression` |
 | `CronExpression` | string | `""` | CRON expression (UTC, 5-field NCrontab format). Setting a valid expression clears `PollingFrequencyMS` |
 | `RunOnStartup` | bool | `false` | Execute immediately when on-ramp starts (relevant when using CRON) |
@@ -134,7 +136,7 @@ Extends `BasePollingConnectorConfig`. **Inherited by:** S3, Azure Storage, GCS. 
 | `StartAfter` | string | `""` | Pagination starting point (supports `script:` prefix for dynamic evaluation) |
 | `StopAfter` | string | `""` | Pagination ending point |
 | `FilterByPathTemplate` | bool | `false` | Enable path template regex matching |
-| `PathTemplate` | string | `null` | Pattern like `{year}/{month}/{filename}.csv` — auto-generates regex |
+| `PathTemplate` | string | `null` | Pattern like `{year}/{month}/{filename}.csv` - auto-generates regex |
 | `PathTemplateRegexPattern` | string | `null` | Custom regex (overrides `PathTemplate` auto-generation) |
 | `MetaDataMessageProperty` | string | `null` | `Scope:Name` format for storing extracted path metadata |
 | `FilterByLatestFileTimestamp` | bool | `true` | Track latest processed file timestamp for incremental imports |
@@ -143,11 +145,11 @@ Extends `BasePollingConnectorConfig`. **Inherited by:** S3, Azure Storage, GCS. 
 
 **Property interactions:**
 
-- `PathTemplate` and `PathTemplateRegexPattern` are mutually exclusive. Setting `PathTemplate` auto-generates the regex and clears `PathTemplate` back to empty — the regex is authoritative.
+- `PathTemplate` and `PathTemplateRegexPattern` are mutually exclusive. Setting `PathTemplate` auto-generates the regex and clears `PathTemplate` back to empty - the regex is authoritative.
 - `StartAfter` supports `"script:"` prefix for dynamic evaluation with `latestFileTimestamp` and `latestProcessLogTimestamp` variables.
 - `StopAfter` is prefix-based: collects objects until the key no longer starts with `StopAfter` after a match.
 - `CopyConfigToMessage` copies credentials to context with `isSensitive: true`. What gets copied varies by connector.
-- `MaxThreads` max varies by connector (S3=50, Azure/GCS/SFTP=25) — throws if exceeded.
+- `MaxThreads` max varies by connector (S3=50, Azure/GCS/SFTP=25) - throws if exceeded.
 
 ### Path Templates
 
@@ -243,7 +245,7 @@ The tracking table must exist before the on-ramp starts. Process log filtering i
 | `false` | set | SASL_PLAINTEXT |
 | `true` | set | SASL_SSL |
 
-**Message context** (scopes: `"kafka"` and `"streaming-scope"` — all properties are set on both):
+**Message context** (scopes: `"kafka"` and `"streaming-scope"` - all properties are set on both):
 
 | Key | Value |
 | ----- | ------- |
@@ -427,7 +429,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 | `TokenCredentialsPath` | string | `""` | Path to token file on disk (supports credential rotation) |
 | **TLS / Certificates** | | | |
 | `UseSecureConnection` | bool | `false` | Enable TLS |
-| `UseSSL` | bool | *(deprecated)* | Alias for `UseSecureConnection` — maps to same property |
+| `UseSSL` | bool | *(deprecated)* | Alias for `UseSecureConnection` - maps to same property |
 | `SSLCACert` | string | `""` | Path to CA certificate PEM |
 | `SSLClientCert` | string | `""` | Path to client certificate PEM (mutual TLS triggered automatically when both `SSLClientCert` and `SSLClientKey` are non-empty) |
 | `SSLClientKey` | string | `""` | Path to client private key PEM |
@@ -467,7 +469,7 @@ Same auth, credential rotation, and message context as NATSConnector.
 | Property | Type | Default | Purpose |
 | ---------- | ------ | --------- | --------- |
 | `Endpoint` | string | `"http://server.com"` | Broker URI (e.g., `"activemq:tcp://localhost:61616"`) |
-| `QueueOrTopic` | string | `""` | Destination — prefix with `topic:` for topics (e.g., `"queue:sensor-data"`) |
+| `QueueOrTopic` | string | `""` | Destination - prefix with `topic:` for topics (e.g., `"queue:sensor-data"`) |
 | `UserName` | string | `""` | Authentication username |
 | `Password` | string | `""` | Authentication password |
 | `ClientId` | string | `""` | Client identifier (required for durable topic subscriptions) |
@@ -617,8 +619,8 @@ Config extends `BasePollingConnectorConfig` and implements `IEndpointPollableCon
 | `EndPoint` | string | `null` | Target URL (inherited from `BasePollingConnectorConfig`) |
 | `MultipleEndpoints` | string[] | `null` | Query multiple URLs |
 | `UsePost` | bool | `false` | Use HTTP POST instead of GET |
-| `PostPayload` | string | `null` | POST body (JSON string) — supports `{{TRACKING_FIELD}}`, `{{TRACKING_VALUE}}`, `{{CURSOR_VALUE}}`, `{{OFFSET_VALUE}}`, `{{PAGE_SIZE}}` placeholders |
-| `MediaType` | string | `"application/json"` | Content type for POST (`"application/json"`, `"application/xml"`, `"text/plain"`) |
+| `PostPayload` | string | `null` | POST body (JSON string) - supports `{{TRACKING_FIELD}}`, `{{TRACKING_VALUE}}`, `{{CURSOR_VALUE}}`, `{{OFFSET_VALUE}}`, `{{PAGE_SIZE}}` placeholders |
+| `MediaType` | string | `"application/json"` | Content type for POST (`"application/json"`, `"application/xml"`, `"text/plain"`, `"application/x-www-form-urlencoded"`) |
 | `AuthenticationType` | AuthenticationType | `None` | `None`, `ApiKeyInUrl`, `ApiKeyInHeaders`, `Basic` |
 | `ApiKeyParameterName` | string | `null` | API key parameter/header name |
 | `ApiKeyValue` | string | `null` | API key value |
@@ -631,13 +633,13 @@ Config extends `BasePollingConnectorConfig` and implements `IEndpointPollableCon
 | `TrackingStartValue` | string | `""` | Default starting tracking value |
 | `DateSubstitutionFormat` | string | `""` | Date format for URL/body placeholders |
 | `TimeZoneOverride` | string | `""` | Timezone for date substitution |
-| `CursorParameterName` | string | `null` | Query parameter name for pagination cursor |
+| `CursorParameterName` | string | `null` | Turns on cursor pagination (GET and POST). GET: query parameter name for the cursor. POST: any non-empty value; the cursor goes into `{{CURSOR_VALUE}}` |
 | `CursorContextScope` | string | `"__cursor"` | Context scope where cursor value is stored |
 | `CursorContextKey` | string | `"__value"` | Context key where cursor value is stored |
 | `PaginationDelayMs` | int | `0` | Delay between paginated requests |
 | `CustomRequestHeaders` | Dictionary\<string, string\> | `[]` | Custom HTTP request headers added to every request |
 | **Offset Pagination** | | | |
-| `OffsetParameterName` | string | `null` | Query parameter name for offset-based pagination (e.g., `"offset"` or `"startRecord"`) |
+| `OffsetParameterName` | string | `null` | Query parameter name for offset-based pagination (e.g., `"offset"` or `"startRecord"`). **Takes precedence over cursor pagination** - when set, all `Cursor*` settings are ignored |
 | `OffsetStartValue` | int | `1` | Starting offset value |
 | `PageSize` | int | `0` | Number of records per page (used with offset pagination) |
 | `RecordCountContextScope` | string | `"__offset"` | Context scope where record count is stored |
@@ -674,9 +676,9 @@ Format controlled by `DateSubstitutionFormat`. Use `TimeZoneOverride` to convert
 }
 ```
 
-##### System 2: Tracking Placeholders (automatic "since last run" — requires DoNotTrack: false)
+##### System 2: Tracking Placeholders (automatic "since last run" - requires DoNotTrack: false)
 
-The connector saves each run's end date and uses it as the next run's start date — built-in "since last run" with no gaps.
+The connector saves each run's end date and uses it as the next run's start date - built-in "since last run" with no gaps.
 
 **GET tracking placeholders** (in URL, substituted by `BuildUrl()`):
 
@@ -685,7 +687,7 @@ The connector saves each run's end date and uses it as the next run's start date
 | `{year1}` | Start date year (previous run's end date, or `StartDate` config, or Jan 1 of current year) |
 | `{month1}` | Start date month |
 | `{day1}` | Start date day |
-| `{year2}` | End date year (always `DateTime.Today` — midnight of current day) |
+| `{year2}` | End date year (always `DateTime.Today` - midnight of current day) |
 | `{month2}` | End date month |
 | `{day2}` | End date day |
 
@@ -693,8 +695,8 @@ The connector saves each run's end date and uses it as the next run's start date
 
 **For sub-day polling, use instead:**
 
-1. **Relative date tokens** (`{now}`, `{now-1h}`) with `DoNotTrack: true` — rolling window with full timestamp precision. No tracking state. Gaps possible if polls are missed.
-2. **POST tracking with `{{TRACKING_VALUE}}`** — tracked value can be any format (e.g., ISO timestamps). `FieldTrackingTransform` extracts new value from response. True "since last run" at any granularity with no gaps.
+1. **Relative date tokens** (`{now}`, `{now-1h}`) with `DoNotTrack: true` - rolling window with full timestamp precision. No tracking state. Gaps possible if polls are missed.
+2. **POST tracking with `{{TRACKING_VALUE}}`** - tracked value can be any format (e.g., ISO timestamps). `FieldTrackingTransform` extracts new value from response. True "since last run" at any granularity with no gaps.
 
 **GET tracking flow:** First run: `date1` = `StartDate` (or Jan 1 of current year). `date2` = today. After processing, saves `{ StartDate, EndDate }`. Next run: `date1` = previous `EndDate`, `date2` = today.
 
@@ -729,13 +731,59 @@ The connector saves each run's end date and uses it as the next run's start date
 
 #### Cursor-Based Pagination (within a single run)
 
-Pages through a single API response (vs. tracking which spans across runs). Configure cursor context keys, use `PropertiesToPromote` in pipeline to extract cursor, connector appends to next request. **GET:** `CursorParameterName=value` in URL. **POST:** `{{CURSOR_VALUE}}` in `PostPayload`. Continues until cursor is empty/null. Can combine with tracking.
+Pages through every page of one poll (tracking, by contrast, spans polls). The connector picks a mode in `ExecutePollForEndpointAsync`: **`OffsetParameterName` set → offset mode; else `CursorParameterName` set → cursor mode; else a single request.** So cursor mode requires `CursorParameterName` for **both GET and POST**, and any `OffsetParameterName` silently disables it.
+
+**Loop** (`ExecuteCursorPaginatedPollAsync`):
+
+1. First request has no cursor (GET: no parameter; POST: `{{CURSOR_VALUE}}` → `""`).
+2. A fresh message context is created per page; the connector `await`s the full pipeline for that page (parse through commit).
+3. It reads `ctx[CursorContextScope, CursorContextKey]?.ToString()` (defaults `__cursor` / `__value`).
+4. Null, empty, or equal to the previous cursor → stop. Otherwise GET sets `CursorParameterName=<cursor>` in the query string (via `HttpUtility.ParseQueryString`, so the value is URL-encoded and an existing parameter of the same name is replaced); POST substitutes `{{CURSOR_VALUE}}`. Then waits `PaginationDelayMs` and loops.
+
+The cursor is any string - opaque tokens like `eyJwIjoyfQ.abc-_DEF` or `...ghi+/JKL=` work (verified live 2026-10-01). It lives in a local variable only: **not persisted between polls**, so every poll starts again at page 1 (dedupe with `PrimaryKeyColumns`).
+
+**Who writes the cursor:** the parser's `PropertiesToPromote` (`Path` → `Scope`/`Name` matching the connector's `CursorContextScope`/`CursorContextKey`). The parser must receive the connector's own context, which means a parser that is the first step, or one reached through stream transforms that pass the context through unchanged. **`JSONDisassemblerStreamTransform` promotes into a cloned context** (`RootWrapper` calls `context.Clone()`), and `MultipleJsonStreamSplitTransform`, `GeoFileInfoStreamTransform`, and the Parquet DB transforms also hand downstream steps a `Clone()`. A cursor promoted by such a step, or by a parser after it, never reaches the connector, and pagination stops after page 1 (verified live 2026-10-01).
+
+An exception anywhere in the pipeline for a page ends pagination for that poll (caught and logged at Error), and tracking is not updated. A non-success HTTP status also stops the loop.
+
+**Symptom → cause:** the cursor parameter is sent as numbers that grow by the page's record count (`1, 3, 5, 7...`) when `OffsetParameterName` is set, even if it is named like a cursor (e.g. `"OffsetParameterName": "pageToken"`). Offset mode ran and fell back to the parser's record count; the cursor settings were never read. Fix: remove `OffsetParameterName`/`OffsetStartValue`/`PageSize`/`RecordCount*`, and set `CursorParameterName`.
+
+**Example - GET with an opaque page token** (response `{"items":[...], "nextPageToken":"..."}`, next request needs `?pageToken=...`):
+
+Connector tab:
+
+```json
+{
+    "EndPoint": "https://api.example.com/items?pageSize=100",
+    "CursorParameterName": "pageToken",
+    "DoNotTrack": true,
+    "PollingFrequencyMS": 300000
+}
+```
+
+Parser step options (Pipeline tab):
+
+```json
+"Options": {
+    "RecordRootPath": "$.items[*]",
+    "PropertiesToPromote": [
+        { "Path": "$.nextPageToken", "Scope": "__cursor", "Name": "__value" }
+    ]
+}
+```
 
 #### Offset-Based Pagination (within a single run)
 
-Pages through results using a numeric offset. Set `OffsetParameterName` (e.g., `"offset"`) and `PageSize`. The connector appends the offset as a query parameter (**GET**) or substitutes `{{OFFSET_VALUE}}` and `{{PAGE_SIZE}}` in `PostPayload` (**POST**). Pagination continues while the number of records returned equals `PageSize`.
+Pages through results using a numeric offset. Set `OffsetParameterName` (e.g., `"offset"`) and `PageSize` (> 0, enforced by validation). The connector appends the offset as a query parameter (**GET**) or substitutes `{{OFFSET_VALUE}}` and `{{PAGE_SIZE}}` in `PostPayload` (**POST**). The first request uses `OffsetStartValue` (default **1**).
 
-The pipeline must set the record count in context via `PropertiesToPromote` or similar — the connector reads `RecordCountContextScope:RecordCountContextKey` to decide whether another page exists.
+After each page the connector computes `recordsReturned` and the next start, in this order:
+
+1. `recordsReturned` = `ctx[RecordCountContextScope, RecordCountContextKey]` if it parses as an int, else 0.
+2. `nextStart = currentStart + recordsReturned`; a non-zero int at `ctx[RecordCountContextScope, NextRecordContextKey]` overrides it.
+3. **Fallback:** if `recordsReturned == 0` and `nextStart == currentStart`, use the parser's own record count (`ctx["Message", "RecordCount"]`, set by `ParserPipelineStepContext`) for both.
+4. Stop when `recordsReturned < PageSize` (or 0).
+
+Because of the fallback, offset pagination runs even when nothing is promoted. That is what makes the "numeric cursor" symptom above happen. Promotion has the same constraint as for cursors: the promoting parser must be on the connector's context. A disassembler-promoted count is invisible, and so is the fallback count from a parser after a cloning stream transform, so pagination stops after page 1 (verified live 2026-10-01).
 
 ```json
 {
@@ -751,17 +799,18 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 
 #### `DoNotTrack` Summary
 
-**`DoNotTrack: false` (default)** — enables tracking/bookmarking:
+**`DoNotTrack: false` (default)** - enables tracking/bookmarking:
 
 - **GET:** Saves `EndDate`; next run starts from previous end date. Requires `{year1}` etc. in URL.
 - **POST:** Saves `PostTrackingValue`; next run substitutes into `{{TRACKING_VALUE}}`. Requires `FieldTrackingTransform`.
-- **Validation:** When `false` + `UsePost: false` + no cursor, URL must contain `{` (date placeholder), else throws `"Set DoNotTrack to true, or add parameters to the EndPoint."`
+- **Validation:** When `false` + `UsePost: false` + no `CursorParameterName` + no `OffsetParameterName`, URL must contain `{` (date placeholder), else throws `"Set DoNotTrack to true, or add parameters to the EndPoint."`
+- **Pagination trap:** the validation above is skipped when cursor or offset pagination is configured, but the GET "same URL as last poll → skip" check still runs. A paginated GET connector with `DoNotTrack: false` and an unchanging URL is accepted, runs its first poll, then **skips every later poll** with no error (verified live 2026-10-01: same config with `DoNotTrack: true` re-polled every interval). Use `DoNotTrack: true` unless the URL contains `{year1}`-style or relative-date placeholders that change between polls.
 
-**`DoNotTrack: true`** — disables tracking:
+**`DoNotTrack: true`** - disables tracking:
 
 - No tracking data read or saved between runs
 - Relative date tokens (`{now}`, `{now-1h}`) still work (separate system)
-- Date placeholders in URL still work — `DoNotTrack` only disables the bookmarking system, not date substitution
+- Date placeholders in URL still work - `DoNotTrack` only disables the bookmarking system, not date substitution
 - Use when: API returns full/current dataset, using rolling relative dates, or deduplication handled downstream
 
 **Other connectors:** `DoNotTrack` on WfsConnector skips OGC tracking filter; on AttachedFilesystemConnector skips file timestamp tracking. For S3/Azure/GCS, the equivalent is `FilterByLatestFileTimestamp`.
@@ -769,9 +818,10 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 #### Validation Rules
 
 - At least one endpoint required (`EndPoint` or `MultipleEndpoints`); basic auth requires both `Username` and `Password`
-- `UsePost` requires `PostPayload` (and vice versa); `MediaType` must be `"application/json"`, `"application/xml"`, or `"text/plain"`
+- `UsePost` requires `PostPayload` (and vice versa); `MediaType` must be `"application/json"`, `"application/xml"`, `"text/plain"`, or `"application/x-www-form-urlencoded"`
+- `OffsetParameterName` requires `PageSize > 0`
 
-**Example — GET polling with date substitution:**
+**Example - GET polling with date substitution:**
 
 ```json
 {
@@ -781,7 +831,7 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
 }
 ```
 
-**Example — POST with cursor pagination:**
+**Example - POST with cursor pagination:**
 
 ```json
 {
@@ -789,12 +839,15 @@ The pipeline must set the record count in context via `PropertiesToPromote` or s
     "UsePost": true,
     "PostPayload": "{\"cursor\": \"{{CURSOR_VALUE}}\", \"limit\": 100}",
     "MediaType": "application/json",
+    "CursorParameterName": "cursor",
     "CursorContextScope": "streaming_msg",
     "CursorContextKey": "next_cursor",
     "PaginationDelayMs": 200,
     "PollingFrequencyMS": 600000
 }
 ```
+
+`CursorParameterName` is required even for POST: it is what turns on cursor mode (its value is not sent anywhere for POST). Without it the connector makes one request per poll. The parser must promote the response's cursor with `"Scope": "streaming_msg", "Name": "next_cursor"` to match.
 
 ---
 
@@ -976,7 +1029,7 @@ Config implements `IMLAcceptsPushedRecordsConfig` directly (not via `BasePolling
 
 **PluginName**: `"SFTPConnector"` | **Type**: LongRunning or Polling | **Base**: `AbstractPollableConnector`
 
-Config extends `BasePollingConnectorConfig` (NOT `AbstractPollingConnectorConfig` — it has its own file-oriented properties). Max threads: **25**.
+Config extends `BasePollingConnectorConfig` (NOT `AbstractPollingConnectorConfig` - it has its own file-oriented properties). Max threads: **25**.
 
 | Property | Type | Default | Purpose |
 | ---------- | ------ | --------- | --------- |
@@ -985,8 +1038,8 @@ Config extends `BasePollingConnectorConfig` (NOT `AbstractPollingConnectorConfig
 | `Username` | string | `null` | SSH username (supports `"scope:propertyName"` for context substitution) |
 | `Password` | string | `null` | SSH password (supports `"scope:propertyName"` for context substitution) |
 | `RemoteDirectoryPath` | string | `null` | Remote directory to scan |
-| `IncludeRegexes` | string[] | `[]` | Regex patterns — only process matching files |
-| `ExcludeRegexes` | string[] | `[]` | Regex patterns — skip matching files |
+| `IncludeRegexes` | string[] | `[]` | Regex patterns - only process matching files |
+| `ExcludeRegexes` | string[] | `[]` | Regex patterns - skip matching files |
 | `CopyConfigToMessage` | bool | `false` | Copy Host, Port, RemoteDirectoryPath, Username, Password to context |
 | `MaxThreads` | int | `1` | Max concurrent file processing |
 | `MinimumFileAgeMS` | int | `1000` | Min file age before processing |
@@ -995,7 +1048,7 @@ Config extends `BasePollingConnectorConfig` (NOT `AbstractPollingConnectorConfig
 
 Plus `BasePollingConnectorConfig` scheduling properties.
 
-**Context substitution:** `Username`/`Password` support `"scope:propertyName"` format — resolved from message context at runtime (useful in pushed-records mode).
+**Context substitution:** `Username`/`Password` support `"scope:propertyName"` format - resolved from message context at runtime (useful in pushed-records mode).
 
 **Message context** (scope: `"SFTPConnector"`):
 
@@ -1035,13 +1088,13 @@ Config extends `BasePollingConnectorConfig`.
 | `Provider` | string | `""` | ADO.NET provider (`"System.Data.SqlClient"`, `"Npgsql"`, etc.) |
 | `ConnectionString` | string | `""` | Database connection string |
 | `Query` | string | `""` | Single SQL query |
-| `Queries` | Dictionary\<string, string\> | `null` | Named queries — keys become pipeline routing keys |
+| `Queries` | Dictionary\<string, string\> | `null` | Named queries - keys become pipeline routing keys |
 | `TrackingColumnName` | string | `""` | Column to track for incremental updates |
 | `InitialTrackValue` | string | `"1970-01-01 00:00:00"` | Starting value for tracking |
 | `TrackDateFormat` | string | `"yyyy-MM-dd HH:mm:ss"` | Date format for tracking value |
 | `TrackMinumumAgeSeconds` | long | `0` | Min age in seconds (max 86400) |
 | `MaxRecordsPerBatch` | int | `1000` | Records per batch (1–100000) |
-| `PollingFrequencyMS` | int | `15000` | **Override** — default 15s instead of base -1 (range 1000–3600000) |
+| `PollingFrequencyMS` | int | `15000` | **Override** - default 15s instead of base -1 (range 1000–3600000) |
 | `TestUuid` | string | `""` | Test UUID field (validated as UUID format) |
 
 Plus `BasePollingConnectorConfig` scheduling properties.
@@ -1076,7 +1129,7 @@ Config extends `BasePollingConnectorConfig`.
 | ---------- | ------ | --------- | --------- |
 | `EndpointUri` | string | `"http://server.com/"` | Elasticsearch search URL (e.g., `"https://es:9200/myindex/_search"`) |
 | `Authorization` | string | `""` | Authorization header value (e.g., `"Basic base64..."` or `"Bearer token"`) |
-| `UseTimeStampField` | string | `""` | Field for incremental polling (e.g., `"@timestamp"`) — auto-adds range query |
+| `UseTimeStampField` | string | `""` | Field for incremental polling (e.g., `"@timestamp"`) - auto-adds range query |
 | `PreventEmptyResults` | bool | `false` | Reject empty result sets before processing |
 
 Plus `BasePollingConnectorConfig` scheduling properties.
@@ -1144,6 +1197,12 @@ Plus `BasePollingConnectorConfig` scheduling properties.
 
 ### WfsConnector
 
+> **Do not use this connector on a layer containing polygons.** Against any service returning GML 3 -
+> which is every WFS 1.1.0 and 2.0.0 service - polygon geometry is lost **silently**: the ramp reports
+> success with 0 records failed, and on a polygons-only layer it substitutes each feature's bounding box
+> for its real shape. Use the HTTP + GeoJSON or HTTP + CSV path instead; both are tested. This connector remains correct
+> for point/line layers.
+
 **PluginName**: `"WfsConnector"` | **Type**: Polling or LongRunning | **Base**: `BasePollingConnector`
 
 Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnectorConfig`.
@@ -1169,7 +1228,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 | `Hits` | long | `-1` | Max records to retrieve (`-1` = all) |
 | `PageSize` | int? | `0` | Features per request (`0` = use server default from GetCapabilities; set `> 0` to override). WFS 1.1.0 disables paging entirely regardless of this value. |
 | `TrackingDateField` | string | `null` | Date field for incremental tracking |
-| `FilterXml` | string | `null` | OGC filter XML |
+| `FilterXml` | string | `null` | **Misnomer - this is CQL, not XML.** Emitted as `cql_filter=`, and only applied under three simultaneous conditions (see gotchas below) |
 | `SrsName` | string | `"EPSG:4326"` | Coordinate reference system |
 | `Parsing` | WfsGmlParserConfig | `new()` | Parser config overrides |
 
@@ -1188,7 +1247,6 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 {
     "EndPoint": "https://geoserver.example.com/wfs",
     "Features": ["namespace:buildings"],
-    "Version": "2.0.0",
     "PageSize": 5000,
     "SrsName": "EPSG:4326",
     "TrackingDateField": "last_modified",
@@ -1198,6 +1256,58 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
     "CronExpression": "0 3 * * *"
 }
 ```
+
+Note the deliberate absence of `Version` - see the first gotcha below.
+
+**Finding the values for `Features`**
+
+`Features` holds WFS *feature type* names, and they come from the service's own catalog - not from anything in MapLarge. Fetch it once in a browser or with curl:
+
+```text
+<EndPoint>?service=WFS&request=GetCapabilities
+```
+
+In the XML that comes back:
+
+- The root element's `version` attribute is the real service version. Trust it over any version in a URL you were handed - the connector reads this same attribute to pick its request dialect.
+- `FeatureTypeList/FeatureType/Name` is the catalog. Each `<Name>` - e.g. `<Name>ns:buildings</Name>` - is exactly the string that goes in `Features`, namespace prefix included. `<Title>` and `<Abstract>` are the human-readable labels you use to pick.
+
+Before building an on-ramp, run `DescribeFeatureType` on the name you chose to see its columns and geometry type:
+
+```text
+<EndPoint>?service=WFS&version=<version>&request=DescribeFeatureType&typeName=<ns:name>
+```
+
+(`typeName` singular for 1.x, `typeNames` for 2.0.0.) In the returned XSD, the element whose `type` starts with `gml:` is the geometry. A specific type such as `gml:PointPropertyType` means one geometry kind; **`gml:GeometryPropertyType` means the layer may hold mixed geometry**, which changes how many tables you end up with - see *Geometry Column Naming* in `PipelineConfig.md`.
+
+Note that a WMS layer name is usually the same string as the WFS `typeName`, but **not every WMS layer is republished over WFS** (imagery is routinely WMS-only). The WFS GetCapabilities is the authority.
+
+#### WfsConnector gotchas
+
+- **`EndPoint` must be the bare base URL** (`https://host/geoserver/wfs`, or GeoServer's unified `https://host/ows`) and nothing else. The connector does not use a URL you hand it - it *rebuilds* one from `EndPoint` plus its own config, appending `?SERVICE=WFS&REQUEST=GetFeature&...` via `host.EndsWith("?") ? "" : "?"` (`WFSRequestBuilder.cs:230`). Pasting a working GetFeature URL produces a request with two `?` and fails.
+- **Leave `Version` unset.** The enum has only `UNSET`, `V1_1_0`, `V2_0_0` (`WFSVersion.cs`). `UpdateWFSVersion` (`WfsConnector.cs:326`) special-cases only a `"1.1"` prefix; **everything else falls through to 2.0.0**, so `"Version": "1.0.0"` silently emits `TYPENAMES`/`COUNT`/`STARTINDEX` at a server that cannot parse them. Auto-detection from GetCapabilities is correct - any `1.x` root `version` attribute maps to `V1_1_0` (`WfsConnector.cs:398`).
+- **No `outputFormat` is ever sent.** You always get the server's default, which is GML - which is what `WfsGmlParser` expects. There is no way to request GeoJSON through this connector.
+- **No bbox / spatial filter.** `WFSRequestBuilder.GetFeature` accepts only `cqlFilter`, `srsName`, `maxRecords`, `pageStart`, and `pageSize` (`:197`).
+- **`FilterXml` needs three conditions at once** to be applied: `DoNotTrack: false`, a tracking start date (from `StartDate` or a prior watermark), **and** `TrackingDateField` empty (`WfsConnector.cs:224-233`). Miss any one and it is a silent no-op. It supports `{year1}`/`{month1}`/`{day1}`/`{year2}`/`{month2}`/`{day2}` substitution.
+- **`TrackingDateField` overrides `FilterXml`.** It auto-generates the CQL `"<field> after <ISO8601>"` plus `sortBy=<field>+A`, and advances the watermark from the max value actually seen in the returned records (`EvaluateTracking`, `:177`). With `DoNotTrack: false` but neither `StartDate` nor a prior watermark, **no filter is applied at all** - a full pull every poll.
+- **`IgnoreErrors` defaults to `true`.** An `ows:ExceptionReport` is logged and the poll cancels quietly *without* faulting the ramp, which reads downstream as "empty table, no error". Set it `false` during bring-up.
+- **WFS 1.1.0 disables paging entirely**, regardless of `PageSize` (`WfsConnector.cs:260`). The whole result set arrives in one response and is held as a string and then a byte array before parsing (`:98-103`), so a large feature type is a memory risk. On 1.1.0, `Hits` maps to `maxFeatures=` and is the only throttle - and at the default `Hits: -1` no `maxFeatures` is emitted at all, so the server returns everything.
+- **Paging on 2.0.0 is conditional** on the capabilities document advertising `ImplementsResultPaging=true`; `PageSize: 0` means "use the server's `CountDefault`" (fallback 100).
+- **All feature types share one output key.** `Parsing.OutputKey` is a single string, so every entry in `Features[]` funnels to the same committer input key and merges into one table. Use one on-ramp per feature type if you want them separate.
+- **No parser step in the pipeline.** `WfsConnector` implements `IMLRecordOrientedConnector`, so the engine injects a `PassThroughParser` and the pipeline can start at the committer. See *Record-Oriented Connectors* in `PipelineConfig.md`.
+- **Geometry becomes WKT text.** GML elements are converted in-parser to a `<path>_WKT` field (`XmlParser.cs:49`); `Parsing.SimplifyColumnNames: true` reduces that to the leaf name. Mixed geometry survives as WKT strings rather than being coerced to one column type - but it will split the target table at commit time (see *Geometry Column Naming* in `PipelineConfig.md`).
+- **`Parsing.SwapAxisOrder` - leave it `false` when `SrsName` is the short `EPSG:4326` form (the default).** The axis order a GeoServer returns is decided by the *form* of the `srsName` you ask for, not by the WFS version:
+
+| `srsName` requested | Axis order returned |
+| --- | --- |
+| omitted | latitude first |
+| `EPSG:4326` (short form) | **longitude first** |
+| `urn:ogc:def:crs:EPSG::4326` | latitude first |
+| `CRS:84` | **longitude first** |
+
+  `WfsConnector` sends `SRSNAME=<SrsName>` and `SrsName` defaults to `EPSG:4326`, so the default request already gets longitude-first data and **needs no swap**. Setting `SwapAxisOrder: true` on that default breaks it - points come back with latitude in the X position and the longitude clamped out of the valid latitude range (`POINT (21.3069 -91)`), and lines come back as empty `MULTILINESTRING ()`.
+
+  Note the core's own WFS *browse* path hardcodes `SwapAxisOrder = true` (`WFSDataBrowseProvider.cs:236`), which is the opposite of what the connector needs - do not take it as the connector's default. Verified against GeoServer 2.26; a server with a non-default axis-order policy can still differ, so check the first pull.
 
 ---
 
@@ -1262,7 +1372,7 @@ Config is `WfsConnectorConfig` → `OgcConnectorConfig` → `BasePollingConnecto
 | `MaxZoom` | int | `-1` | Max zoom level (`-1` = auto-detect from capabilities) |
 | `WMTSLayerTitle` | string | `null` | Layer name for WMTS services |
 
-Geographic bounds are read from WMTS capabilities (`WGS84BoundingBox`) at runtime — there is no BoundingBox config property.
+Geographic bounds are read from WMTS capabilities (`WGS84BoundingBox`) at runtime - there is no BoundingBox config property.
 
 **Message context** (scope: `"tile"`):
 
@@ -1366,7 +1476,39 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 | ----------- | ---- |
 | `FileSystemConnector` | Config directly implements `IMLAcceptsPushedRecordsConfig` |
 | All `BasePollingConnectorConfig` descendants | Inherits from `BasePollingConnectorConfig` which implements `IMLAcceptsPushedRecordsConfig` |
-| Messaging connectors (Kafka, NATS, etc.) | N/A — already accepting by nature |
+| Messaging connectors (Kafka, NATS, etc.) | N/A - already accepting by nature |
+
+---
+
+## Encrypted Configuration Fields
+
+Connector config properties marked `[MLEncrypted]` in C# are encrypted at rest by `PluginSecretsService` (`MapLarge.Engine/Unified/PluginFramework/PluginSecretsService.cs`). You type the plaintext value into the Connector tab as normal; the server encrypts it on save and decrypts it before the plugin runs.
+
+### Mechanism
+
+- `EncryptConfigSecretsAsync` runs on save and `DecryptConfigSecretsAsync` on load, both keyed off the plugin's config type.
+- Encrypted values carry an `mlcrypt1:` prefix; the backing store is the `plugin_secrets` table in the system account.
+- Only **non-empty JSON string** values are encrypted. Nulls, empty strings, and non-string tokens pass through untouched, and if nothing needed encrypting the original JSON is returned byte-for-byte with its formatting intact.
+- **Secrets are stripped on export.** `DataStreamManager.RemovePluginSecrets` (`:1201`) rewrites every `"mlcrypt1:..."` value to `""` when an on-ramp is exported, so an imported on-ramp always needs its credentials re-entered.
+
+### Which properties are encrypted
+
+| Connector | Encrypted properties |
+| ----------- | --------------------- |
+| `ActiveMQConnector` | `ClientId`, `UserName`, `Password`, `QueueOrTopic` |
+| `ArcGIS Rest Connector` | `TableName` |
+| `ElasticsearchConnector` | `Authorization` |
+| `HttpPollingConnector` | `ApiKeyValue`, `Username`, `Password` |
+| `KafkaConnector` | `SSLKeyPassword`, `SaslUsername`, `SaslPassword` |
+| `NATSConnector` | `NKey` |
+| `PulsarConnector` | `Token` |
+| `S3Connector` | `KMSKey`, `AccessKey`, `SecretKey` |
+| `SFTPConnector` | `Username`, `Password` |
+| `SQSConnector` | `SecretKey` |
+
+**Two surprises in that list.** `ActiveMQConnector.ClientId` and `QueueOrTopic`, and `ArcGIS Rest Connector.TableName`, are not credentials but carry the attribute anyway. Their values are stored as `mlcrypt1:` ciphertext like any other secret - not readable or greppable in a saved config, and blanked on export. Treat that as current behavior rather than intent.
+
+**Connectors with no encrypted properties at all:** `MQTTConnector`, `NATSJetStreamConnector`, `PushedMessageConnector`, `WebSocketMessageConnector`, `WfsConnector`, `AzureStorageConnector`, `GoogleCloudStorageConnector`, `FileSystemConnector`, `RelationalDatabaseConnector`, `AttachedFilesystemConnector`, `Tiled Imagery Connector`, `VideoConnector`. Credentials in those configs - including `WfsConnector`'s `Username`/`Password` and `RelationalDatabaseConnector`'s `ConnectionString` - are stored **in the clear** and are **not** stripped on export.
 
 ---
 
@@ -1407,14 +1549,14 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 
 **No reconnection:**
 
-- **MQTT** — connects once; silent failure on disconnect
-- **ActiveMQ** — no reconnection; only supports text messages (`ITextMessage` cast); failed durable subscription silently falls back to non-durable
+- **MQTT** - connects once; silent failure on disconnect
+- **ActiveMQ** - no reconnection; only supports text messages (`ITextMessage` cast); failed durable subscription silently falls back to non-durable
 
 **Reconnection with backoff:**
 
-- **Kafka/Pulsar** — 5-second delay then retry, indefinitely
-- **HttpPolling** — single retry with 5s delay; if retry fails, throws (or returns null if `IgnoreErrors: true`)
-- **WebSocket** — no backoff when `IgnoreErrors: true` (immediate retry); connection duration expiry = permanent exit (no reconnect)
+- **Kafka/Pulsar** - 5-second delay then retry, indefinitely
+- **HttpPolling** - single retry with 5s delay; if retry fails, throws (or returns null if `IgnoreErrors: true`)
+- **WebSocket** - no backoff when `IgnoreErrors: true` (immediate retry); connection duration expiry = permanent exit (no reconnect)
 
 **Message handling:**
 
@@ -1429,16 +1571,18 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 
 **Other:**
 
-- **HttpPolling duplicate URL skipping** — GET tracking skips poll if built URL matches previous poll's URL
+- **HttpPolling duplicate URL skipping** - GET tracking skips poll if built URL matches previous poll's URL. With cursor/offset pagination the placeholder validation is bypassed, so a static URL + `DoNotTrack: false` polls once and then silently never again
+- **HttpPolling offset beats cursor** - `OffsetParameterName` set → cursor settings ignored; the "cursor" param is sent as growing integers
+- **HttpPolling pagination values must be promoted on the connector's context** - by the parser, not `JSONDisassemblerStreamTransform` (cloned context) → otherwise stops after page 1
 - **WebSocket `ConnectionSpan`** takes precedence over `ConnectionDurationMS`
 - **`FaultedRetryAttempts: 3`** = 4 total executions (1 initial + 3 retries). Retry delay has 0-1000ms random jitter.
-- **Accepting mode race condition** — concurrent pushed records can overwrite shared `_config` field
+- **Accepting mode race condition** - concurrent pushed records can overwrite shared `_config` field
 
 ### Connector-Specific Nuances
 
 | Connector | Nuance |
 | ----------- | -------- |
-| **AttachedFilesystem** | `Recursive` config property is **never read** — always recurses. Use `STOP_RECURSION` context property to halt. Reconciliation **deletes rows** when source files removed. |
+| **AttachedFilesystem** | `Recursive` config property is **never read** - always recurses. Use `STOP_RECURSION` context property to halt. Reconciliation **deletes rows** when source files removed. |
 | **TiledImagery** | Resumes via `LAST_TILE_XYZ` metadata. Per-tile errors non-fatal. One-shot: processes all tiles then exits. |
 | **SFTP** | Uses both `PasswordAuthenticationMethod` and `KeyboardInteractiveAuthenticationMethod`. `Port` string→int; invalid = default SSH port. NOT recursive. Context substitution (`scope:propertyName`) breaks if value contains a colon. |
 | **WFS** | Auto-fetches GetCapabilities for version/paging. WFS 1.1.0 disables paging. Version `"1.1*"` → V1_1_0, else V2_0_0. `FilterXml` is actually CQL, not XML. `TrackingDateField` auto-generates CQL filter (may conflict with user filters). `Method` containing `"post"` → PostKvp. |
@@ -1463,7 +1607,7 @@ Only one of `PushedRecordIsConfig` or `PushedDataMapping` should be set.
 | `SQSConnector` | Polling/LR | BasePollingConnectorConfig | QueueEndpoint, AccessKey, SecretKey, Region |
 | `WebSocketMessageConnector` | Accepting | standalone | EndPoint, SubscriptionMessage, RecvTimeoutSec |
 | `PushedMessageConnector` | Accepting | standalone | PromotableProperties |
-| `HttpPollingConnector` | Polling/LR | BasePollingConnectorConfig | EndPoint, UsePost, PostPayload, AuthenticationType, Cursor* |
+| `HttpPollingConnector` | Polling/LR | BasePollingConnectorConfig | EndPoint, UsePost, PostPayload, AuthenticationType, Cursor*, Offset*/PageSize |
 | `S3Connector` | Polling/LR | AbstractPollingConnectorConfig | Bucket, AccessKey, SecretKey, Region, ServiceUrl |
 | `AzureStorageConnector` | Polling/LR | AbstractPollingConnectorConfig | Credentials |
 | `GoogleCloudStorageConnector` | Polling/LR | AbstractPollingConnectorConfig | Bucket, KeyFile, Anonymous |
@@ -1519,43 +1663,214 @@ These are on-ramp-level settings configured in the UI form (not in connector or 
 
 **With `tableLogging`**: Step details are written to `_system/datastream_log` with columns: `Timestamp`, `RampName`, `RampId`, `Message`, `JsonDataString` (full JSON of step diagnostics). You can query this table directly via the SQL query interface for historical analysis.
 
-### Querying Ramp Status via SQL (TVFs)
+### Querying Ramp Status via Table-Valued Functions
 
-You can also query ramp status directly using SQL Table-Valued Functions in the MapLarge query interface. This is useful for building dashboards or automated monitoring.
+Ramp status, logs and plugin metadata are all exposed as TVFs. This is the scriptable path - it is exactly what the Admin UI itself calls - and it is the only way to read this data without a browser.
 
-**Cluster-wide ramp overview:**
+**How to call them.** TVFs resolve by **.NET type name**, not by a short SQL alias: `QueryTableFunction.GetFunctionOrMatchType` does `Type.GetType("MapLarge.Engine.Query.TableValuedFunctions." + name)`. Use a query descriptor with `table.function.name` set to the class name:
 
-```sql
-SELECT * FROM ml_rampserverstats(ramptype='on', asof='{{now}}')
+```json
+{
+    "table": {
+        "function": {
+            "name": "RampServerStatsTableValuedFunction",
+            "params": { "ramptype": "on", "asof": "{{cacheString}}" }
+        }
+    },
+    "where": [[{ "col": "UniqueID", "test": "Equal", "value": "<ramp-unique-id>" }]],
+    "orderby": ["ServerName"],
+    "usenullvalues": true
+}
 ```
 
-Returns: `UniqueID`, `Name`, `ServerName`, `ActualStatus`, `ErrorMessage`, `QueueDepth`, `MessagesProcessed`, `RecordsProcessed`, `RecordsSkipped`, `RecordsFailed`, `MessagesFailed`, `AvgLatencyMS`, `LastProcessedTimestamp`, `LastStateChangeTime`, `HasWarnings`
+Every one of these takes an `asof` parameter whose only purpose is cache busting - pass a changing value (a timestamp) or you will get a stale cached result on the second call.
 
-Optional parameters: `local='true'` (local server only), `nondeleted='true'` (exclude deleted ramps). Use `ramptype='off'` for off-ramps.
+> **Note:** short aliases of the form `ml_rampserverstats(...)` do **not** exist and never did. Earlier revisions of this document showed them; they cannot resolve, because name lookup goes through `Type.GetType`.
 
-**Message-level logs for a specific ramp:**
+#### RampsTableValuedFunction - the ramp's saved configuration
 
-```sql
-SELECT * FROM ml_ramplog(id='<ramp-unique-id>', ramptype='on', asof='{{now}}')
+The one to reach for first when a ramp misbehaves, because it returns **`ConnectorOptions` and `PipelineDefinition` as actually stored**, rather than what a UI form re-renders.
+
+| Param | Optional | Purpose |
+| ------- | ---------- | --------- |
+| `mode` | yes | `'Minimal'` (default) or `'Full'` |
+| `ramptype` | yes | `'on'` or `'off'` |
+| `asof` | yes | Cache busting |
+
+Columns: `UniqueID`, `Name`, `RequestedStatus`, `ActualStatus`, `ConnectorAppName`, `ConnectorPluginName`, `ConnectorOptions`, `PipelineDefinition`, `WellKnownPipelineId`, `EffectiveUserName`, `PerformanceCounterInstanceName`, `RequiredClusterRole`, `NumberRunning`, `NumberFaulted`, `NumberNonFatal`, `Parameters`, `VerboseLogging`, `TableLogging`, `FaultedRetryAttempts`, `FaultedRetryIndefinitely`, `FaultedRetryDelay`, `FaultedRetryExponentialBackoff`, `SupportIncrementalUpdate`, `HasWarnings`, `WellKnownLoggingInterceptorId`, `LoggingInterceptorDefinition`.
+
+`SupportIncrementalUpdate` is worth reading before you reset tracking - see *Reset Tracking* below.
+
+#### RampServerStatsTableValuedFunction - per-server counters
+
+| Param | Optional | Purpose |
+| ------- | ---------- | --------- |
+| `ramptype` | yes | `'on'` or `'off'` |
+| `local` | yes | `'true'` = this server only |
+| `nondeleted` | yes | `'true'` = exclude deleted ramps |
+| `asof` | yes | Cache busting |
+
+Columns: `UniqueID`, `Name`, `ServerName`, `ActualStatus`, `ErrorMessage`, `QueueDepth`, `MessagesProcessed`, `MessagesFailed`, `RecordsProcessed`, `RecordsSkipped`, `RecordsFailed`, `AvgLatencyMS`, `LastProcessedTimestamp`, `LastStateChangeTime`, `HasWarnings`.
+
+Counters are always tracked - this works whether or not `verboseLogging` is on.
+
+#### RampLoggingTableValuedFunction - message-level log
+
+| Param | Optional | Purpose |
+| ------- | ---------- | --------- |
+| `id` | yes | Ramp `UniqueID` |
+| `ramptype` | yes | `'on'` or `'off'` |
+| `local` | yes | This server only |
+| `nondeleted` | yes | Exclude deleted ramps |
+| `asof` | yes | Cache busting |
+
+Columns: `UniqueID`, `MessageId`, `MessageStart`, `MessageEnd`, `ServerName`, `NumStepsWithException`, `RecordsProcessed`.
+
+#### RampStepLoggingTableValuedFunction - step-level detail
+
+| Param | Optional | Purpose |
+| ------- | ---------- | --------- |
+| `id` | **no - required** | Ramp `UniqueID` |
+| `messageid` | yes | Narrow to one message |
+| `ramptype` | yes | `'on'` or `'off'` |
+| `local` | yes | This server only |
+| `nondeleted` | yes | Exclude deleted ramps |
+| `asof` | yes | Cache busting |
+
+Columns: `UniqueID`, `StepName`, `Count`, `Start`, `End`, `Exceptions`, `MessageContext`, `MessageId`, `MessageStart`, `MessageEnd`, `ServerName`, `NumStepsWithException`.
+
+`Exceptions` and `MessageContext` are the two that matter - they tell you which step threw and what the context held at that moment. Needs `verboseLogging` to be populated.
+
+#### PluginListTableValuedFunction - what plugins exist, and their config schema
+
+Runtime discovery of every registered plugin, **including its config metadata and defaults**. This is how you answer "does this server even have `WfsConnector`?" and "what properties does its config accept?" without source access.
+
+| Param | Optional | Purpose |
+| ----- | -------- | ------- |
+| `interfaceType` | yes | .NET interface name to filter by |
+| `asof` | yes | Cache busting |
+
+Columns: `AppName`, `PluginName`, `Type`, `ConfigMetadata`, `ConfigDefaults`, `ValidTransitions`.
+
+#### PipelineParametersTableValuedFunction - parameters of a saved pipeline
+
+Params: `UniqueID` (the pipeline id, optional), `asof`. Columns: `UniqueID`, `PipelineName`, `ParameterName`, `ParameterValue`.
+
+---
+
+### Scriptable Control and Debugging (ProcessDirect)
+
+Everything the Data Streams admin page does is a ProcessDirect action on the `datastream` module (registered at `ApiRequestManager.cs:236`). Post to `/Api/ProcessDirect` with an `action` of `datastream/<verb>`:
+
+```json
+{
+    "action": "datastream/resetonramptracking",
+    "onramp": { "UniqueID": "<ramp-unique-id>" }
+}
 ```
 
-Returns: `MessageId`, `MessageStart`, `MessageEnd`, `UniqueID`, `ServerName`, `NumStepsWithException`, `RecordsProcessed`
+| Verb | Purpose |
+| ------ | --------- |
+| `fetchallonramps` / `fetchonramp` | List / read on-ramps. **`fetchonramp` is the truth** for a ramp's saved config |
+| `createonramp` / `editonramp` / `deleteonramp` | CRUD |
+| `startonramp` / `stoponramp` | Start / stop |
+| `testonramp` | Send a test payload at the connector |
+| `resetonramptracking` | Clear the incremental watermark (see below) |
+| `exportonramp` / `importonramp` | Export / import JSON (**secrets are blanked on export**) |
+| `acceptstream` | Push records into a ramp running in accepting mode |
+| `fetchallpipelines` / `fetchpipeline` / `createpipeline` / `editpipeline` / `deletepipeline` | Saved-pipeline CRUD |
+| `testpipeline` / `testexportpipeline` | Run a whole pipeline against a payload |
+| `testpipelinestep` | **Run one step in isolation** |
+| `testpipelinesubgraph` | **Run from one step downstream through the rest** |
+| `importpipeline` / `exportpipeline` | Pipeline import / export |
+| `fetchallresources` / `fetchresource` / `createresource` / `editresource` / `deleteresource` | Well-known resources |
+| `fetchallofframps` … `resetofframptracking` | The off-ramp equivalents of all of the above |
 
-**Step-level detail within messages:**
+**Access gate.** `sysAdminOnlyDataStreamAccess` defaults to **`true`** (`Config.cs:689`). With it on, every verb above throws `ForbiddenException` for a non-sysadmin - including the read-only ones. A blanket 403 on datastream calls usually means this, not a per-object permission problem.
 
-```sql
-SELECT * FROM ml_rampsteplog(id='<ramp-unique-id>', ramptype='on', asof='{{now}}')
+---
+
+### Testing a Pipeline Without Running the Ramp
+
+Two verbs let you exercise pipeline logic against a payload you supply, with no connector involved and no schedule. This is the fastest loop for debugging a transform or committer.
+
+**`testpipelinestep`** - one step, in isolation. Request body carries a `pipelineSandbox` object:
+
+| Field | Default | Purpose |
+| ------- | --------- | --------- |
+| `rampIdOrName` | - | Ramp whose pipeline definition to use |
+| `stepName` | - | The step to run |
+| `textPayload` | - | Payload as a string (JSON-encoded) |
+| `isExportPipeline` | `false` | True when the step is export-only |
+| `simplifyColumnNames` | `true` | Column naming when parsing a JSON payload |
+| `recordRootPath` | `"$.features[*]"` | JSONPath to the records |
+
+**`testpipelinesubgraph`** - start at a step and run everything downstream, committers included. Request body carries a `pipelineSubgraphRun` object:
+
+| Field | Default | Purpose |
+| ------- | --------- | --------- |
+| `startStepName` | - | **Required.** Where execution begins |
+| `rampIdOrName` | - | Use this ramp's pipeline definition |
+| `wellKnownPipelineName` | - | …or this saved pipeline |
+| `pipelineDefinition` | - | …or an inline definition (object or string) |
+| `textPayload` | - | Payload as a string; **if omitted, the HTTP body is used** |
+| `pipelineParameters` | - | Parameter substitutions applied to the definition |
+| `contextProperties` | - | Message-context properties set before the start step runs |
+| `keepHistory` | `true` | Whether committers retain import history |
+| `isExportPipeline` | `false` | Export pipeline definitions |
+| `simplifyColumnNames` | `true` | Column naming for JSON record payloads |
+| `recordRootPath` | `"$.features[*]"` | JSONPath to the records |
+
+Exactly one of `rampIdOrName` / `wellKnownPipelineName` / `pipelineDefinition` is required; an unknown `startStepName` returns `Pipeline does not contain step '<name>'`. The payload is shape-validated against the start step before anything is enqueued, so a mismatched payload fails fast rather than half-committing.
+
+The response returns `messageResult`, `pipelineName`, the list of `stepNames` that actually ran, and `affectedResources` - the last of which tells you which tables were written. `extraData.CorrelationToken` carries the coalescer batch id.
+
+**This runs for real.** A subgraph that ends in a committer writes to the target table. Point it at a scratch table first.
+
+---
+
+### Server-Side Logs
+
+The in-browser Detailed Logging tab and the ramp TVFs cover the pipeline's own diagnostics. The server event log is separate, and is where connector-level failures (HTTP errors, auth, connection drops) land.
+
+DataStream code logs almost entirely under the **`import`** module tag (`LoggableModule.import`, `MapLarge.IO/Logging/LoggableModule.cs:6`); a few paths use `dataimport`, `file`, `pipe`, and `video`. To raise just that module without flooding the log, add a `LoggingOverrides` entry in `config.json`:
+
+```json
+"DefaultLogLevel": "Info",
+"LoggingOverrides": { "import": "Debug" }
 ```
 
-Returns: `UniqueID`, `StepName`, `Count`, `Start`, `End`, `Exceptions`, `MessageContext`, `MessageId`, `MessageStart`, `MessageEnd`, `ServerName`, `NumStepsWithException`
+Three things to know:
 
-Optional: add `messageid='<message-id>'` to filter to a single message.
+- **`DefaultLogLevel` defaults to `Info`, so `Debug` entries are dropped** unless you override the module explicitly. Setting the override is what makes connector debug output appear.
+- **`LoggingOverrides` keys are matched case-sensitively.** Use exactly `import`, lowercase.
+- Entries land in `<logDirectory>/YYYYMMDD/EventLog.HH.txt` - **rotated hourly**, so one day is many files - and flush asynchronously (~5 s), meaning a hard crash can lose the last few lines.
+
+An override of `None` fully suppresses the module regardless of `DefaultLogLevel`.
+
+---
+
+### Reset Tracking - Read This First
+
+`resetonramptracking` behaves differently depending on the connector (`DataStreamManager.cs:1355`):
+
+- If the connector implements `ISupportIncrementalUpdate` - which **every `BasePollingConnector` descendant does**, including `WfsConnector`, `HttpPollingConnector`, `ArcGISRestConnector`, `RelationalDatabaseConnector` and `ElasticsearchConnector` - only its tracking data is cleared. This is the safe, targeted case.
+- If it does **not**, the fallback is `ClearAllMetadataForComponentAsync` - **all** metadata for that ramp is wiped, not just the watermark.
+
+Check the `SupportIncrementalUpdate` column from `RampsTableValuedFunction` before resetting a connector you are unsure about.
+
+After a reset, the next poll re-pulls from `StartDate` if one is configured, and otherwise pulls everything.
+
+---
 
 ### Debugging Workflow
 
-1. **Check status**: Go to Admin (gear icon) → Data Streams → On Ramps. Look for red (Faulted) or orange (warnings) indicators.
-2. **Read the error**: Click the status indicator → Server Statistics tab → read `ErrorMessage` column.
-3. **Enable verbose logging**: Edit the on-ramp → set `verboseLogging = true` → save and restart.
-4. **Review step details**: Click status indicator → Detailed Logging tab → expand a message to see which step failed, the exception, and context variables at that point.
-5. **For historical analysis**: Enable `tableLogging`, reproduce the issue, then query `_system/datastream_log` in the SQL interface.
-6. **For dashboards**: Use the `ml_rampserverstats()` TVF to build a monitoring view across all ramps.
+1. **Check status** - Admin (gear icon) → Data Streams → On Ramps. Red = Faulted, orange = warnings. Scriptable equivalent: `RampServerStatsTableValuedFunction` and read `ActualStatus` / `ErrorMessage`.
+2. **Read the error** - click the status indicator → Server Statistics tab → `ErrorMessage`.
+3. **Confirm what the ramp is actually configured with** - `fetchonramp`, or the `ConnectorOptions` / `PipelineDefinition` columns of `RampsTableValuedFunction`. Do not trust a re-rendered UI form for this.
+4. **Nothing arriving at all?** Check the connector, not the pipeline: raise `LoggingOverrides: { "import": "Debug" }` and read `EventLog.HH.txt`. Remember that several connectors default `IgnoreErrors` to `true` and will log-and-continue rather than fault.
+5. **Data arriving but wrong?** That is the pipeline. Enable `verboseLogging`, restart, then read `RampStepLoggingTableValuedFunction` - `Exceptions` and `MessageContext` identify the failing step.
+6. **Iterate on the fix without waiting for a poll** - `testpipelinestep` for one step, `testpipelinesubgraph` to run from that step through the committers. Point at a scratch table; these write for real.
+7. **Historical analysis** - enable `tableLogging`, reproduce, then query `_system/datastream_log` (auto-caps at 100,000 rows; costs throughput, so turn it back off).
+8. **Re-pull from the beginning** - `resetonramptracking`, after checking `SupportIncrementalUpdate`.
+9. **Dashboards** - `RampServerStatsTableValuedFunction` across all ramps, with a rotating `asof`.

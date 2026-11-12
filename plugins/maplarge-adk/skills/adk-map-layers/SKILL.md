@@ -1,10 +1,10 @@
 ---
 name: adk-map-layers
-description: Authoring and debugging server-side and client-side map layers in a MapLarge ADK extension. Covers the layer query shape (a nested table query with withgeo, an explicit geometry column, where placement), the create-then-tile render path and why one broken layer blanks every composited layer, mistakes that pass layer creation and then fail every tile, how style rules match, the color formats the tile renderer accepts, and client-side geo.client layers. Use when a layer draws nothing, the map shows base tiles only, every layer vanished after adding one, tiles return HTTP 500, a choropleth or ramp draws wrong, colors come out in the wrong hue, or when adding a layer to a Raptor map. Triggers on "layer draws nothing", "map is blank", "base map only", "layer not showing", "tile 500", "Index was outside the bounds of the array", "Unknown JSON attribute", "is not found in any table source", "choropleth", "dynamic ramp", "withgeo", "select.column", "style rules", "fillColor", "geo.client.dot".
+description: Authoring and debugging server-side and client-side map layers in a MapLarge ADK extension. Covers the layer query shape (withgeo, geometry column, where placement), the create-then-tile render path and why one broken layer blanks every composited layer, mistakes that pass create and fail every tile, style rule matching, text labels, tile color formats, raster layers (gradients, coded bands such as a viewshed), and geo.client layers. Use when a layer draws nothing or only base tiles show, every layer vanished after adding one, tiles return HTTP 500, a ramp or raster draws in the wrong colors, or when adding a layer to a Raptor map. Triggers on "layer draws nothing", "map is blank", "layer not showing", "tile 500", "Index was outside the bounds of the array", "Unknown JSON attribute", "choropleth", "dynamic ramp", "withgeo", "select.column", "geo.client.dot", "geo.raster", "raster layer", "viewshed layer", "rasterGradient", "scaleTransparentBelow", "text label", "label not showing".
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
-  provenance: "ARC-75"
-  verified-against: "MapLarge Server 4.139 (docs host): 48 layer behaviors re-run live on the create-then-tile render path and the JSON query route against ml_samples/Miami_* tables, each in at least 3 distinct requests, plus the grounding query through the CLI on 4 tables, 2026-09-29 (ARC-75); map wiring and client-side layer behavior read from the 4.139 framework bundle"
+  provenance: "ARC-75, ARC-98"
+  verified-against: "MapLarge Server 4.139 (docs host): 48 layer behaviors re-run live on the create-then-tile render path and the JSON query route against ml_samples/Miami_* tables, each in at least 3 distinct requests, plus the grounding query through the CLI on 4 tables, 2026-09-29 (ARC-75); map wiring and client-side layer behavior read from the 4.139 framework bundle; table-inside-select and style.metaData refusals re-run against a local server and in the browser, LayerQuery annotation and cast behavior checked with tsc against the 4.141 declarations, 2026-10-14 (ARC-64); raster layer styles rendered through POST /restapi/v1/layers tiles on MapLarge Server 4.141 (2026-10-13 build) against ml_samples/Miami_Elevation and a computed viewshed, style keys read from core source a19113527d8, plus text labels under rules and dynamic styles on ml_samples/Miami_Busstops, 2026-10-16 (ARC-98)"
 ---
 
 # ADK Map Layers
@@ -55,6 +55,7 @@ A server-side layer that draws `ml_samples/Miami_Streets`, restricted to three r
 }
 ```
 
+- **`table` is a sibling of `select`, not a field inside it.** `select: { type, table }` is refused at create with `Unknown JSON attribute in select block: table`, even when a sibling `table` is also present, and the layer never draws. An uncast, typed layer object catches this at compile time. A plain `as ml.ui.map.IMlUiLayerOptionsInterface` catches it only when `select.table` is the sole `table`; with a sibling `table` also present it compiles clean, and `as unknown as` or `as any` let it through either way. Declare the query as a `const query: ml.ui.map.LayerQuery` before putting it on the layer object, which catches it in every case. The layer's `style` gets no such protection, because the layer options type declares it `style.LayerStyle | any`.
 - **`withgeo: true` inside the nested query.** Without it the nested result carries attribute columns and no geometry. The layer is still accepted at create, and then every tile fails with HTTP 500, because the geometry column the layer selects is missing from that result; a failing tile also takes down every other layer in the same composite request (next section). A plain table can be written flat instead, `table: { name: "ml_samples/Miami_Streets" }`, and draws the same tile. The examples here use the nested form, which is where they put a projection, a join or an aggregate.
 - **`select.column` names the geometry column, and its kind must match the select type.** A `geo.line` pointed at a point column, or a `geo.dot` pointed at a String column, is accepted at create and fails every tile with a cast error. With the column omitted, the server resolved the geometry column matching the select type on every table tried, including one carrying both a polygon and a point column; naming it keeps the layer independent of that resolution and makes the kind visible in review.
 - **`where` works at either level, and each level sees different columns.** Inside the nested query a clause runs against the base table. At the outer level, as a sibling of `table`, it runs against the nested query's result, so when the nested query has an `sqlselect` only the projected columns exist there, and a clause on any other column is accepted at create and fails every tile; the tile response carries only an opaque reference, and an extents call on the hash names the column (`Column '<name>' is not found in any table source`). Without a nested `sqlselect`, the two placements draw identical tiles.
@@ -98,12 +99,16 @@ Check these first when the map goes blank.
 | Style rule with an unrecognized `test` (a misspelling such as `NotARealTest`) | Accepted | HTTP 500 | Opaque reference in the tile response |
 | Nested join query without `withgeo`, joining on a geometry column | Accepted | HTTP 500 | `Column 'XY' is not found in the table with alias ...` |
 
-Two mistakes are refused at create instead, so the layer never gets a hash and drops out of the composite:
+These mistakes are refused at create instead, so the layer never gets a hash and drops out of the composite:
 
 | In the layer | Create | Message |
 | --- | --- | --- |
 | `opacity` in a style, at the style root or inside a rule's `style` | HTTP 500 | `Unknown JSON attribute in query style clause: opacity`. The style schema has no `opacity`; put the alpha in the color instead. |
+| `table` inside `select`, `select: { type, table }`, with or without a sibling `table` | HTTP 500 | `Unknown JSON attribute in select block: table, ignoring contents and parsing next`. Move `table` out to sit beside `select`. |
+| `metaData` in a style, a v4 leftover | HTTP 500 | `Unknown JSON attribute in query style clause: metadata`. Compiles clean, because the layer options type declares `style` as `style.LayerStyle \| any`. |
 | `alias` inside a nested join query, `join.table: { query: { ..., alias } }` | HTTP 500 | `Unknown JSON attribute in query-query clause: alias`. The JSON query route refuses it too. A table reference with an alias, `join.table: { name, alias }`, is accepted. |
+
+In the browser a refusal is easy to miss: the framework's create call (`/Api/CacheRequest`) returns HTTP 500, and the console gets a log-level line, not an error, that starts `Layer processing failure. Layer ID <id>` and ends with the attribute the server rejected (for example `Error:  metadata`). The rest of the map keeps drawing. `POST /restapi/v1/layers` refuses the same layers with HTTP 403 and the same message.
 
 ## Style rules on the tile path
 
@@ -111,6 +116,28 @@ Two mistakes are refused at create instead, so the layer never gets a hash and d
 - **A row that matches no rule is not drawn.** With a single rule for class 1 on a layer selecting classes 1 to 3, the tile drew about what a layer selecting class 1 alone draws, a fraction of what giving every class a rule draws. Cover every row the `where` selects, or use a catch-all as the last rule.
 - **Rules see the nested query's result, not the base table.** A rule or a ramp column naming a column the nested `sqlselect` leaves out fails every tile (see the table above), so project every column the style names. A layer with no nested `sqlselect` has every base column available.
 - The catch-all can be written `where: { col: "*", test: "CatchAll", value: 0 }`; the string `"CatchAll"` and the nested form `[[{ col: "*", test: "CatchAll", value: 0 }]]` drew identical tiles.
+
+## Text labels
+
+A rule's style can carry `text`, and the server draws it into the tile beside each point the rule styles. Labelling the stops over 8550 in `ml_samples/Miami_Busstops` and leaving the rest bare:
+
+```ts
+style: {
+  method: "dynamic",
+  rules: [
+    {
+      style: { fillColor: "#FFFF0000", shape: "round", size: 10, text: { text: "Stop ${StopID}", color: "#FF000000", bold: true, size: 14 } },
+      where: [[{ col: "StopID", test: "Greater", value: 8550 }]]
+    },
+    { style: { fillColor: "#FF0000FF", shape: "round", size: 10 }, where: { col: "*", test: "CatchAll", value: 0 } }
+  ]
+}
+```
+
+- **`${column}` is filled in only under `method: "dynamic"`.** Under `"rules"`, a label containing a placeholder draws nothing at all, not even its fixed part: `Stop ${StopID}` left every dot bare, on a flat table and through a nested query alike. Fixed text draws under either method. Under `dynamic`, the same label drew `Stop 8558` beside each matching stop.
+- **Computed columns work too.** `${sid10}`, over `StopID * 10 as sid10` in the nested `sqlselect`, drew under `dynamic` just like a stored column. As with any rule, the column has to be projected by the nested query.
+- **Rules still match row by row under `dynamic`, and the first match wins.** With the rules above, the stops over 8550 drew red with their label, and the rest drew blue with none.
+- **`maxWidth` with `wrapType: "WordWrap"` wraps long text**: a `${StopName}` label at `maxWidth: 80` drew on three lines. `backColor` appears beside them in demo layers and was not checked here, and neither was the `${column:Format(...)}` form that the server's style formatter accepts.
 
 ## Colors on the tile path
 
@@ -131,6 +158,58 @@ The layer-level `opacity` option (on the layer options object, not in its style)
 
 For point `shape`, the declared tokens are `round`, `rectangle`, `triangle`, `diamond`, `plus`, `star`, `x` and `chevron`. An undeclared token is not rejected: `circle`, `square` and a made-up token all drew exactly like the default round marker, while `rectangle` and `star` drew differently. Layer factories usually return their object through a cast, so a wrong token passes the type check as well.
 
+## Raster layers
+
+A raster layer paints one color per cell of a `Raster` column: an elevation tint, a land-cover class, a viewshed. Band names, `Raster` versus `Image` columns and NoData are covered in `maplarge-query-dialect`'s `reference/raster.md`; read it first if the raster came out of a query. 3D terrain is covered in the `raptor` skill's `reference/controls/map-3d-layers.md`.
+
+The layer selects the raster column with `select.type: "geo.raster"`, and the style needs no `method` or `rules`:
+
+```ts
+{
+  id: "elevation",
+  visible: true,
+  query: {
+    select: { type: "geo.raster", column: "grid_float" },
+    table: { name: "ml_samples/Miami_Elevation" }
+  },
+  style: { rasterType: "pixel", gradient: "#FF0000FF,#FFFF0000", scaleMin: 0, scaleMax: 10 }
+}
+```
+
+- **A raster computed by a query is drawn the same way.** Put the query in `table.query`, return the raster under an alias in its `sqlselect`, and name the alias in `select.column`. A viewshed drew this way with no `withgeo`.
+- **`select.column` names the raster.** With one `Raster` column on the table it can be left out. Some demos put `layerType: { column }` in the style instead; `POST /restapi/v1/layers` refuses that with `Unknown JSON attribute in query style clause: layertype`. It works only on a data-source layer in a `LayerStore`, where the framework moves it into `select` and deletes it from the style before creating the layer. On a layer with its own `query`, use `select.column`.
+
+### Raster style keys
+
+Measured on tiles:
+
+| Key | What it does |
+| --- | --- |
+| `rasterType` | `"pixel"` paints each cell. The parser also accepts `contour`, `arrow` and `barb` |
+| `gradient` | Comma-separated colors, lowest value first, stretched evenly between `scaleMin` and `scaleMax` |
+| `scaleMin`, `scaleMax` | The values the gradient's ends sit on. Left out, they default to the band's stored minimum and maximum: the tile was byte-identical to one with those values pinned |
+| `rasterGradient` | Explicit stops as `[{ position, value }]`, with the color in `value`. A `{ color, position }` shape is refused at create. Positions are **raw cell values**, not fractions: stops at `"0"` and `"10"` drew the same as `gradient` over a 0 to 10 scale, while stops at `"0"` and `"1"` pushed nearly every cell past the top color. Write `"0%"` and `"100%"` for positions relative to the scale |
+| `scaleTransparentBelow` | Leaves cells below `scaleMin` unpainted instead of clamping them to the bottom color. `scaleTransparentAbove` is its counterpart above `scaleMax` (read from the parser) |
+| `rasterSelect` | The band to draw. Leave it out to draw the first band. A name that does not exist is accepted at create and fails every tile with `Could not get raster function band <name>`, which on a map looks like a grey or empty raster |
+| `rasterCellSelect` | A comma-separated list of exact values to paint. It is applied after the raster is downsampled for the zoom, so cells whose value was blended by downsampling drop out |
+
+Read from the style parser and not rendered here: `aggregate` (`Avg`, the default, `Min`, `Max` or `TopOnly`, for how cells are combined when downsampled; a different list from the query-side `GridLookup` aggregates), `nodata`, `scaleLog`, `interpolate`, `interpolateStartZoom`, `uniformDownsampling`, and `contourStart` and `contourStep` for `rasterType: "contour"`. NoData cells are skipped in 2D, so they show the map beneath.
+
+### Codes are not scores
+
+Decide what the band's values mean before choosing a style:
+
+- **A score** (elevation, a count, a probability) is ordered, so a multi-stop `gradient` reads correctly.
+- **A code** (a land-cover class, a viewshed's -1 not visible, 1 partly visible, 2 visible, 0 no data) has no order, and a ramp across codes invents one. On a 1 m observer's viewshed, a red-yellow-green ramp painted the not-visible majority of the area red, with a yellow fringe wherever downsampling blended a -1 into a 2.
+
+To show one class, paint a flat ramp (the same color at both ends) and drop everything under it:
+
+```ts
+style: { rasterType: "pixel", gradient: "#FF55FF00,#FF55FF00", scaleMin: 1, scaleMax: 3, scaleTransparentBelow: true }
+```
+
+That drew only the visible ground, with the not-visible cells left transparent. `scaleMin: 1` also drops the blended cells between -1 and 1. `rasterCellSelect: "2"` paints only cells that are exactly 2 after downsampling, which leaves the class looking speckled at most zooms. To show several classes, give each its own layer with its own flat ramp.
+
 ## Client-side layers
 
 When the data lives in the browser, the layer's `query.table.retrieveData` callback returns `{ columns, data }` rows, and the select type is one of `geo.client.dot`, `geo.client.line`, `geo.client.poly` or `geo.client.heat`. There is no `geo.client.point`: any other type throws `Layer options not supported for clientside layer.`
@@ -142,19 +221,21 @@ When the data lives in the browser, the layer's `query.table.retrieveData` callb
 
 ## Examples
 
-**"Show the major roads from ml_samples/Miami_Streets, classes 1 and 2 in different colors."** Nested query with `withgeo`, the line column named, the class filter at the outer level, and one rule per class so every selected row matches exactly one rule:
+**"Show the major roads from ml_samples/Miami_Streets, classes 1 and 2 in different colors."** An annotated `LayerQuery`, a nested query with `withgeo`, the line column named, the class filter at the outer level, and one rule per class so every selected row matches exactly one rule:
 
 ```ts
 // client/layers/streetsLayer.ts
 export function streetsLayer(): ml.ui.map.IMlUiLayerOptionsInterface {
+  // Annotated so a misplaced `table` fails the build even if the layer object is later cast through unknown.
+  const query: ml.ui.map.LayerQuery = {
+    select: { type: "geo.line", column: "Miami_Streets" },
+    table: { query: { table: { name: "ml_samples/Miami_Streets" }, withgeo: true } },
+    where: [[{ col: "CLASS", test: "EqualAny", value: "1,2" }]]
+  };
   return {
     id: "streets",
     visible: true,
-    query: {
-      select: { type: "geo.line", column: "Miami_Streets" },
-      table: { query: { table: { name: "ml_samples/Miami_Streets" }, withgeo: true } },
-      where: [[{ col: "CLASS", test: "EqualAny", value: "1,2" }]]
-    },
+    query,
     style: {
       method: "rules",
       rules: [
@@ -217,5 +298,6 @@ Only block groups containing at least one stop draw (1,384 of 1,843), because th
 
 - Map options, base layers, the `data` binding, map events and control wiring: use the `raptor` skill.
 - Choosing between JSON, fluent and SQL query forms, and query data access in general: use `adk-query-dev`.
-- Aggregation expressions, filter-test semantics and differences between query endpoints behind a layer's query: use `maplarge-query-dialect`.
+- Aggregation expressions, filter-test semantics and differences between query endpoints behind a layer's query: use `maplarge-query-dialect`. Raster bands, NoData and grid functions are in its `reference/raster.md`.
+- 3D terrain from an elevation raster: the `raptor` skill's `reference/controls/map-3d-layers.md`.
 - Building, packaging and serving the extension the layer lives in: use `adk-extension-dev`.

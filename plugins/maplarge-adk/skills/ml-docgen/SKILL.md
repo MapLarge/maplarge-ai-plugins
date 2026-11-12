@@ -4,7 +4,7 @@ description: Work on or run "ml-docgen", the MapLarge ADK config-documentation g
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "ml-docgen CLI @ 2026-08 import baseline; manifest Config-block claims re-verified against live ADK extension repos 2026-09-09 (ARC-51)"
+  verified-against: "ml-docgen CLI @ 2026-08 import baseline; manifest Config-block claims re-verified against live ADK extension repos 2026-09-09 (ARC-51); dependency .d.ts regeneration by a bare maplarge adk build (declarations for every extension, in Dependencies order) verified live on ADK CLI 1.0.94, 2026-11-03 (ARC-25)"
 ---
 
 # ml-docgen
@@ -53,8 +53,9 @@ the extension.
   `"Config": { ..., "DocRootType": "IInventoryConfig" }` to `extensions/Inventory/manifest.json`
   (matching the literal root shape of its config.json), then `npm run ml-docgen -- Inventory`.
 - "I added JSDoc to a shared config interface but the dependent extension's docs don't show it" →
-  rebuild the owning extension first (`maplarge adk build`) so `.adk/types.d/_<Ext>.d.ts`
-  regenerates, then rerun ml-docgen for the dependent.
+  run a bare `maplarge adk build` first (no `-extensions`: it compiles declarations for every
+  extension, a single-extension build does not) so `.adk/types.d/_<Ext>.d.ts` regenerates, then
+  rerun ml-docgen for the dependent.
 
 ## How an extension opts in
 
@@ -83,8 +84,11 @@ back to the convention `I<Name without punctuation>Config` if omitted.
 
 - **Stale `.d.ts`:** dependency-extension types resolve to the ADK-generated
   `.adk/types.d/_<Ext>.d.ts`, which is only refreshed by a build (`mlcomp` / `maplarge adk
-  build`). New JSDoc on a shared/dependency type won't appear in a *dependent's* docs until
-  that file regenerates. Own-extension types reflect source immediately.
+  build`) that compiles that extension's declarations (a bare `maplarge adk build`, not a
+  single-extension build; see
+  [Failure modes](../../docs/extension-dependencies.md#failure-modes)). New JSDoc on a
+  shared/dependency type won't appear in a *dependent's* docs until that file regenerates.
+  Own-extension types reflect source immediately.
 - **`//` comments are stripped** from generated `.d.ts`; only `/** */` JSDoc survives. Prefer
   JSDoc on shared config interfaces.
 - Comment fidelity, scope (which types expand vs stay opaque), subtypes, and the Shared Types

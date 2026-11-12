@@ -132,7 +132,8 @@ try {
 	const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, "package.json"), "utf8"));
 	const bin = typeof pkg.bin === "string" ? pkg.bin : pkg.bin["markdownlint-cli2"];
 	const binPath = path.join(pkgDir, bin);
-	const mdlint = spawnSync(process.execPath, [binPath, "**/*.md", "!node_modules"], {
+	// eval-runs/ holds captured assistant transcripts (ARC-35) - data, not repo content.
+	const mdlint = spawnSync(process.execPath, [binPath, "**/*.md", "!node_modules", "!eval-runs"], {
 		cwd: repoRoot,
 		encoding: "utf8",
 	});

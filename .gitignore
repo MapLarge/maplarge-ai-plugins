@@ -13,5 +13,9 @@ Thumbs.db
 # Node
 node_modules/
 
+# Raw eval runs (transcripts + artifact snapshots, ARC-35); the committed
+# record is each skill's evals/results.md
+eval-runs/
+
 # Logs
 *.log

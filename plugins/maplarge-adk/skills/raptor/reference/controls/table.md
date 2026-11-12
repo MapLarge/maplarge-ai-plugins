@@ -1,13 +1,14 @@
 # Table (plain semantic table)
 
-Static, structural HTML `<table>` built declaratively from RSScriptor. It is *not* the DataTable — there is no built-in sorting, paging, virtualization, or data source. Use it for fixed layouts you populate yourself (key/value pairs, small summaries, `foreach`-driven row lists). The rendered node is a thin `Table extends RaptorNode` that just wraps `ViewDefinitions.ITable`; all behavior is in the view definition.
+Static, structural HTML `<table>` built declaratively from RSScriptor. It is *not* the DataTable: there is no built-in sorting, paging, virtualization, or data source. Use it for fixed layouts you populate yourself (key/value pairs, small fixed summaries). The rendered node is a thin `Table extends RaptorNode` that just wraps `ViewDefinitions.ITable`; all behavior is in the view definition.
 
 ## When to use
 
-- A small/medium static or `foreach`-driven table where you control every cell.
+- A small static table where you control every cell, like a fixed comparison or a legend.
 - Bootstrap-styled tables (striped/bordered/hover/responsive/compact) with semantic `<thead>/<tbody>/<tfoot>`.
 - Key/value or summary panels.
-- Reach for **data-table.md** instead when you need column sorting, filtering, selection, virtualization, or binding to a data source.
+
+Not for lists of records, even short ones ("a table of my team", "show the invoices"). Use the `data-table` skill for those: it brings sorting, filtering, selection and scrolling, and this table brings none.
 
 ## Builder
 
@@ -62,12 +63,12 @@ The `Table` node has only `nodeModel: ITable`; it holds no view state of its own
 ## Patterns
 
 1. **Key/value panel**: a single `tableBody` whose rows are literal `tr` with one `th({scope:'Row', text:'Label'})` and one `boundTd('field')`.
-2. **foreach row list**: `tableBody().contentTemplates(s => s.foreach(prop, s => s.tr()...))`; toggle row emphasis with `tr({ active: true })` or `tr({ color: 'warning' })` bound off the item.
+2. **foreach rows** (a handful of fixed layout rows, not records): `tableBody().contentTemplates(s => s.foreach(prop, s => s.tr()...))`; toggle row emphasis with `tr({ active: true })` or `tr({ color: 'warning' })` bound off the item.
 3. **Scrollable wide table**: set `responsive: true` (or a breakpoint) so the renderer wraps the `<table>` in an `overflow-x` container; combine with `fixed: true` for stable column widths.
 
 ## Gotchas
 
-- Not a grid. No sort/page/filter/selection comes for free; if you find yourself building those, switch to **data-table.md**.
+- Not a grid. No sort/page/filter/selection comes for free; if you find yourself building those, switch to the `data-table` skill.
 - `responsive` changes the returned root element to a wrapping `<div>` — account for that if you query/style by the table element directly.
 - Cells show `text` only when empty of children; adding `contentTemplates` to a `td`/`th` suppresses its `text`/`text`-binding.
 - `striped`+`stripedColumns` are mutually exclusive in effect (Bootstrap); pick one.
@@ -80,7 +81,7 @@ For "let the user choose a stored table", use the `tablePicker` node (`@Register
 ## Related skills
 
 - **raptor** — parent skill: View/VM split, RSScriptor.create, `getTypedProp`, `update()`, `foreach`, bindings/events basics.
-- **data-table.md** — the interactive, sortable, virtualized table; use it instead for real data tables.
+- **`data-table` skill** - the interactive, sortable, virtualized table; use it for any list of records.
 - **foreach.md** — driving `<tbody>` rows from a VM array.
 - **list-group.md**, **card.md** — alternative layouts for non-tabular records.
 - **select.md**, **dropdown.md** — simpler pickers when you don't need the full TablePicker.

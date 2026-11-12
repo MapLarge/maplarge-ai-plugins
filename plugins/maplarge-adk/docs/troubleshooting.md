@@ -24,6 +24,8 @@ Likely causes:
 - generated declarations are stale
 - extension was renamed
 - importing route path as a module path
+- the imported extension is missing from, or misspelled in, the manifest's `Dependencies`
+- the imported extension's `.adk/types.d/_<Name>.d.ts` is 0 bytes after `maplarge adk init`
 
 Checks:
 
@@ -33,7 +35,9 @@ rg "declare module" .adk/types.d/_<extension>*.d.ts
 maplarge adk build -extensions <extension> -skipCompileUITests
 ```
 
-Do not assume `ext/<extension>` is a valid TypeScript import prefix.
+A single-extension build does not regenerate another extension's `_<Name>.d.ts`; run a full build (`maplarge adk build` with no `-extensions`) to refresh it (after `maplarge adk init`, add `-disableOptimizations`).
+
+Do not assume an `ext/<Name>/...` path is importable: it resolves only when `client/<path>.ts` exists in the extension whose manifest `Name` is `<Name>`, and dashboard IDs and routes that look like module paths often have no such file. See [Failure modes](extension-dependencies.md#failure-modes).
 
 ## Stale ADK build output
 
@@ -52,7 +56,7 @@ find .adk/.www/ext -maxdepth 2 -type d
 
 Fix:
 
-Remove only the affected extension cache and rebuild with `maplarge adk build`. Refresh `.adk/lib/` and `.adk/types.d/` with `maplarge adk init`, not manual deletion.
+Remove only the affected extension cache and rebuild with `maplarge adk build`. Refresh `.adk/lib/` and the framework declarations in `.adk/types.d/` with `maplarge adk init`, not manual deletion. Per-extension `.adk/types.d/_<Name>.d.ts` files come from builds: `init` deletes them, so after `init` in a project that has already been built, run one `maplarge adk build -disableOptimizations` (see [Failure modes](extension-dependencies.md#failure-modes)).
 
 ## Build files are locked
 
@@ -124,3 +128,5 @@ Refresh the ADK project when the installed CLI version is newer:
 maplarge adk update-version
 maplarge adk init -profile <current-profile>
 ```
+
+In a project that has already been built, follow `init` with one `maplarge adk build -disableOptimizations` (see [Failure modes](extension-dependencies.md#failure-modes)).

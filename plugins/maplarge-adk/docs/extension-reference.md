@@ -46,15 +46,15 @@ Client-only extensions may omit `Plugins`.
 
 ## Dependencies
 
-Use `Dependencies` when one extension requires another to load first:
+Use `Dependencies` when this extension's client code imports from another extension through an `ext/<Name>/...` path:
 
 ```json
 "Dependencies": [
-  { "Extension": "geo-editor" }
+  { "Extension": "producer" }
 ]
 ```
 
-Client code can then import dependency modules with `ext/<extension-name>/...` paths.
+Declare every extension you import from, using its manifest `Name`. For versions, imports, server-side code, a worked example and failure modes, see [Extension Dependencies](extension-dependencies.md).
 
 ## Accounts and Tables
 
@@ -130,7 +130,7 @@ Common client entry points:
 - `data/` for schemas, descriptors, queries, and data sources
 - `layers/` for map layers and map-specific presentation
 
-Keep dependency imports explicit. If the extension depends on another extension for shared descriptors, controls, or setup, `init.ts` is usually the safest place for those side-effect imports.
+Keep dependency imports explicit. If the extension depends on another extension for shared descriptors, controls, or setup, `init.ts` is usually the safest place for those side-effect imports. Also declare that extension in `Dependencies`; see [Consuming client exports](extension-dependencies.md#consuming-client-exports).
 
 ## Server-Side Notes
 
@@ -225,5 +225,6 @@ Lifecycle handlers are the right place for this when install, upgrade, or config
   - `manifest.json`
   - `client/home.ts`
   - generated declarations in `.adk/types.d`
+  - other extensions' `Dependencies` entries and `ext/<Name>/...` imports, if `Name` changes
   - route IDs and public dashboard IDs
   - docs paths under `/ext/<extension>/...`

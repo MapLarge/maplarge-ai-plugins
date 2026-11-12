@@ -15,8 +15,8 @@ description: >-
   "ml_ramplog".
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
-  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "MapLarge Server trunk source @ 2026-08 import baseline; Kafka connector config properties spot-verified against trunk 119ba585c6e, 2026-09-09 (ARC-48)"
+  provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12; references merged from claude-plugins mlx-data-dev 0.1.5 (2e40711) under ARC-115"
+  verified-against: "MapLarge Server trunk source @ 2026-08 import baseline; Kafka connector config properties spot-verified against trunk 119ba585c6e, 2026-09-09 (ARC-48); PipelineConfig checked upstream against Stable_Trunk 4ef1d0986b6, 2026-10-08, ConnectorConfig upstream revision 2026-09-11 (merged ARC-115, not re-verified here)"
 ---
 
 # MapLarge DataStreams — Connector & Pipeline Configuration
@@ -48,16 +48,20 @@ Read only the sections you need for the task (not the whole file unless required
 | Connector gotchas, validation, reconnection, destructive ops | ConnectorConfig: *Gotchas, Validation & Behavioral Nuances* |
 | Build pipeline JSON structure, step order, transitions | PipelineConfig: *Pipeline Structure*, *Step Types*, *Transitions and Conditional Routing* |
 | Understand the runtime record model + defensive coding | PipelineConfig: *Runtime Data Model & Defensive Patterns* |
-| Choose / configure a parser (JSON, XML, CSV, Avro, YAML, etc.) | PipelineConfig: *Parsers: How Data Gets Interpreted*, *How Nested Data Gets Flattened* |
+| Choose / configure a parser (JSON, XML, CSV, Avro, YAML, etc.) | PipelineConfig: *Parsers: How Data Gets Interpreted*, *How Nested Data Gets Flattened*; WFS, DB and other record-oriented connectors take no parser (*Record-Oriented Connectors - Omit the Parser Step*) |
 | Rename/compute/filter fields, expression functions | PipelineConfig: *Record Transforms* → *FieldNameTransform*, *ExpressionTransform* (incl. *Available Functions*) |
 | Convert coordinates to geometry / WKT, name geo columns | PipelineConfig: *Record Transforms* → *Geometry Transforms*; *Geometry Column Naming* |
 | Enrich/dedupe/skip records, embedded JSON, lookups | PipelineConfig: *TableLookupTransform*, *SkipRecordTransform*, *EmbeddedJsonTransform*, *FieldTrackingTransform* |
 | Split JSON envelope / promote context before parsing | PipelineConfig: *JSONDisassemblerStreamTransform*, *Stream Transforms* |
 | Commit to tables (schema, PK/dedup, partitions, multi-table) | PipelineConfig: *Committers* → *CoalescingPipelineCommitter*, *MLImportOptions*, *ExtendedConfigJson*, *SchemaDirectives*, *Multiple Tables from One Committer* |
 | Build an off-ramp / export pipeline | PipelineConfig: *Export Pipeline Components*, *Valid Export Transition Order* |
+| Notify an Alert/Trigger workflow after a commit | PipelineConfig: *TransactionNotifier Plugins* |
 | Well-known vs inline pipelines; message context lookup | PipelineConfig: *Well-Known vs Ad-Hoc Pipelines*, *Message Context System* |
 | End-to-end worked examples | PipelineConfig: *Complete Pipeline Examples*; *Data Selection Cheat Sheet* |
-| Monitor / debug a running ramp in UI or via SQL | ConnectorConfig: *Monitoring, Logging & Debugging* (`ml_rampserverstats`, `ml_ramplog`, `ml_rampsteplog`, `verboseLogging`, `tableLogging`) |
+| Monitor / debug a running ramp in UI or via table-valued functions | ConnectorConfig: *Monitoring, Logging & Debugging* (*Querying Ramp Status via Table-Valued Functions*, `verboseLogging`, `tableLogging`, *Debugging Workflow*); the `ml_ramplog`-style short aliases do not exist |
+| Script ramp control, read server-side logs | ConnectorConfig: *Scriptable Control and Debugging (ProcessDirect)*, *Server-Side Logs* |
+| Re-pull from the beginning / reset tracking | ConnectorConfig: *Reset Tracking - Read This First* |
+| Credentials and secrets in connector config | ConnectorConfig: *Encrypted Configuration Fields* |
 
 ## Key facts (verified)
 

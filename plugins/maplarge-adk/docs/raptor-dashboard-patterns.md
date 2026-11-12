@@ -152,7 +152,7 @@ return ml.util.Text.formatDate(this.timestamp, "ShortDate ShortTime", tz, format
 
 ## Data table and metadata patterns
 
-Build record tables with the DataTable (`s.dataTable` from `data-ui/data-table`), inside a container with a height; the older grid builder is deprecated. When per-row behavior, actions, or conditional styles exceed plain text, use column `transformValue`, a `scope` predicate bound into a cell template, or a `virtualColumn` with buttons, rather than a per-row view model. The `raptor` skill's `controls/data-table.md` has the full reference. For table metadata, prefer server-cache table metadata helpers already used by the extension before adding new server calls.
+Build record tables with the DataTable (`s.dataTable` from `data-ui/data-table`), inside a container with a height; the older grid builder is deprecated. When per-row behavior, actions, or conditional styles exceed plain text, use column `transformValue`, a `scope` predicate bound into a cell template, or a `virtualColumn` with buttons, rather than a per-row view model. The `data-table` skill has the full reference. For table metadata, prefer server-cache table metadata helpers already used by the extension before adding new server calls.
 
 ## Add A Page To An Existing Extension
 

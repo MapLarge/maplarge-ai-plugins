@@ -109,3 +109,4 @@ Read these when the task reaches their topic; skip them otherwise:
 - The view, chart, or dashboard consuming the query: use `adk-raptor-dev`.
 - Creating tables, designing schema, or loading sample data: use `adk-data-dev`.
 - Table administration on a running server (CRUD verbs, permissions, exports): use `maplarge-database`.
+- Raster and elevation queries (`GridLookup`, `ViewShed`, Grid math, and slow area-per-value queries that should use `GridAreaByRasterValue` instead of repeated `GridAcres`), routing over a line network (`ShortestPathTableValuedFunction`), and session-only inline rows (`JsonToTableTableValuedFunction`): use `maplarge-query-dialect`, reference `raster.md`.

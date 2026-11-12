@@ -146,6 +146,24 @@ Quick-update props (no full reload): `lat`, `lng`, `z`, `rotation`, `baseLayer`,
 
 `id` (stable unique key — required for diffing), `visible`, `name`, `style` (`style.LayerStyle`), `query` (`LayerQuery`), `sourceTable`, `filterString`, `opacity`, `zIndex`, `minZoom`/`maxZoom`, `type`, `service` (`iLayerService` for tiles), `legend` (`LayerLegend`), `showOnLegendView`. Click/hover: `onClick` (`boolean | string | IClickHandler`), `clickTemplate`, `clickContextMenu`, `onDoubleClick`, `onHover`, `hoverTemplate`, `hoverFields`. Add imperatively: `ml.layer(map, layerOptions, onLoad?, triggerCallback?)`.
 
+### The layer query literal
+
+`table` is a sibling of `select`, never a field inside it. Annotate the literal as `ml.ui.map.LayerQuery`:
+
+```ts
+const query: ml.ui.map.LayerQuery = {
+  select: { type: "geo.line", column: "Miami_Streets" },
+  table: { name: "ml_samples/Miami_Streets" },
+  where: [[{ col: "CLASS", test: "EqualAny", value: "1,2" }]],
+};
+return { id: "streets", visible: true, query, style: { /* ... */ } } as ml.ui.map.IMlUiLayerOptionsInterface;
+```
+
+- **Keep the annotation even when the layer object is cast.** An uncast, typed layer object makes a `table` inside `select` a compile error. A plain `as ml.ui.map.IMlUiLayerOptionsInterface` catches it only when `select.table` is the sole `table`, and once the object goes through `as unknown as` or `as any`, which loosely typed styles such as raster styles tend to push code toward, it never does. When the mistake compiles, the server refuses the layer when it is created, so the layer never draws while the map's other layers still do. The only signs are an HTTP 500 on `/Api/CacheRequest` and a log-level (not error-level) console line, `Layer processing failure. Layer ID <id>, Error:  table, ignoring contents and parsing next`. An annotated `const query` keeps the check in force under those casts.
+- **`style` is not compile-checked.** `IMlUiLayerOptionsInterface` declares `style?: style.LayerStyle | any`, so a misspelled key or a v4 leftover such as `style.metaData` compiles clean, and the server refuses the layer when it is created (`Unknown JSON attribute in query style clause: metadata`).
+
+Geometry columns, `withgeo` in nested queries, `where` placement, style rules, tile colors, raster layers (`geo.raster`, gradients, viewshed and other coded bands) and how to prove a layer draws are covered by the `adk-map-layers` skill. Load it before writing or debugging a layer.
+
 ## RaptorMap (node class) — public API
 
 | Member | Signature | Purpose |

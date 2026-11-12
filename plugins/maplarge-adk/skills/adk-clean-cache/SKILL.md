@@ -4,21 +4,21 @@ description: Clean the ADK build cache to fix stale or corrupt build artifacts. 
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "clean_adk_cache.mjs verified by live run 2026-09-09 (ARC-40); MapLarge ADK CLI @ 2026-08 import baseline"
+  verified-against: "clean_adk_cache.mjs verified by live run 2026-09-09 (ARC-40); MapLarge ADK CLI @ 2026-08 import baseline; per-extension types files and their declaration build records (_<Name>_NEW.tsbuildinfo) under .adk/types.d, init deleting the types files, and recovery with a bare maplarge adk build -disableOptimizations verified live on ADK CLI 1.0.94, 2026-11-03 (ARC-25)"
 ---
 
 # Clean ADK Build Cache
 
 Clean the `.adk/.build/` cache for MapLarge ADK extensions to fix stale or corrupt build
 artifacts. This skill only removes per-extension build cache (and optionally compiled output);
-it never touches `.adk/lib/` or `.adk/types.d/`, which come from `maplarge adk init` and are
-refreshed by rerunning init (`adk-extension-dev` covers init and the rest of the project
-workflow). For deploy-time staleness on a server rather than local build staleness, use
+it never touches `.adk/lib/` or `.adk/types.d/`. `.adk/lib/` and the framework declarations
+come from `maplarge adk init`; the per-extension `.adk/types.d/_<Name>.d.ts` files come from
+builds (`adk-extension-dev` covers init and the rest of the project workflow). For deploy-time staleness on a server rather than local build staleness, use
 `deploy-extension` instead.
 
 ## When to use
 
-- ADK build produces unexpected errors after dependency changes
+- ADK build produces unexpected errors after dependency changes. This does not fix stale types from another extension: their build records are in `.adk/types.d/_<Name>_NEW.tsbuildinfo`, not `.adk/.build/` (see [Failure modes](../../docs/extension-dependencies.md#failure-modes)).
 - Runtime "Module not Found" errors after a build that appeared to succeed
 - TypeScript changes not reflected in build output
 - After upgrading the MapLarge CLI or running `maplarge adk update-version`
@@ -48,7 +48,7 @@ The script prints a JSON summary (project root, per-extension bytes freed, next 
 | (default) | Build cache only | `.adk/.build/{ExtName}/` |
 | `--include-output` | Build cache + compiled output | `.adk/.build/{ExtName}/` + `.adk/.www/ext/{ExtName}/` |
 
-`.adk/lib/` and `.adk/types.d/` are NOT cleaned — those come from `maplarge adk init` and should be refreshed with `maplarge adk init` if needed.
+`.adk/lib/` and `.adk/types.d/` are NOT cleaned. Refresh `.adk/lib/` and the framework declarations with `maplarge adk init` if needed; the per-extension `_<Name>.d.ts` files come from builds.
 
 `--extensions` and `--all` are mutually exclusive; `--extensions` takes a comma-separated list (`--extensions Reports,Inventory`).
 
@@ -65,7 +65,9 @@ The ADK project root is auto-detected by walking up from the current directory t
   `node <plugin-root>/scripts/clean_adk_cache.mjs --all --include-output`, then rebuild.
   A CLI upgrade can invalidate every extension's cache and compiled output at once, so clean both, project-wide.
 - "TypeScript types from a dependency extension are stale" → not a cache-clean problem; the
-  generated `.adk/types.d/` files refresh via `maplarge adk init`, which this script deliberately never touches.
+  extension's `.adk/types.d/_<Name>.d.ts` regenerates when its declarations compile, so run
+  `maplarge adk build` with no `-extensions` (after `maplarge adk init`, add `-disableOptimizations`).
+  See [Failure modes](../../docs/extension-dependencies.md#failure-modes).
 
 ## Output
 

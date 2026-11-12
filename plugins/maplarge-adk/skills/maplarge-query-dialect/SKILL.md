@@ -1,10 +1,10 @@
 ---
 name: maplarge-query-dialect
-description: Runtime behavior of the MapLarge query dialect when a query returns 200 and is still wrong, or fails with a 500 naming an alias, a method or an unknown attribute. Covers filter-test separators and nesting, aggregation shapes that put a value in totals instead of the data, take defaults, ordering by an aggregate, which expressions and functions exist, and where the JSON, SQL and REST endpoints disagree. Use when a query returns no rows or too many, an aggregate column is missing from the response, a GROUP BY looks un-aggregated, an orderby fails, a date or string function returns HTTP 500, a count of distinct values is rejected, or a filter matches everything. Triggers on "query returns nothing", "no rows returned", "query 500", "sqlselect", "groupby", "count distinct", "CountDistinct", "median", "Between", "EqualAny", "aggregate missing", "orderby", "top N", "date function", "window function", "totals", "Unknown JSON attribute".
+description: Runtime behavior of the MapLarge query dialect when a query returns 200 and is still wrong, or fails with a 500 naming an alias, a method or an unknown attribute. Covers filter-test separators and nesting, aggregation shapes that put a value in totals instead of the data, take defaults, ordering by an aggregate, which expressions and functions exist, and where the JSON, SQL and REST endpoints disagree. Use when a query returns no rows or too many, an aggregate column is missing from the response, a GROUP BY looks un-aggregated, an orderby fails, a date or string function returns HTTP 500, a count of distinct values is rejected, or a filter matches everything. Triggers on "query returns nothing", "sqlselect", "groupby", "count distinct", "CountDistinct", "median", "Between", "EqualAny", "orderby", "top N", "date function", "window function", "totals", "Unknown JSON attribute", "raster", "band name", "GetBandName", "ViewShed", "GridLookup", "GridAcres", "GridAreaByRasterValue", "shortest path".
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
-  provenance: "ARC-76"
-  verified-against: "MapLarge Server 4.139 (docs host): 74 filter and expression behaviors and 52 aggregation, endpoint-parity and skill-body behaviors re-run live on the JSON query route (/Api/ProcessDirect table/query, built as Query.fromApiRequest(q).runAsync() sends it), the SQL endpoint and the REST query and validation routes against ml_samples/Miami_* tables, plus flat-versus-grouped null handling re-confirmed in 3 trials each on the JSON route and the SQL endpoint, 2026-09-29 (ARC-76)"
+  provenance: "ARC-76, ARC-98, ARC-78, ARC-67"
+  verified-against: "MapLarge Server 4.139 (docs host): 74 filter and expression behaviors and 52 aggregation, endpoint-parity and skill-body behaviors re-run live on the JSON query route (/Api/ProcessDirect table/query, built as Query.fromApiRequest(q).runAsync() sends it), the SQL endpoint and the REST query and validation routes against ml_samples/Miami_* tables, plus flat-versus-grouped null handling re-confirmed in 3 trials each on the JSON route and the SQL endpoint, 2026-09-29 (ARC-76). Raster reference: MapLarge Server 4.141 (2026-10-13 build) on the JSON query route and layer tiles against ml_samples/Miami_Elevation, read against core source a19113527d8, 2026-10-16 (ARC-98); grid functions, ViewShed and Grid math extent behavior, plus ShortestPath routing, the outer-join line filter and inline rows on ml_samples/Miami_Streets and Miami_Busstops, re-run on the same server with every worked example executed verbatim, 2026-10-16 (ARC-78); GridAcres versus GridAreaByRasterValue parity and timing on ml_samples/Miami_Elevation on the same server, 2026-10-16 (ARC-67)"
 ---
 
 # MapLarge Query Dialect
@@ -21,6 +21,8 @@ Reach for this skill when any of these is true:
 - An `orderby` fails with `MLE0011:Column '<alias>' is not found in any table source` or `Malformed column name`.
 - A function call fails with `MLE0010: ... method '<name>' doesn't exist` or `MLE0015: ... no overloaded version of method`.
 - A response error lists `Unknown JSON attribute in ...`.
+- A grid function on a raster fails with `Cannot find band named <name>`, or Grid math on two rasters fails with `Index was outside the bounds of the array`.
+- A raster area query is slow, especially one calling `GridAcres` once per class or value range.
 - The same query behaves differently through extension code, the REST API, the SQL endpoint or the command line.
 - A result verified on one route is about to be relied on in code that calls another.
 
@@ -34,6 +36,7 @@ Read the matching reference before writing the query, not after it returns somet
 | Read before writing a `groupby`, a join, a top-N, a distinct count or a percentile: `sqlselect`, a missing aggregate column, zero data rows, `totals`, ordering by an aggregate, `take` on an aggregate, counts and averages over nullable columns | `reference/aggregation.md` |
 | Read before using a function or operator inside `sqlselect`, `groupby` or `orderby`: dates, strings, math, ternaries, `CASE WHEN` and `LIKE`, nulls read as zero (`usenullvalues`), window functions, integer binning, computed aliases, string columns holding numbers | `reference/expressions.md` |
 | Read before confirming a query on a route other than the one the code calls, or when JSON, SQL, REST and command-line results disagree | `reference/endpoint-parity.md` |
+| Read before querying a raster or elevation table: `Raster` versus `Image` columns, band names, `Cannot find band named`, `GetBandName`, NoData, a band's value range, `GridLookup` heights at points, `ViewShed` line of sight, Grid math and `NoDataHandling`, combining viewsheds, `CoveringGridTableValuedFunction`, area per value with `GridAreaByRasterValue` versus slow `GridAcres`; also routing with `ShortestPathTableValuedFunction` and `build_graph`, removing blocked lines, and session-only inline rows with `JsonToTableTableValuedFunction` | `reference/raster.md` |
 
 ## Mental model
 

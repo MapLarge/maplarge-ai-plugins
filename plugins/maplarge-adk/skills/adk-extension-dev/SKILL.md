@@ -4,7 +4,7 @@ description: MapLarge ADK project setup, extension authoring, build/run, and pac
 metadata:
   owner: "Abdullah Ali <abdullah.ali@maplarge.com> · AI Resource Team"
   provenance: "Imported from the internal claude-plugins pool; retrofitted under ARC-12"
-  verified-against: "MapLarge ADK CLI 1.0.90 (adk new subcommands, package/deploy flags, update-version, run) verified live 2026-09-09 (ARC-42); server-side lifecycle/schema patterns @ 2026-08 import baseline"
+  verified-against: "MapLarge ADK CLI 1.0.90 (adk new subcommands, package/deploy flags, update-version, run) verified live 2026-09-09 (ARC-42); server-side lifecycle/schema patterns @ 2026-08 import baseline; per-command extension flags (--help and live runs) and the default and raptor-map template output checked on CLI 1.0.95, 2026-10-13 (ARC-64); post-init types-file recovery (init deleting the per-extension types files, a bare maplarge adk build compiling declarations in Dependencies order, -disableOptimizations restoring 0-byte types files) verified live on ADK CLI 1.0.94, 2026-11-03 (ARC-25)"
 ---
 
 # MapLarge ADK Extension Development
@@ -66,20 +66,23 @@ Browse live docs when:
 
 - Prefer current CLI syntax: `maplarge adk new project`, `maplarge adk new p`, `maplarge adk new extension`, `maplarge adk new e`, `maplarge adk new ext`, `maplarge adk new component`, `maplarge adk new c`, `maplarge adk new feature`, and `maplarge adk new f`.
 - Treat `maplarge adk create-project` and `maplarge adk create-extension` as legacy compatibility commands only.
+- The extension flag is not the same on every command. `build` and `run` accept only `-extensions`. `new component` and `new feature` accept `-e` or `--extension` but not `-extensions`. `package` and `deploy` accept all three. Use `-extensions` everywhere except `new`, and never carry `-e` or `--extension` over to `build` or `run`.
 - Treat `.adk/` as the strongest signal that a folder is an ADK project root.
 - Do not run `tsc` directly to build an ADK project. Use MapLarge CLI commands such as `maplarge adk build`, `maplarge adk run`, `maplarge adk package`, or `maplarge adk deploy` so ADK-managed build configuration and artifacts stay in the expected locations.
 - Treat ADK profiles as user-managed local state. Do not edit profile files or add or replace saved tokens without explicit user approval. If credentials must be supplied and password auth is sufficient, use `-user`/`-password` instead of a token.
 - For CLI upgrade requests on relevant ADK projects, run `dotnet tool install -g MapLargeInc.CLI`, then `maplarge adk update-version`, then `maplarge adk init -profile <current-profile>`.
 - If the installed CLI version is newer than the ADK project's CLI version, run `maplarge adk update-version` and then re-run `maplarge adk init` with the current profile even when the global install step was already done earlier.
+- After `maplarge adk init` in a project that has already been built, run one `maplarge adk build -disableOptimizations`: `init` deletes the per-extension `.adk/types.d/_<Name>.d.ts` files, and a normal build can leave them empty. See [Failure modes](../../docs/extension-dependencies.md#failure-modes).
 - To deploy a new ADK extension, use `maplarge adk deploy`; do not run a separate `package` step first unless the user asks for a package artifact.
 - For `maplarge adk package` and `maplarge adk deploy`, include `-i <component>` by default so output gets an incremented version. Use `PRERELEASE` when the current version has a pre-release tag, otherwise use `PATCH` unless the user explicitly asks for `MINOR` or `MAJOR`. Never use bare `-i` — the CLI needs the component to know which part to bump.
 - Do not manually edit `manifest.json` to change versions — the CLI derives the next version from what the server reports (`-seedVersion SERVER_INSTALLED` + `-i`), and a hand-edited manifest desynchronizes that comparison so later deploys mis-version. Never use `-overwrite` unless the user explicitly instructs you to overwrite an existing archive; silently replacing an already-built package hides versioning mistakes. Treat omitting `-i <component>` as an explicit exception, not the normal workflow. `-incrementVersion` is the same option as `-i`; prefer the short form for consistency with the examples below.
 - If the user is in an extension repo without `.adk/`, explain that packaging and `adk run` usually require working from an ADK project root.
 - When giving browser URLs, distinguish local `maplarge adk run` URLs, usually `https://localhost:8443`, from configured remote or deployed extension URLs; do not infer local run URLs from `maplarge adk config`.
 - When redeploying an installed extension with user-managed config, preserve the full extension config object before deploy and restore it after install when the target server exposes a documented config API.
-- For stale builds, clean only the affected `.adk/.build/<extension>/` cache and rebuild with `maplarge adk build`; refresh `.adk/lib/` and `.adk/types.d/` with `maplarge adk init`.
+- For stale builds, clean only the affected `.adk/.build/<extension>/` cache and rebuild with `maplarge adk build`; refresh `.adk/lib/` and the framework declarations in `.adk/types.d/` with `maplarge adk init`. Per-extension `_<Name>.d.ts` files come from builds, not `init`; refresh them with a full build (`maplarge adk build` with no `-extensions`) (see [Failure modes](../../docs/extension-dependencies.md#failure-modes)).
 - Use `-localServerRoot` guidance only when local repo context is available or the user explicitly wants source-based internal setup.
 - Prefer `maplarge adk new component` or `maplarge adk new feature` when the CLI/templates can scaffold the requested work.
+- For a new extension built around a full-screen map, scaffold with `maplarge adk new extension <name> -t raptor-map`; `maplarge adk list-templates` shows the rest. As of CLI 1.0.95, the default `raptor` template and `new component page` leave a full-screen page blank until it gets `fullScreen` and a sized layout host (see the `raptor` skill's gotchas). CLI 1.0.90 through 1.0.95 scaffold a `raptor-map` `MapViewModel.ts` that imports `raptor/raptorDom/view-models/DynamicViewModel`, which does not compile; change it to `raptor/raptorDom/viewModels/DynamicViewModel`. The extension's own `client/view-models/` folder is correct as is.
 - Keep default guidance customer-safe. Internal-only guidance should be clearly labeled.
 - For runtime-configured target tables, do not rely only on manifest `CreateTables`. Prefer `systemContext.Database.GetExistingTable("<account>/<table>").GetColumnInfo()` for lightweight schema inspection, and use `TableBuilderProvider.GetMultiTableBuilder(...).CreateFixedSchemaTableBuilder(...).Flush()` for additive schema migration when a required column is missing.
 - Prefer schema inspection over probe queries when checking whether a column exists, especially on connector startup paths.
@@ -90,16 +93,17 @@ Browse live docs when:
 
 - "Create a Reports extension in my ADK project and put it on the dev server" →
   `maplarge adk new extension Reports`, implement, then
-  `maplarge adk deploy -e Reports -profile dev -i PATCH -install`.
+  `maplarge adk deploy -extensions Reports -profile dev -i PATCH -install`.
   No separate `package` step, no bare `-i`, no `-overwrite`, and no direct `tsc` anywhere in the
   chain. Add `-seedVersion SERVER_INSTALLED` only on redeploys, where the server has an installed
   version to look up.
 - "I updated the MapLarge CLI; my project now warns about a version mismatch" →
   `dotnet tool install -g MapLargeInc.CLI`, then in each affected project
-  `maplarge adk update-version` followed by `maplarge adk init -profile <current-profile>`.
-  Both project steps run even if the global install reported the version was already current.
+  `maplarge adk update-version` followed by `maplarge adk init -profile <current-profile>`, then
+  one `maplarge adk build -disableOptimizations` if the project has been built before.
+  `update-version` and `init` run even if the global install reported the version was already current.
 - "Package Reports for a customer drop, it has a pre-release tag" →
-  `maplarge adk package -e Reports -i PRERELEASE -outputFolder ./dist` — `PRERELEASE` because the
+  `maplarge adk package -extensions Reports -i PRERELEASE -outputFolder ./dist` — `PRERELEASE` because the
   current version carries a pre-release tag; `PATCH` would jump it to a release version.
 
 ## Primary references
@@ -110,6 +114,7 @@ Read these when the task reaches their topic; skip them otherwise:
 - [`../../docs/workspace-detection.md`](../../docs/workspace-detection.md) — when the grounding scripts' JSON output needs interpreting.
 - [`../../docs/adk-workflows.md`](../../docs/adk-workflows.md) — before running a multi-step workflow (new project, run, package, deploy) you have not done this session.
 - [`../../docs/extension-reference.md`](../../docs/extension-reference.md) — when touching `manifest.json` fields or extension folder layout.
+- [`../../docs/extension-dependencies.md`](../../docs/extension-dependencies.md) — when one extension imports from another (`ext/<Name>/...`, manifest `Dependencies`), or such an import fails to build.
 - [`../../docs/raptor-dashboard-patterns.md`](../../docs/raptor-dashboard-patterns.md) — only for quick orientation before handing UI work to `adk-raptor-dev`.
 - [`../../docs/source-of-truth.md`](../../docs/source-of-truth.md) — when bundled docs and live behavior disagree.
 - [`../../docs/troubleshooting.md`](../../docs/troubleshooting.md) — when a CLI command fails with an error the rules above do not explain.

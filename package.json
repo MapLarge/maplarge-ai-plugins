@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"check": "node scripts/check.mjs",
+		"eval": "node scripts/eval-run.mjs",
 		"publish": "node scripts/publish.mjs",
 		"test": "node --test \"tests/*.test.mjs\""
 	},

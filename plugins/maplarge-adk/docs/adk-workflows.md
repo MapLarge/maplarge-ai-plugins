@@ -60,6 +60,8 @@ Common options:
 - `-pathToTypeScriptDeclarations <path>` and `-pathToPluginDependencies <path>`: use local artifacts instead of downloading them
 - `-verbose`: emit detailed logs
 
+`init` deletes the per-extension types files (`.adk/types.d/_<Name>.d.ts`). In a project that has already been built, follow it with one `maplarge adk build -disableOptimizations` (see [Failure modes](extension-dependencies.md#failure-modes)).
+
 ADK profiles are user-managed local state. Do not edit saved profile files or add or replace a profile token without explicit user approval. If credentials must be supplied and password auth is sufficient, use `-user` and `-password`; do not persist short-lived tokens in profiles.
 
 Examples:
@@ -85,7 +87,11 @@ maplarge adk build -extensions "ext1,ext2"
 maplarge adk run -extensions "ext1,ext2"
 ```
 
-Useful `run` options include `-httpPort`, `-httpsPort`, `-nossl`, `-skipCompile`, `-skipCompileUITests`, and `-skipCompileDeclarations`.
+`build` and `run` accept only `-extensions`; the `-e` / `--extension` that `new` uses is rejected there. `package` and `deploy` accept all three forms.
+
+An explicit list is built in the order given, even when it conflicts with the extensions' `Dependencies`. List each dependency before the extensions that import from it, or run a full build (`maplarge adk build` with no `-extensions`) (see [Declaring a dependency](extension-dependencies.md#declaring-a-dependency)).
+
+Useful `run` options include `-httpPort`, `-httpsPort`, `-nossl`, `-skipCompile`, `-skipCompileUITests`, and `-skipCompileDeclarations`. `-skipCompileDeclarations` also skips regenerating the types files that other extensions import from.
 
 If you are in a standalone extension repo without `.adk/`, package and `run` workflows usually need an ADK project root.
 
@@ -162,6 +168,7 @@ Rules:
 - Run all three steps for each relevant ADK project.
 - If `dotnet tool install -g MapLargeInc.CLI` reports that the current CLI version is already installed, skip the global install step and still refresh any ADK project whose `maplarge adk version` is older than the installed CLI.
 - When the installed CLI version is newer than the ADK project's CLI version, run `maplarge adk update-version` and then re-run `maplarge adk init` with the project's current profile.
+- In a project that has already been built, follow `init` with one `maplarge adk build -disableOptimizations`. `init` deletes the per-extension types files, and a normal build can leave them empty (see [Failure modes](extension-dependencies.md#failure-modes)).
 - Use `maplarge adk version` to compare the ADK project version with the installed CLI version.
 - Use `maplarge adk config` or `.adk/.www/maplarge.adk.config.json` to confirm the current profile before re-running `init`.
 - Re-running `init` with an existing profile should not change saved profile credentials unless the user explicitly approves that change.
@@ -202,9 +209,9 @@ Direct `tsc` runs can bypass the ADK-managed configuration and leave artifacts s
 
 ## ADK Cache Maintenance
 
-When builds appear stale after dependency, template, or CLI changes, clean only the affected extension cache under `.adk/.build/<extension>/`, then run `maplarge adk build`. If runtime output is stale, also remove the matching compiled output under `.adk/.www/ext/<extension>/`.
+When builds appear stale after dependency, template, or CLI changes, clean only the affected extension cache under `.adk/.build/<extension>/`, then run `maplarge adk build`. If runtime output is stale, also remove the matching compiled output under `.adk/.www/ext/<extension>/`. This does not fix stale dependency types: their build records are in `.adk/types.d/_<Name>_NEW.tsbuildinfo`, not `.adk/.build/` (see [Failure modes](extension-dependencies.md#failure-modes)).
 
-Do not remove `.adk/lib/` or `.adk/types.d/` as a cache-cleaning shortcut. Refresh those with `maplarge adk init`.
+Do not remove `.adk/lib/` or `.adk/types.d/` as a cache-cleaning shortcut. Refresh `.adk/lib/` and the framework declarations in `.adk/types.d/` with `maplarge adk init`. Per-extension `_<Name>.d.ts` files come from builds: `init` deletes them, so after `init` in a project that has already been built, run one `maplarge adk build -disableOptimizations`.
 
 If a build fails because files are locked, stop the process holding the generated output or server assembly, then rerun the ADK build. Avoid workstation-specific process-kill commands in reusable guidance.
 
@@ -225,6 +232,8 @@ Use the lightest verification that answers the question:
    package/deploy/install to a target server.
 
 For route or page changes, prefer at least step 1. For server plugin changes, also run relevant dotnet tests/builds.
+
+Steps 1 and 2 do not regenerate the types files of extensions that yours imports from, so they can fail with `TS2305` or `TS6053` when those files are out of date or missing; run a full build (`maplarge adk build` with no `-extensions`) instead (see [Failure modes](extension-dependencies.md#failure-modes)).
 
 ## General Guidance
 
