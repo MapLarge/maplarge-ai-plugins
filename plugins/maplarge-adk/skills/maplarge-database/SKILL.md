@@ -25,7 +25,8 @@ Covers interacting with MapLarge tables from the outside across all four surface
 plugin API - including verbs, auth, permissions, versions, exports, and the footguns between
 them. It excludes authoring the queries themselves (`adk-query-dev`), designing new tables and
 sample data for an extension (`adk-data-dev`), streaming ingest pipelines
-(`maplarge-datastreams`), and the extension build/deploy workflow (`adk-extension-dev`).
+(`maplarge-datastreams`), the extension build/deploy workflow (`adk-extension-dev`), and
+scripted Python via the PyPI `maplargerest` client (`maplargerest`).
 
 Before doing any MapLarge table data / schema / version / permission / metadata work — or before guessing a verb name, REST route, or permission quad — read the bundled reference: `reference/maplarge-database.md` (relative to this skill folder). It is the authoritative, source-cited reference for the CLI, REST, ProcessDirect, and plugin surfaces (each claim names its file and a greppable symbol). Read only the relevant sections (the table below maps tasks to headings); read the whole file only if the task spans many areas.
 
@@ -62,7 +63,8 @@ Before doing any MapLarge table data / schema / version / permission / metadata 
 
 - "Delete the archived rows from MyAccount/Orders" → the CLI cannot do this;
   `maplarge table delete-row` would empty the whole table. Use ProcessDirect:
-  `{"action":"table/deletetablerows","table":{"tableName":"MyAccount/Orders", …filter…}}` (§5, §8).
+  `{"action":"table/deletetablerows","query":{"table":"MyAccount/Orders","where":[[{"col":"status","test":"Equal","value":"archived"}]]}}`.
+  The filter is a query, so it goes under `query`, not under a `table` object (§5, §8).
 - "List the tables in my account" → CLI `maplarge table list -account MyAccount -profile <p>`,
   or ProcessDirect `{"action":"table/getactivetables"}` — never `table/list`, which is not a
   registered verb and fails with "Could not find permissions key" (§5).

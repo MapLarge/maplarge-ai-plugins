@@ -57,7 +57,7 @@ All CLI `maplarge table *` / `admin *` / `query *` commands go through REST. Ver
 | CLI subcommand | HTTP | Endpoint | CLI source |
 | --- | --- | --- | --- |
 | `list` | GET | `/restapi/v1/accounts/{account}/tables` | `table/List.cs` |
-| `create` | POST | `/restapi/v1/accounts/{account}/tables/{table}` or `.../{table}/upload` | `table/CreateTable.cs` |
+| `create-table` | POST | `/restapi/v1/accounts/{account}/tables/{table}` or `.../{table}/upload` | `table/CreateTable.cs` |
 | `create-empty` | POST | `/restapi/v1/accounts/{account}/tables/{table}/empty` | `table/CreateEmpty.cs` |
 | `export` | GET | `/restapi/v1/accounts/{account}/tables/{table}/versions/{version}/export?geoFormat=WKT&includePolicies=true&messageIdentifier=string` | `table/Export.cs` |
 | `delete` | DELETE | `/restapi/v1/accounts/{account}/tables/{table}/versions` (deletes ALL versions) | `table/DeleteTableAllVersions.cs` |
@@ -242,7 +242,7 @@ The switch at `TableModule.cs` dispatches on the string literal `"refreshtableme
 | `bulkupdate` | `BulkUpdateTableRowsAsync` | **Update rows matching a WHERE clause** — sets a flat `string[]` of column values on every matched row. NOT a multi-row insert. Use `editmulti` for that. Requires transacted table. |
 | `editmulti` | `UpdateMultiRowAsync` | **Multi-row insert/upsert** — use `MultiValues: string[][]` and `PrimaryKey`. This is the right verb for adding new rows. |
 | `editrecord` | `UpdateMultiRowAsync` | Alias of `editmulti` (same handler); still batch-capable |
-| `deletetablerows` | `DeleteTableRowsAsync` | Filtered delete (WHERE / row IDs) |
+| `deletetablerows` | `DeleteTableRowsAsync` | Filtered delete (rows matching `query.where`) |
 | `appendfromstream` | `AppendFromStreamAsync` | Stream rows into existing table |
 
 **If you need to change specific rows, use one of these — not the REST `/rows` DELETE.**
@@ -317,7 +317,9 @@ Root is always `{"action": "table/<verb>", ...}`. Sub-object nesting varies:
 - **Row mutations** — pick the right verb:
   - **`editmulti` / `editrecord`** — the multi-row insert/upsert verb. Uses `tableRequest.MultiValues ?? new[] { tableRequest.Values }` (`TableModule.cs` via `UpdateTableAsync`). Supply `PrimaryKey` for upsert semantics (update if PK matches, insert otherwise). Supply `RowId` to update by internal row id (mutually exclusive with `PrimaryKey`). With neither, behavior is insert-only-like — but note: **supplying a `PrimaryKey` with a `MultiValues` payload whose IDs don't match any existing row results in inserts**. In practice, for a plain append, set `PrimaryKey` to the PK column name anyway (e.g. `"id"`) and use fresh Guids — rows with non-matching PKs are inserted.
   - **`bulkupdate`** — *does not* do bulk insert. It's "update rows matching a WHERE clause, setting columns to values" (`ImportManager.Transacted.cs`: `BulkUpdateRowsByQueryTransactedAsync(tableHandle, QueryRequest qr, columnNames, columnValues, ...)`). The `qr.where` filters which rows to touch; `columnValues` is a **flat `string[]`** (one value per named column) applied to **every matched row**. Useful for "set status=archived where region=west", not for "insert these 17 new rows". Also requires the table be transacted (`TxDataHandle != null`; `TableModule.cs`).
-  - **`appendfromstream`** — pure append of a stream (CSV/JSON) in the request body; needs `?tableBaseName=&account=` query params (`StreamAppenderOptions.cs`). Use when you have a file-shaped payload or want the datastream-style path.
+  - **`appendfromstream`** - pure append of a stream (CSV/JSON); needs `tableBaseName` and `account` params (`StreamAppenderOptions.cs`). Use when you have a file-shaped payload or want the datastream-style path. Two routes, both POST:
+    - `/Api/ProcessDirect` with `request={'action':'table/appendfromstream'}`, `account`, `tableBaseName`, optional `processImmediately`, and the data as a raw body, a multipart `file` part, or a `json` form field.
+    - `/Remote/AppendFromStream` as multipart form data: `mluser`, `mlpass`, `account`, `tableName` (not `tableBaseName`), optional `processImmediately` and `extendedImportConfig`, and the data in a `json` part.
 
   Request shape for `editmulti` maps to `TableRequest` (`MapLarge.Engine/Unified/Request/TableRequest.cs`). Relevant fields:
   - `TableName` — `"Account/TableName"`.
@@ -571,9 +573,9 @@ $pass   = '<password>'
 
 $action = @{
     action = 'table/deletetablerows'
-    table  = @{
-        tableName = 'MyAccount/MyTable'
-        where     = "status = 'archived'"
+    query  = @{
+        table = 'MyAccount/MyTable'
+        where = @(, @(@{ col = 'status'; test = 'Equal'; value = 'archived' }))
     }
 } | ConvertTo-Json -Compress -Depth 10
 
@@ -600,10 +602,10 @@ ProcessDirect equivalent: `{"action":"table/query","query":{"table":"Account/Tab
 **Cannot be done via CLI.** ProcessDirect:
 
 ```json
-{"action":"table/deletetablerows","table":{"tableName":"Account/TableName", …filter…}}
+{"action":"table/deletetablerows","query":{"table":"Account/TableName","where":[[{"col":"status","test":"Equal","value":"archived"}]]}}
 ```
 
-Read `TableModule.cs` → `DeleteTableRowsAsync` for the exact parameter shape, or `Unified/ProcessingModules/` helpers for schema, before writing the call.
+The body is a query: `DeleteTableRowsAsync` reads the table from `query.table` and deletes the rows `query.where` matches (same where shape as `table/query`). A `table: { tableName, where }` object is not read. To delete every row through this verb, use `{"col":"<any column>","test":"CatchAll","value":""}`, though `table/truncatetable` is the simpler route for that.
 
 ### Truncate a table (keep schema)
 
@@ -623,19 +625,19 @@ No CLI. ProcessDirect `table/settablevisibility` (`TableModule.cs`). Or plugin: 
 
 ### Create table from data / file
 
-- Small inline data: `maplarge table create` → POST `/restapi/v1/accounts/{acct}/tables/{tbl}`.
-- File upload: `maplarge table create` with file args → POST `.../upload`.
+- Small inline data (`-input` or `-inputFile` JSON): `maplarge table create-table` → POST `/restapi/v1/accounts/{acct}/tables/{tbl}`.
+- File upload: `maplarge table create-table -local-file-paths <files>` → POST `.../upload`.
 - Empty with schema: `maplarge table create-empty` → POST `.../empty`.
 
 ### Copy a table from one server to another (snapshot)
 
 Use case: pull a remote dev/prod table onto your local dev server. **All three paths below work** — pick the one that fits.
 
-**Option A — CLI export + create-table** (simplest end-to-end). Verified 2026-05-18 against a 15,576-row, 24-column source table with WKT geometry: roundtripped to a new table with matching row count, column count, and sample data.
+**Option A - CLI export + create-table** (simplest end-to-end, single-geometry tables only). Verified 2026-05-18 against a 15,576-row, 24-column source table with one WKT geometry column: roundtripped to a new table with matching row count, column count, and sample data. On a table with **more than one geometry column**, the CSV export keeps only the first (renamed `WKT`) and silently drops the rest (field-observed on a three-geometry table). For those, export the native `.mln` format instead: ProcessDirect `{"action":"table/query","query":{"table":"SrcAccount/SrcTable","withgeo":true}}` with `uParams=formatType:maplarge` on the request; any `formatType` export also needs the `table/exporttable` permission. Without `withgeo: true` the `.mln` carried no geometry either (field-observed, not traced in source).
 
 ```bash
 # 1. Find the active version on the source (CLI export REQUIRES -version even though --help doesn't say so)
-maplarge table active-version -account SrcAccount -table SrcTable -profile remote
+maplarge table active-version -account SrcAccount -table-name SrcTable -profile remote
 
 # 2. Export to CSV (note: -version is effectively required; omitting it gives the opaque
 #    "The given key was not present in the dictionary.")

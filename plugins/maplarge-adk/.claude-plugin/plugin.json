@@ -1,7 +1,7 @@
 {
   "name": "maplarge-adk",
-  "version": "1.9.1",
-  "description": "Portable, customer-safe guidance for building MapLarge ADK extensions: workspace detection, queries, Raptor dashboards, data modeling, server-side extension patterns, granular Raptor-control and Apache ECharts charting skill families, and the ml-docgen config-documentation tool.",
+  "version": "1.9.5",
+  "description": "Portable, customer-safe guidance for building MapLarge ADK extensions: workspace detection, queries, Raptor dashboards, data modeling, server-side extension patterns, granular Raptor-control and Apache ECharts charting skill families, the ml-docgen config-documentation tool, and the Python maplargerest REST client.",
   "author": {
     "name": "MapLarge",
     "email": "support@maplarge.com",
@@ -24,6 +24,9 @@
     "data",
     "server",
     "manifest",
-    "ml-docgen"
+    "ml-docgen",
+    "maplargerest",
+    "python",
+    "rest"
   ]
 }

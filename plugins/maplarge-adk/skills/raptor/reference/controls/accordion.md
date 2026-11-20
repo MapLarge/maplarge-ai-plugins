@@ -18,26 +18,34 @@ For a non-stacked single dock/expand at a viewport edge, that is the separate `d
 Key option fields:
 
 - `IAccordion`: `singleOpen?: boolean` (only one item open; opening one closes the others), `accordionFlush?: boolean` (removes outer borders/rounded corners).
-- `IAccordionItem`: `headerText?: string` (label shown in the header bar), `collapsed?: boolean` (initial state — `true` = closed, `false`/omit = open), `headerBorder?: DisplayUtilities.IBorder`, `headerBorderSubtle?: boolean`.
+- `IAccordionItem`: `collapsed?: boolean` (initial state of a static item; only `false` opens it, so omitting it renders closed. A bound `collapsed` works the other way: anything but `true`, including `undefined`, opens the item), `headerBorder?: DisplayUtilities.IBorder`, `headerBorderSubtle?: boolean`. Do not use `headerText`: it is declared but the renderer never reads it.
 - `IAccordionItemHeader` / `IAccordionItemBody`: thin text-control wrappers; supports `text` binding and arbitrary nested content via their `contentTemplates`.
+
+**Every header needs `s.button({ accordionHeaderButton: true, text })`.** The flag gives the button the `accordion-button` class that the toggle and chevron hang off. Without it the header is a blank bar that never toggles, and `collapsed: false` throws `accordion item needs accordion button and accordion body defined in json`.
 
 ```ts
 const s = RSScriptor.create<MyVm>();
 s.view("myAccordion", s =>
   s.accordion({ singleOpen: true }).contentTemplates(s =>
-    s.accordionItem({ headerText: "Section A" }).contentTemplates(s =>
-      s.accordionItemBody().contentTemplates(s =>
+    s.accordionItem({ collapsed: false }).contentTemplates(s =>
+      s.accordionItemHeader().contentTemplates(s =>
+        s.button({ accordionHeaderButton: true, text: "Section A" })
+      )
+      .accordionItemBody().contentTemplates(s =>
         s.div({ text: "Body A content" })
       )
     )
-    .accordionItem({ headerText: "Section B", collapsed: true }).contentTemplates(s =>
-      s.accordionItemBody().contentTemplates(s => s.div({ text: "Body B content" }))
+    .accordionItem({ collapsed: true }).contentTemplates(s =>
+      s.accordionItemHeader().contentTemplates(s =>
+        s.button({ accordionHeaderButton: true, text: "Section B" })
+      )
+      .accordionItemBody().contentTemplates(s => s.div({ text: "Body B content" }))
     )
   )
 );
 ```
 
-`headerText` is a shortcut; for rich/custom header content nest an `accordionItemHeader().contentTemplates(...)` instead and omit `headerText`.
+For icons or badges beside the title, put them inside the header button's own `contentTemplates`, or next to it in `accordionItemHeader().contentTemplates(...)`. The button itself is what toggles.
 
 ## Bindings & events
 
@@ -68,16 +76,16 @@ Prefer mutating the bound `collapsed` VM property + `update()` over calling thes
 
 - **Single-open filter groups.** `s.accordion({ singleOpen: true, accordionFlush: true })` with one `accordionItem` per group; bind each item's `collapsed` to a VM flag so you can persist which group is open in serialized state.
 - **Programmatic open from elsewhere.** Drop a `controlTarget` inside an item body, then call `nodeT<Accordion>(...).openItemByControlTarget("myTarget")` to expand it (e.g. to reveal the section holding an invalid field).
-- **Custom header.** Omit `headerText`; nest `accordionItemHeader().contentTemplates(s => s.div(...).span(...))` for icons/badges alongside the title.
+- **Custom header.** Keep the `accordionHeaderButton` button and add icons or badges beside it in `accordionItemHeader().contentTemplates(...)`; a header made only of `div`/`span` content never toggles.
 
 ## Gotchas
 
 - Clicks on interactive children inside the header (selects, nested buttons, anything matching the interactive-target check) do NOT toggle the item — by design, so embedded controls stay usable. A plain header label toggles normally.
-- `collapsed: true` means closed. It is easy to invert; the default (omitted/`false`) renders expanded.
+- `collapsed: true` means closed and is easy to invert. A static item with no `collapsed` option renders closed; only `collapsed: false` starts it open.
 - `singleOpen` only closes siblings within the same `.accordion` root — nested accordions are independent.
 - Toggling is animated (height transition) and guarded by a per-panel transition lock; rapid repeat calls during the animation are ignored. Await the `open*/close*` methods if you depend on completion.
 - `Accordion` is late-bound: the node is instantiated when its element is inserted, so freshly injected accordion markup wires up on insertion rather than at parse time.
-- Header and body are text-control wrappers — set the label via `headerText` or the `text` binding, not by assuming a child paragraph exists.
+- Set the header label on the `accordionHeaderButton` button (`text` option or binding). `headerText` on the item does nothing.
 
 ## Related skills
 

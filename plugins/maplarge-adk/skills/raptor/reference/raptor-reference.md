@@ -24,7 +24,7 @@ Text/media: `h3`,`h4`,`h6`,`label`,`anchor({navLink,href,target})`,`image({src,m
 
 Interactive: `button({kind:"link",dropdownToggle,dropdownItem,accordionHeaderButton,tooltip,svgOptions,hideDropDownArrow,testId})`, `dropdown`, `list({dropdownMenu,listStyleType,minWidth})`, `listItem`, `radio`, `radioButtonGroup`, `quickSelect`.
 
-Accordion: `accordion`, `accordionItem({headerText, bindings:{collapsed}})`, `accordionItemHeader`, `accordionItemBody`.
+Accordion: `accordion`, `accordionItem({bindings:{collapsed}})`, `accordionItemHeader` (holds a `button({accordionHeaderButton: true, text})`), `accordionItemBody`.
 
 Data: `dataTable(dataTableOptions({data, schema, columns}))`, `table`, `tableHead`, `tableBody`, `tr`, `th`, `td`, `foreach(prop, s=>...)`.
 

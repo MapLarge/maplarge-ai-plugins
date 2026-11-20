@@ -1,6 +1,6 @@
 # MapLarge AI Plugins
 
-AI skills for building on the MapLarge platform: scaffolding and deploying ADK extensions, authoring queries, building Raptor dashboards and ECharts charts, working with tables, DataStream pipelines, and Notebooks. Each skill is a `SKILL.md` instruction document in the [Agent Skills](https://agentskills.io) format that teaches an AI coding assistant how to do the work correctly.
+AI skills for building on the MapLarge platform: scaffolding and deploying ADK extensions, authoring queries, building Raptor dashboards and ECharts charts, working with tables, DataStream pipelines, Notebooks, and the Python `maplargerest` REST client. Each skill is a `SKILL.md` instruction document in the [Agent Skills](https://agentskills.io) format that teaches an AI coding assistant how to do the work correctly.
 
 Built for developers using an AI assistant against a MapLarge server. Claude Code is the primary target (this repository is a Claude Code plugin marketplace), and the same skills install into GitHub Copilot, Cursor, Codex, and other agents through the GitHub CLI - see [Other assistants](#other-assistants).
 
@@ -38,7 +38,7 @@ dotnet tool install -g MapLargeInc.CLI   # MapLarge CLI, if needed
 
 Customer-safe guidance for building MapLarge ADK extensions. No configuration or credentials required.
 
-**Workflow skills** (procedural, end to end): `adk-extension-dev`, `adk-query-dev`, `adk-raptor-dev`, `adk-map-layers`, `adk-data-dev`, `adk-clean-cache`, `adk-ui-testing`, `create-table`, `deploy-extension`.
+**Workflow skills** (procedural, end to end): `adk-extension-dev`, `adk-query-dev`, `adk-raptor-dev`, `adk-map-layers`, `adk-data-dev`, `adk-clean-cache`, `adk-ui-testing`, `create-table`, `deploy-extension`, `maplargerest`.
 
 **Reference skills** (routers with on-demand reference docs): `maplarge-database` (tables, queries, versions, permissions across the CLI, REST, ProcessDirect, and plugin API surfaces), `raptor` (the Raptor control catalog and view patterns), `echarts` (every chart type and component), `maplarge-datastreams` (on-ramp and off-ramp pipelines), `maplarge-notebooks`, `maplarge-query-dialect` (query runtime semantics: filter separators, aggregates that land in totals, take defaults, ordering by an aggregate, and where the JSON, SQL and REST endpoints disagree), `ml-docgen`.
 

@@ -59,6 +59,7 @@ import { sayHello } from "ext/producer/greetings";
 - To read another installed extension's name, version, config or packaged files, use the SDK's `GetExtensionInfo` method.
 - To use another extension's server logic, call its HTTP endpoints. The SDK's `CreateManagedHttpClient` method creates an HTTP client.
 - Do not reference another extension's plugin DLL from your `.csproj`. It may compile, but it is untested at runtime.
+- Do not reference core server assemblies either (`MapLarge.Engine.dll`, `MapLarge.Server.dll`, or anything from a server's install folder). Server code compiles against `MapLarge.PluginDependencies` only; if it lacks an API, that is a gap to raise, not a reason to reference core.
 
 ## Worked example
 

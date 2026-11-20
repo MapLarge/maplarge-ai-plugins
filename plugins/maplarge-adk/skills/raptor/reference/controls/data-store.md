@@ -85,6 +85,7 @@ public clearSelection() { this.dataStore.removeFilter("myThing", "selection"); }
 
 - Filters merge with **AND** only. For OR, build a single `IQueryWhere[][]` clause and set it under one name.
 - `setFilter`/`removeFilter` resolve after the update completes — `await` them; reading `getDataSource` synchronously right after returns the pre-update source.
+- `update(sources)` returns `void`, not a promise: the new definition lands on the store's next cycle. Code on the next line (registering layers, reading `getDataSource`) still sees the old source, and layers briefly draw the old data. Put work that needs the replaced source in an `onDataSourceChanged(name, callback, undefined, true)` subscription made before calling `update()`. A subscription made later fires at once with the source it already holds, which may still be the old one; the fourth argument (`skipInitialCallback`) skips that first call.
 - Re-`setFilter` with the same `name` replaces (does not stack). Different names stack.
 - `getDataSource` returns `null` before initial load — guard with `areDataSourcesLoaded` / `getDataSourceStatus`, or use `getDataSourceAsync`.
 - `updateParams` must run before registering sources that reference the params; unsupported on `MinimalDataStore`.
@@ -177,7 +178,7 @@ type DataSourceCallback = (ds: ml.data.IDataSource) => Promise<void> | void;
 type DataSourceErrorCallback = (errors: string[]) => Promise<void>;
 ```
 
-`IQueryWhere.test` values are the standard MapLarge comparison ops (e.g. `Equal`, `NotEqual`, `GreaterThan`, `LessThan`, `Contains`, `In`, geo ops like `DWithin`/`Overlaps`). Use `ml.data.query.combineWhereClauses(clauses, "And" | "Or")` to merge clauses yourself; the store does the AND-combine internally before exposing the filtered `ml.data.IDataSource`.
+`IQueryWhere.test` values are MapLarge `TestSymbol` names, not SQL-style ones (e.g. `Equal`, `EqualNot`, `Greater`, `Less`, `EqualAny`, `Contains`, geo ops like `DWithin`/`Overlaps`). `NotEqual`, `GreaterThan`, `LessThan` and `In` do not exist and fail on the server; the full list is in the test-symbol gotcha in `patterns.md`. Use `ml.data.query.combineWhereClauses(clauses, "And" | "Or")` to merge clauses yourself; the store does the AND-combine internally before exposing the filtered `ml.data.IDataSource`.
 
 ## Filtered-source mechanics
 

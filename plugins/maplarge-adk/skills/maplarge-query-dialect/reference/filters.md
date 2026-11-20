@@ -22,7 +22,8 @@ These two tests usually sit a few lines apart in the same filter builder, which 
 
 ## Blank values
 
-- **`{ "test": "EqualNot", "value": "" }` matches every row.** It does not exclude blanks: on `Miami_Busstops.MUNIC_NAME`, which has 15 blank values, it returns all 5,595 rows.
+- **`{ "test": "EqualNot", "value": "" }` matches every row of a stored column.** It does not exclude blanks: on `Miami_Busstops.MUNIC_NAME`, which has 15 blank values, it returns all 5,595 rows.
+- **A computed column behaves the other way.** On an inner query that selects `'' as session_change`, `EqualNot ""` on `session_change` returns 0 rows. Do not rely on either behavior.
 - **Use `IsEmpty` and `IsNotEmpty` for blanks.** They return 15 and 5,580 on `MUNIC_NAME`, 92 and 6,855 on `Miami_Flights.flight`, and 4 and 5,591 on `Miami_Busstops.StopName`, each pair summing to the table's row count. `Equal ""` counts blanks as well.
 - A numeric null is a different case: filter tests skip it, while an expression in the `sqlselect` of a grouped query reads it as 0 unless the query sets `"usenullvalues": true`.
 

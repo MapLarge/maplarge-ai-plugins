@@ -25,7 +25,7 @@ s.quickSelect({
     clearable: true,            // render an "x" clear button
     sortColumn: "label",        // column to sort on (defaults to labelProperty)
     minPopupWidth: 180,         // popup min width px (default 180)
-    size: "sm",                 // DisplayUtilities.InputSize
+    size: "small",              // DisplayUtilities.InputSize: "large" | "medium" | "small"
 });
 
 // Shorthand: first string arg becomes the `items` binding
